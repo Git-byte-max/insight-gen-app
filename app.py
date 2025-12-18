@@ -263,6 +263,7 @@ else:
 # 5. Fixed Professional Footer
 st.markdown("""
     <div class="footer">
-        Designed by Abhai | Powered by CrewAI Engine
+        Designed by Nithin Prasad | Powered by CrewAI Engine
     </div>
 """, unsafe_allow_html=True)
+
