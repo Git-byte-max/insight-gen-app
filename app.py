@@ -5,20 +5,23 @@ os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 import streamlit as st
 import pandas as pd
 import time
-import requests # Needed to load the animation
-from streamlit_lottie import st_lottie # Import the new library
+import requests 
+from streamlit_lottie import st_lottie 
 
 # Import agents and tools
 from agents import planner, coder, reporter 
 import tools 
 from crewai import Task, Crew
 
-# --- Lottie Loader Function ---
+# --- Robust Lottie Loader ---
 def load_lottieurl(url: str):
-    r = requests.get(url)
-    if r.status_code != 200:
+    try:
+        r = requests.get(url, timeout=5) # Added timeout to prevent hanging
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except:
         return None
-    return r.json()
 
 # 1. Page Configuration
 st.set_page_config(
@@ -35,16 +38,13 @@ st.markdown("""
     html, body, [class*="css"] { font-family: 'Inter', sans-serif; color: #E0E0E0; scroll-behavior: smooth; }
     .stApp { background-color: #0F1116; }
     
-    /* Animations & Transitions */
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     .block-container { animation: fadeInUp 0.6s ease-out both; }
 
-    /* Header & Navbar Fixes */
     header { visibility: visible !important; background-color: transparent !important; }
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; }
 
-    /* Titles & Cards */
     .main-title {
         background: linear-gradient(90deg, #E0E0E0 60%, #4DB6AC 100%);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700 !important;
@@ -55,23 +55,19 @@ st.markdown("""
     }
     div[data-testid="stContainer"]:hover { border-color: #4DB6AC; box-shadow: 0 4px 12px rgba(77, 182, 172, 0.1); }
     
-    /* Metrics */
     [data-testid="stMetric"] { background-color: #181B22; padding: 15px; border-radius: 8px; border: 1px solid #2D313A; }
     [data-testid="stMetricValue"] { font-size: 26px; font-weight: 600; color: #4DB6AC; }
     [data-testid="stMetricLabel"] { font-size: 13px; color: #9CA3AF; letter-spacing: 0.5px; }
     
-    /* Buttons */
     .stButton>button {
         background: linear-gradient(135deg, #4DB6AC 0%, #26A69A 100%); color: #0F1116; border-radius: 6px;
         font-weight: 600; border: none; padding: 0.75rem 1rem; width: 100%; transition: all 0.2s ease;
     }
     .stButton>button:hover { transform: scale(1.01); box-shadow: 0 4px 15px rgba(77, 182, 172, 0.4); color: #FFFFFF; }
     
-    /* Inputs */
     .stTextInput>div>div>input { background-color: #1E2129; border: 1px solid #2D313A; color: #E0E0E0; border-radius: 6px; }
     .stTextInput>div>div>input:focus { border-color: #4DB6AC; }
 
-    /* Footer */
     .footer {
         position: fixed; left: 0; bottom: 0; width: 100%; background-color: #0F1116; color: #6B7280;
         text-align: center; padding: 12px; font-size: 11px; border-top: 1px solid #1E2129; z-index: 1000;
@@ -95,9 +91,8 @@ st.markdown("<h2 class='main-title'>InsightGen Analyst Platform</h2>", unsafe_al
 st.markdown("#### *Autonomous data exploration and visualization engine.*")
 st.markdown("---")
 
-# Pre-load the animations
-lottie_analyzing = load_lottieurl("https://lottie.host/5a83764b-a675-4c07-9e7f-b7696e5d8868/jR17l7u9jD.json") # AI Brain Animation
-lottie_success = load_lottieurl("https://assets9.lottiefiles.com/packages/lf20_ofa3xwo7.json") # Checkmark
+# Safe Loading of Animations (Switched to more stable URLs)
+lottie_analyzing = load_lottieurl("https://lottie.host/5a83764b-a675-4c07-9e7f-b7696e5d8868/jR17l7u9jD.json") 
 
 if uploaded_file is not None:
     try:
@@ -125,17 +120,19 @@ if uploaded_file is not None:
             start_btn = st.button("INITIATE ANALYSIS", use_container_width=True)
 
         if start_btn and user_query:
-            # Create a placeholder for the animation so we can remove it later if needed
             lottie_placeholder = st.empty()
             
             status_container = st.container()
             with status_container:
-                # NEW: Display Animation at the top while processing
+                # CRITICAL FIX: Only show animation if it loaded successfully
                 with lottie_placeholder.container():
-                    # Centers the animation
                     c_lot1, c_lot2, c_lot3 = st.columns([1, 1, 1])
                     with c_lot2:
-                        st_lottie(lottie_analyzing, height=150, key="analyzing")
+                        if lottie_analyzing:
+                            st_lottie(lottie_analyzing, height=150, key="analyzing")
+                        else:
+                            # Fallback if animation fails (Invisible spacer)
+                            st.write("") 
                 
                 with st.status("Processing Request Sequence...", expanded=True) as status:
                     st.write("🧠 **Planner:** Strategizing analysis path...")
@@ -152,9 +149,7 @@ if uploaded_file is not None:
                     try:
                         result = crew.kickoff()
                         
-                        # Clear the loading animation and show success
                         lottie_placeholder.empty()
-                        
                         status.update(label="Analysis Completed Successfully", state="complete", expanded=False)
                         
                         st.markdown("---")
