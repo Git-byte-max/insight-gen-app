@@ -22,12 +22,13 @@ if not api_key:
 # 3. Setup LLM
 # CRITICAL FIX: Set rpm=2. 
 # The free tier limit is 5 requests/min. Setting it to 2 ensures we NEVER hit it.
+# Tomorrow, use this configuration for maximum stability:
 my_llm = LLM(
-    model="gemini/gemini-2.0-flash-lite", 
+    model="gemini/gemini-1.5-flash",  # <--- The stable workhorse model
     api_key=api_key,
     temperature=0.5,
     verbose=True,
-    rpm=4
+    rpm=10  # You can safely increase this to 10 on the standard model
 )
 
 # --- AGENT DEFINITIONS ---
@@ -59,4 +60,5 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
+
 
