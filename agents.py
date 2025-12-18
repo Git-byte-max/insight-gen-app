@@ -5,35 +5,29 @@ from tools import execute_code_tool, get_columns_tool
 
 # --- CONFIGURATION ---
 
-# 1. Disable Telemetry (Fixes "Signal only works in main thread" error)
+# 1. Disable Telemetry 
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
-# 2. Get API Key Securely
-# This checks Streamlit Secrets (for Cloud) first, then local environment (for testing)
+# 2. Get API Key
 api_key = None
-
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
 elif "GOOGLE_API_KEY" in os.environ:
     api_key = os.environ["GOOGLE_API_KEY"]
 
-# Stop execution if key is missing (prevents crash)
 if not api_key:
-    st.error("⚠️ GOOGLE_API_KEY not found! If running locally, add it to .env. If on Cloud, add it to Secrets.")
+    st.error("⚠️ GOOGLE_API_KEY is missing! Add it to secrets.toml or .env")
     st.stop()
 
-# Ensure the environment variable is set for internal libraries
-os.environ["GOOGLE_API_KEY"] = api_key
-
 # 3. Setup LLM
-# We use 'gemini/gemini-1.5-flash' as it is the most stable free model.
-# We set 'rpm=5' (Requests Per Minute) to prevent 429 Rate Limit errors.
+# CRITICAL FIX: Set rpm=2. 
+# The free tier limit is 5 requests/min. Setting it to 2 ensures we NEVER hit it.
 my_llm = LLM(
     model="gemini/gemini-flash-latest", 
-    api_key=os.environ["GOOGLE_API_KEY"],
+    api_key=api_key,
     temperature=0.5,
     verbose=True,
-    rpm=5 
+    rpm=2
 )
 
 # --- AGENT DEFINITIONS ---
@@ -65,4 +59,3 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
-
