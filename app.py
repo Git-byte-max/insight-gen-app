@@ -1,228 +1,249 @@
 import os
-# MUST BE THE FIRST LINE
+# MUST BE THE FIRST LINE to fix Threading Errors
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 import streamlit as st
 import pandas as pd
-# Import agents
+import time
+
+# Import agents and tools
 from agents import planner, coder, reporter 
-# Import the 'df' variable from tools so we can load data into it
 import tools 
 from crewai import Task, Crew
 
 # 1. Page Configuration
 st.set_page_config(
     page_title="Insight-Gen AI",
-    page_icon="📊",
+    page_icon="✨",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom CSS for "Dark Mode"
+# 2. Enhanced "Dark Mode" CSS
 st.markdown("""
     <style>
-    /* Main Background - Dark */
+    /* Global Font & Background */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    
     .stApp {
         background-color: #0E1117;
         color: #FAFAFA;
     }
     
-    /* Card-like styling for containers (Dark Gray) */
-    div[data-testid="stExpander"], div[data-testid="stContainer"] {
+    /* Glassmorphism Containers */
+    div[data-testid="stExpander"], div[data-testid="stContainer"], .stStatusWidget {
         background-color: #262730;
-        border-radius: 10px;
-        padding: 10px;
+        border-radius: 12px;
+        padding: 16px;
         border: 1px solid #41444C;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease;
+    }
+    
+    div[data-testid="stExpander"]:hover {
+        border-color: #4DB6AC;
     }
 
     /* Metric Cards Styling */
     [data-testid="stMetricValue"] {
-        font-size: 24px;
-        color: #4DB6AC; /* Teal/Cyan for pop */
+        font-size: 28px;
+        font-weight: 700;
+        background: -webkit-linear-gradient(45deg, #4DB6AC, #80CBC4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     [data-testid="stMetricLabel"] {
+        font-size: 14px;
         color: #B0BEC5;
     }
     
-    /* Button Styling */
+    /* Glowing Button */
     .stButton>button {
-        background-color: #4DB6AC;
+        background: linear-gradient(90deg, #4DB6AC 0%, #26A69A 100%);
         color: #000000;
-        border-radius: 8px;
+        border-radius: 10px;
         font-weight: bold;
         border: none;
-        padding: 0.5rem 1rem;
+        padding: 0.6rem 1rem;
         width: 100%;
+        text-transform: uppercase;
+        letter-spacing: 1px;
         transition: all 0.3s ease;
     }
+    
     .stButton>button:hover {
-        background-color: #26A69A;
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(77, 182, 172, 0.6);
         color: #FFFFFF;
-        box-shadow: 0 4px 10px rgba(77, 182, 172, 0.4);
     }
     
-    /* Inputs fields text color */
-    .stTextInput>div>div>input {
-        color: #FAFAFA;
-        background-color: #262730;
+    /* Footer Styling */
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #0E1117;
+        color: #888;
+        text-align: center;
+        padding: 10px;
+        font-size: 12px;
+        border-top: 1px solid #262730;
+        z-index: 1000;
     }
     
-    /* Dataframe dark theme fixes */
-    [data-testid="stDataFrame"] {
-        border: 1px solid #41444C;
-    }
-    
-    /* Headers */
-    h1, h2, h3 {
-        color: #FAFAFA !important;
-    }
-    h4, h5, h6 {
-        color: #B0BEC5 !important;
+    /* Header Gradient */
+    .gradient-text {
+        background: -webkit-linear-gradient(45deg, #FF6B6B, #4ECDC4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. Sidebar for Inputs
+# 3. Sidebar
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712035.png", width=80)
-    st.title("Configuration")
+    st.image("https://cdn-icons-png.flaticon.com/512/12308/12308823.png", width=70)
+    st.title("🔧 Configuration")
     st.markdown("---")
+    uploaded_file = st.file_uploader("📂 **Upload Dataset**", type=["csv"])
     
-    uploaded_file = st.file_uploader(
-        "📂 **Upload Dataset (CSV)**", 
-        type=["csv"], 
-        help="Upload a clean CSV file for analysis."
-    )
-    
-    st.markdown("---")
-    st.markdown("### 💡 How to use")
+    st.markdown("### 💡 Quick Tips")
     st.info(
-        "1. Upload your CSV file.\n"
-        "2. Check the data summary.\n"
-        "3. Ask a question in plain English.\n"
-        "4. Let the AI Agents do the work!"
+        "• Use simple English.\n"
+        "• Ask for trends, counts, or plots.\n"
+        "• Example: 'Plot alcohol vs quality'"
     )
+    
     st.markdown("---")
-    st.caption("Built with CrewAI & Gemini 2.0")
+    st.caption("⚡ Powered by Gemini 2.0 & CrewAI")
 
-# 4. Main Content Area
-st.title("📊 Insight-Gen: Autonomous Data Agent")
-st.markdown("#### *Turn raw data into actionable insights instantly.*")
+# 4. Main Content
+st.markdown("## 📊 <span class='gradient-text'>Insight-Gen: Autonomous Analyst</span>", unsafe_allow_html=True)
+st.markdown("##### *Your personal AI data scientist.*")
+st.markdown("---")
 
 if uploaded_file is not None:
-    # Load Data
+    # Load Data into the tool
     try:
         tools.df = pd.read_csv(uploaded_file)
         
-        # --- Dashboard Metrics ---
-        st.markdown("### 📋 Dataset Overview")
+        # Dashboard Metrics
+        st.subheader("📋 Data Snapshot")
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Rows", tools.df.shape[0])
-        col2.metric("Columns", tools.df.shape[1])
+        col1.metric("Total Rows", tools.df.shape[0])
+        col2.metric("Total Columns", tools.df.shape[1])
         col3.metric("Missing Values", tools.df.isna().sum().sum())
         col4.metric("Duplicates", tools.df.duplicated().sum())
         
-        # --- Data Preview (Collapsible) ---
-        with st.expander("👀 View Raw Data Preview"):
+        with st.expander("👀 Click to View Raw Data"):
             st.dataframe(tools.df.head(), use_container_width=True)
-            st.markdown(f"**Column Names:** `{', '.join(list(tools.df.columns))}`")
 
         st.divider()
 
-        # --- User Input Section ---
-        st.subheader("🤖 Ask your Data")
+        # Input & Run
+        st.subheader("🤖 Ask a Question")
+        user_query = st.text_input("Describe the analysis you want:", placeholder="e.g., Show me the distribution of pH values")
         
-        col_input, col_btn = st.columns([4, 1])
+        # Spacer
+        st.write("") 
         
-        with col_input:
-            user_query = st.text_input(
-                "What would you like to analyze?", 
-                placeholder="e.g., 'Show me the sales trend over time' or 'Analyze the correlation between price and rating'",
-                label_visibility="collapsed"
-            )
-        
-        with col_btn:
-            start_btn = st.button("🚀 Run Analysis", use_container_width=True)
+        c_btn1, c_btn2, c_btn3 = st.columns([1, 2, 1])
+        with c_btn2:
+            start_btn = st.button("🚀 Start Analysis", use_container_width=True)
 
-        # --- Execution Logic ---
-        if start_btn:
-            if not user_query:
-                st.warning("Please enter a question first!")
-            else:
-                status_container = st.container()
-                result_container = st.container()
+        if start_btn and user_query:
+            with st.status("🔄 **AI Agents are thinking...**", expanded=True) as status:
                 
-                with status_container:
-                    # Using a dark-friendly status container
-                    with st.status("🔄 **AI Agents Working...**", expanded=True) as status:
-                        
-                        st.write("🧠 **Planner Agent:** Analyzing data schema...")
-                        # Define Tasks
-                        task1 = Task(
-                            description=f"Analyze the dataset columns and plan the steps to answer: '{user_query}'",
-                            agent=planner,
-                            expected_output="A step-by-step analysis plan."
-                        )
+                st.write("🧠 **Planner:** Structuring the analysis...")
+                # Task 1: Plan
+                task1 = Task(
+                    description=f"Analyze columns and plan steps for: '{user_query}'",
+                    agent=planner,
+                    expected_output="Analysis plan"
+                )
+                
+                st.write("💻 **Coder:** Writing and executing Python...")
+                # Task 2: Code
+                task2 = Task(
+                    description="Write/execute Python code using 'df'. Save plots as 'plot.png'.",
+                    agent=coder,
+                    expected_output="Code execution confirmation"
+                )
+                
+                st.write("📝 **Reporter:** Summarizing findings...")
+                # Task 3: Report
+                task3 = Task(
+                    description="Summarize the findings and the plot.",
+                    agent=reporter,
+                    expected_output="Insights summary"
+                )
 
-                        st.write("💻 **Coder Agent:** Generating & Executing Python code...")
-                        task2 = Task(
-                            description=f"Write Python code to execute the plan. Use the 'df' variable. Save any plot as 'plot.png'.",
-                            agent=coder,
-                            expected_output="Executed Python code and a confirmation message."
-                        )
+                crew = Crew(
+                    agents=[planner, coder, reporter],
+                    tasks=[task1, task2, task3],
+                    verbose=True
+                )
 
-                        st.write("📝 **Reporter Agent:** Summarizing insights...")
-                        task3 = Task(
-                            description="Look at the code results and write a summary.",
-                            agent=reporter,
-                            expected_output="A text summary of insights."
-                        )
-
-                        # Create Crew
-                        crew = Crew(
-                            agents=[planner, coder, reporter],
-                            tasks=[task1, task2, task3],
-                            verbose=True
-                        )
-
-                        try:
-                            result = crew.kickoff()
-                            status.update(label="✅ **Analysis Complete!**", state="complete", expanded=False)
-                        except Exception as e:
-                            status.update(label="❌ **Error Occurred**", state="error")
-                            st.error(f"An error occurred: {str(e)}")
-                            result = None
-
-                # --- Results Display ---
-                if result:
+                try:
+                    result = crew.kickoff()
+                    status.update(label="✅ **Analysis Complete!**", state="complete", expanded=False)
+                    
+                    # Display Results
                     st.divider()
-                    st.markdown("### 💡 Analysis Report")
+                    st.markdown("### 💡 Results")
                     
-                    # Create two columns for Layout: Text Left, Image Right
-                    res_col1, res_col2 = st.columns([1.5, 1])
-                    
-                    with res_col1:
-                        # Styling the result text to ensure visibility in dark mode
-                        st.markdown(f"<div style='background-color: #262730; padding: 15px; border-radius: 10px;'>{result}</div>", unsafe_allow_html=True)
-                        
-                    with res_col2:
-                        # Check if an image was generated
+                    r_col1, r_col2 = st.columns([1.5, 1])
+                    with r_col1:
+                        st.success("### 📝 Key Insights")
+                        st.markdown(result)
+                    with r_col2:
                         if os.path.exists("plot.png"):
                             st.image("plot.png", caption="Visual Analysis", use_container_width=True)
                         else:
-                            st.info("No visual chart was generated for this query.")
+                            st.info("No visual chart needed for this query.")
+                            
+                except Exception as e:
+                    status.update(label="❌ Error", state="error")
+                    st.error(f"Error: {e}")
+                    st.warning("Tip: If you got a 429 error, wait 1 minute and try again.")
 
     except Exception as e:
-        st.error(f"Error loading file: {e}")
-
+        st.error(f"File Error: {e}")
 else:
-    # Empty State (Welcome Screen)
-    st.info("👈 **Please upload a CSV file in the sidebar to get started!**")
+    # Empty State
+    st.info("👈 Please upload a CSV file in the sidebar to begin.")
     
-    # Placeholder metrics to look nice before upload
-    st.markdown("---")
-    st.markdown("#### Example Capabilities")
-    ex_col1, ex_col2, ex_col3 = st.columns(3)
-    ex_col1.success("📈 **Trend Analysis**\n\nVisualize growth over time.")
-    ex_col2.info("🔗 **Correlation**\n\nFind hidden relationships.")
-    ex_col3.warning("🧹 **Data Cleaning**\n\nDetect missing values.")
+    # Placeholder decorative cards
+    st.write("")
+    pc1, pc2, pc3 = st.columns(3)
+    pc1.markdown("""
+        <div style="padding:20px; background:#262730; border-radius:10px; border:1px solid #41444C;">
+            <h4>📈 Trend Analysis</h4>
+            <p style="color:#aaa; font-size:14px;">Spot patterns over time automatically.</p>
+        </div>
+    """, unsafe_allow_html=True)
+    pc2.markdown("""
+        <div style="padding:20px; background:#262730; border-radius:10px; border:1px solid #41444C;">
+            <h4>🔗 Correlations</h4>
+            <p style="color:#aaa; font-size:14px;">Find hidden relationships in data.</p>
+        </div>
+    """, unsafe_allow_html=True)
+    pc3.markdown("""
+        <div style="padding:20px; background:#262730; border-radius:10px; border:1px solid #41444C;">
+            <h4>🧹 Data Cleaning</h4>
+            <p style="color:#aaa; font-size:14px;">Identify missing values instantly.</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# 5. Creator Footer
+st.markdown("""
+    <div class="footer">
+        <p>Created with ❤️ by <b>Nithin Prasad</b> | Powered by CrewAI</p>
+    </div>
+""", unsafe_allow_html=True)
