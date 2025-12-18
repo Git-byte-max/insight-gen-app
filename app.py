@@ -11,15 +11,15 @@ from agents import planner, coder, reporter
 import tools 
 from crewai import Task, Crew
 
-# 1. Page Configuration (Professional Settings)
+# 1. Page Configuration
 st.set_page_config(
     page_title="InsightGen Analyst",
-    page_icon=None, # Removed emoji icon
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 2. Enterprise-Grade CSS (Mobile Responsive & Clean)
+# 2. Enterprise-Grade CSS (Mobile Fixed)
 st.markdown("""
     <style>
     /* Import Professional Font */
@@ -35,10 +35,16 @@ st.markdown("""
         background-color: #0F1116;
     }
     
-    /* Hide Default Streamlit Branding */
+    /* --- MOBILE SIDEBAR FIX --- */
+    /* We MUST keep the header visible so the hamburger menu (☰) shows up on mobile */
+    header {
+        visibility: visible !important;
+        background-color: #0F1116 !important;
+    }
+    
+    /* Only hide the 3-dot menu and footer for cleanliness */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
     
     /* Card Styling */
     div[data-testid="stExpander"], div[data-testid="stContainer"], .stStatusWidget {
@@ -94,6 +100,10 @@ st.markdown("""
             width: 100% !important;
             flex: 1 1 auto !important;
             min-width: 100% !important;
+        }
+        /* Make sidebar overlay look cleaner on mobile */
+        section[data-testid="stSidebar"] {
+            background-color: #161920;
         }
     }
     
@@ -253,6 +263,6 @@ else:
 # 5. Fixed Professional Footer
 st.markdown("""
     <div class="footer">
-        Designed by Nithin | Powered by CrewAI Engine
+        Designed by Abhai | Powered by CrewAI Engine
     </div>
 """, unsafe_allow_html=True)
