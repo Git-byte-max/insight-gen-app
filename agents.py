@@ -29,8 +29,8 @@ os.environ["GOOGLE_API_KEY"] = api_key
 # We use 'gemini/gemini-1.5-flash' as it is the most stable free model.
 # We set 'rpm=5' (Requests Per Minute) to prevent 429 Rate Limit errors.
 my_llm = LLM(
-    model="gemini/gemini-1.5-flash",
-    api_key=api_key,
+    model="gemini/gemini-flash-latest", 
+    api_key=os.environ["GOOGLE_API_KEY"],
     temperature=0.5,
     verbose=True,
     rpm=5 
@@ -65,3 +65,4 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
+
