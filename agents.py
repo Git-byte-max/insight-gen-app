@@ -1,25 +1,42 @@
 import os
-# DISABLE TELEMETRY
-os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
-
+import streamlit as st
 from crewai import Agent, LLM
 from tools import execute_code_tool, get_columns_tool
 
-# 1. Setup LLM
-# Ensure your API key is pasted here
-os.environ["GOOGLE_API_KEY"] = "AIzaSyDDIEgzGUVdQywwgg0igmW4jKc_GNUUS3Q"
+# --- CONFIGURATION ---
 
-# CHANGE 1: Use 'gemini-flash-latest' (More stable limits)
-# CHANGE 2: Add 'rpm=5' to force the agent to work slowly and avoid errors
+# 1. Disable Telemetry (Fixes "Signal only works in main thread" error)
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+
+# 2. Get API Key Securely
+# This checks Streamlit Secrets (for Cloud) first, then local environment (for testing)
+api_key = None
+
+if "GOOGLE_API_KEY" in st.secrets:
+    api_key = st.secrets["GOOGLE_API_KEY"]
+elif "GOOGLE_API_KEY" in os.environ:
+    api_key = os.environ["GOOGLE_API_KEY"]
+
+# Stop execution if key is missing (prevents crash)
+if not api_key:
+    st.error("⚠️ GOOGLE_API_KEY not found! If running locally, add it to .env. If on Cloud, add it to Secrets.")
+    st.stop()
+
+# Ensure the environment variable is set for internal libraries
+os.environ["GOOGLE_API_KEY"] = api_key
+
+# 3. Setup LLM
+# We use 'gemini/gemini-1.5-flash' as it is the most stable free model.
+# We set 'rpm=5' (Requests Per Minute) to prevent 429 Rate Limit errors.
 my_llm = LLM(
-    model="gemini/gemini-flash-latest", 
-    api_key=os.environ["GOOGLE_API_KEY"],
+    model="gemini/gemini-1.5-flash",
+    api_key=api_key,
     temperature=0.5,
     verbose=True,
     rpm=5 
 )
 
-# 2. Define Agents
+# --- AGENT DEFINITIONS ---
 
 planner = Agent(
     role='Senior Data Analyst',
