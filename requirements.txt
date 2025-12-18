@@ -6,4 +6,5 @@ seaborn
 langchain-google-genai
 crewai-tools
 litellm
+streamlit-lottie
 google-generativeai
