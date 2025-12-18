@@ -11,74 +11,90 @@ from agents import planner, coder, reporter
 import tools 
 from crewai import Task, Crew
 
-# 1. Page Configuration
+# 1. Page Configuration (Professional Settings)
 st.set_page_config(
-    page_title="Insight-Gen AI",
-    page_icon="✨",
+    page_title="InsightGen Analyst",
+    page_icon=None, # Removed emoji icon
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 2. Enhanced "Dark Mode" CSS
+# 2. Enterprise-Grade CSS (Mobile Responsive & Clean)
 st.markdown("""
     <style>
-    /* Global Font & Background */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    /* Import Professional Font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
+        color: #E0E0E0;
     }
     
+    /* Main Background */
     .stApp {
-        background-color: #0E1117;
-        color: #FAFAFA;
+        background-color: #0F1116;
     }
     
-    /* Glassmorphism Containers */
+    /* Hide Default Streamlit Branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Card Styling */
     div[data-testid="stExpander"], div[data-testid="stContainer"], .stStatusWidget {
-        background-color: #262730;
-        border-radius: 12px;
-        padding: 16px;
-        border: 1px solid #41444C;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        transition: transform 0.2s ease;
+        background-color: #1E2129;
+        border: 1px solid #2D313A;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        margin-bottom: 1rem;
     }
     
-    div[data-testid="stExpander"]:hover {
-        border-color: #4DB6AC;
-    }
-
-    /* Metric Cards Styling */
+    /* Professional Metrics */
     [data-testid="stMetricValue"] {
-        font-size: 28px;
-        font-weight: 700;
-        background: -webkit-linear-gradient(45deg, #4DB6AC, #80CBC4);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        font-size: 24px;
+        font-weight: 600;
+        color: #4DB6AC;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 14px;
-        color: #B0BEC5;
-    }
-    
-    /* Glowing Button */
-    .stButton>button {
-        background: linear-gradient(90deg, #4DB6AC 0%, #26A69A 100%);
-        color: #000000;
-        border-radius: 10px;
-        font-weight: bold;
-        border: none;
-        padding: 0.6rem 1rem;
-        width: 100%;
+        font-size: 13px;
+        font-weight: 400;
+        color: #9CA3AF;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: all 0.3s ease;
+        letter-spacing: 0.5px;
     }
     
+    /* Button Styling - Flat & Clean */
+    .stButton>button {
+        background-color: #4DB6AC;
+        color: #0F1116;
+        border-radius: 6px;
+        font-weight: 600;
+        border: none;
+        padding: 0.75rem 1rem;
+        width: 100%;
+        transition: background-color 0.2s;
+    }
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0 15px rgba(77, 182, 172, 0.6);
+        background-color: #26A69A;
         color: #FFFFFF;
+    }
+    
+    /* Input Fields */
+    .stTextInput>div>div>input {
+        background-color: #1E2129;
+        border: 1px solid #2D313A;
+        color: #E0E0E0;
+        border-radius: 6px;
+    }
+    
+    /* Mobile Responsiveness for Columns */
+    @media (max-width: 768px) {
+        [data-testid="column"] {
+            width: 100% !important;
+            flex: 1 1 auto !important;
+            min-width: 100% !important;
+        }
     }
     
     /* Footer Styling */
@@ -87,163 +103,156 @@ st.markdown("""
         left: 0;
         bottom: 0;
         width: 100%;
-        background-color: #0E1117;
-        color: #888;
+        background-color: #0F1116;
+        color: #6B7280;
         text-align: center;
-        padding: 10px;
-        font-size: 12px;
-        border-top: 1px solid #262730;
+        padding: 12px;
+        font-size: 11px;
+        border-top: 1px solid #1E2129;
         z-index: 1000;
-    }
-    
-    /* Header Gradient */
-    .gradient-text {
-        background: -webkit-linear-gradient(45deg, #FF6B6B, #4ECDC4);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: bold;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. Sidebar
+# 3. Sidebar Configuration
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/12308/12308823.png", width=70)
-    st.title("🔧 Configuration")
+    st.markdown("### CONFIGURATION")
     st.markdown("---")
-    uploaded_file = st.file_uploader("📂 **Upload Dataset**", type=["csv"])
+    uploaded_file = st.file_uploader("Upload Data Source (CSV)", type=["csv"])
     
-    st.markdown("### 💡 Quick Tips")
+    st.markdown("#### GUIDE")
     st.info(
-        "• Use simple English.\n"
-        "• Ask for trends, counts, or plots.\n"
-        "• Example: 'Plot alcohol vs quality'"
+        "1. Upload a valid CSV file.\n"
+        "2. Review the data schema.\n"
+        "3. Enter an analytical query."
     )
     
     st.markdown("---")
-    st.caption("⚡ Powered by Gemini 2.0 & CrewAI")
+    st.caption("v1.0.0 | Stable Build")
 
-# 4. Main Content
-st.markdown("## 📊 <span class='gradient-text'>Insight-Gen: Autonomous Analyst</span>", unsafe_allow_html=True)
-st.markdown("##### *Your personal AI data scientist.*")
+# 4. Main Application Interface
+st.markdown("## InsightGen Analyst Platform")
+st.markdown("Automated data exploration and visualization engine.")
 st.markdown("---")
 
 if uploaded_file is not None:
-    # Load Data into the tool
     try:
+        # Load Data
         tools.df = pd.read_csv(uploaded_file)
         
-        # Dashboard Metrics
-        st.subheader("📋 Data Snapshot")
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Rows", tools.df.shape[0])
-        col2.metric("Total Columns", tools.df.shape[1])
-        col3.metric("Missing Values", tools.df.isna().sum().sum())
-        col4.metric("Duplicates", tools.df.duplicated().sum())
+        # Dashboard Overview
+        st.subheader("Dataset Metrics")
         
-        with st.expander("👀 Click to View Raw Data"):
+        # Responsive Columns for Metrics
+        m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+        m_col1.metric("Total Rows", tools.df.shape[0])
+        m_col2.metric("Total Columns", tools.df.shape[1])
+        m_col3.metric("Missing Values", tools.df.isna().sum().sum())
+        m_col4.metric("Duplicates", tools.df.duplicated().sum())
+        
+        # Collapsible Data Preview
+        with st.expander("View Raw Data Schema"):
             st.dataframe(tools.df.head(), use_container_width=True)
 
-        st.divider()
+        st.markdown("---")
 
-        # Input & Run
-        st.subheader("🤖 Ask a Question")
-        user_query = st.text_input("Describe the analysis you want:", placeholder="e.g., Show me the distribution of pH values")
+        # Analysis Section
+        st.subheader("Execute Analysis")
         
-        # Spacer
-        st.write("") 
+        col_input, col_btn = st.columns([3, 1])
         
-        c_btn1, c_btn2, c_btn3 = st.columns([1, 2, 1])
-        with c_btn2:
-            start_btn = st.button("🚀 Start Analysis", use_container_width=True)
+        with col_input:
+            user_query = st.text_input(
+                "Search Query", 
+                placeholder="Enter your analysis requirement here...",
+                label_visibility="collapsed"
+            )
+        
+        with col_btn:
+            start_btn = st.button("RUN ANALYSIS", use_container_width=True)
 
         if start_btn and user_query:
-            with st.status("🔄 **AI Agents are thinking...**", expanded=True) as status:
-                
-                st.write("🧠 **Planner:** Structuring the analysis...")
-                # Task 1: Plan
-                task1 = Task(
-                    description=f"Analyze columns and plan steps for: '{user_query}'",
-                    agent=planner,
-                    expected_output="Analysis plan"
-                )
-                
-                st.write("💻 **Coder:** Writing and executing Python...")
-                # Task 2: Code
-                task2 = Task(
-                    description="Write/execute Python code using 'df'. Save plots as 'plot.png'.",
-                    agent=coder,
-                    expected_output="Code execution confirmation"
-                )
-                
-                st.write("📝 **Reporter:** Summarizing findings...")
-                # Task 3: Report
-                task3 = Task(
-                    description="Summarize the findings and the plot.",
-                    agent=reporter,
-                    expected_output="Insights summary"
-                )
-
-                crew = Crew(
-                    agents=[planner, coder, reporter],
-                    tasks=[task1, task2, task3],
-                    verbose=True
-                )
-
-                try:
-                    result = crew.kickoff()
-                    status.update(label="✅ **Analysis Complete!**", state="complete", expanded=False)
+            # Professional Status Container
+            status_container = st.container()
+            
+            with status_container:
+                with st.status("Processing Request...", expanded=True) as status:
                     
-                    # Display Results
-                    st.divider()
-                    st.markdown("### 💡 Results")
+                    # Coder Task
+                    st.write("Initializing Python Environment...")
+                    task2 = Task(
+                        description=f"Analyze the dataset properties (using df). Then write and execute Python code to answer: '{user_query}'. Save any plot as 'plot.png'.",
+                        agent=coder,
+                        expected_output="Executed Python code and a confirmation message."
+                    )
                     
-                    r_col1, r_col2 = st.columns([1.5, 1])
-                    with r_col1:
-                        st.success("### 📝 Key Insights")
-                        st.markdown(result)
-                    with r_col2:
-                        if os.path.exists("plot.png"):
-                            st.image("plot.png", caption="Visual Analysis", use_container_width=True)
-                        else:
-                            st.info("No visual chart needed for this query.")
+                    # Reporter Task
+                    st.write("Generating Business Insights...")
+                    task3 = Task(
+                        description="Look at the code results and write a summary.",
+                        agent=reporter,
+                        expected_output="A text summary of insights."
+                    )
+
+                    # Crew Execution (Optimized: No Planner)
+                    crew = Crew(
+                        agents=[coder, reporter],
+                        tasks=[task2, task3],
+                        verbose=True
+                    )
+
+                    try:
+                        result = crew.kickoff()
+                        status.update(label="Analysis Completed Successfully", state="complete", expanded=False)
+                        
+                        # Results Display
+                        st.markdown("---")
+                        st.subheader("Report Output")
+                        
+                        res_c1, res_c2 = st.columns([1.5, 1])
+                        
+                        with res_c1:
+                            st.markdown("#### Key Findings")
+                            st.markdown(result)
                             
-                except Exception as e:
-                    status.update(label="❌ Error", state="error")
-                    st.error(f"Error: {e}")
-                    st.warning("Tip: If you got a 429 error, wait 1 minute and try again.")
+                        with res_c2:
+                            st.markdown("#### Visualization")
+                            if os.path.exists("plot.png"):
+                                st.image("plot.png", use_container_width=True)
+                            else:
+                                st.markdown("*No visual output generated for this query.*")
+                                
+                    except Exception as e:
+                        status.update(label="Process Failed", state="error")
+                        st.error(f"System Error: {str(e)}")
+                        st.caption("Please wait 60 seconds before retrying due to API rate limits.")
 
     except Exception as e:
-        st.error(f"File Error: {e}")
-else:
-    # Empty State
-    st.info("👈 Please upload a CSV file in the sidebar to begin.")
-    
-    # Placeholder decorative cards
-    st.write("")
-    pc1, pc2, pc3 = st.columns(3)
-    pc1.markdown("""
-        <div style="padding:20px; background:#262730; border-radius:10px; border:1px solid #41444C;">
-            <h4>📈 Trend Analysis</h4>
-            <p style="color:#aaa; font-size:14px;">Spot patterns over time automatically.</p>
-        </div>
-    """, unsafe_allow_html=True)
-    pc2.markdown("""
-        <div style="padding:20px; background:#262730; border-radius:10px; border:1px solid #41444C;">
-            <h4>🔗 Correlations</h4>
-            <p style="color:#aaa; font-size:14px;">Find hidden relationships in data.</p>
-        </div>
-    """, unsafe_allow_html=True)
-    pc3.markdown("""
-        <div style="padding:20px; background:#262730; border-radius:10px; border:1px solid #41444C;">
-            <h4>🧹 Data Cleaning</h4>
-            <p style="color:#aaa; font-size:14px;">Identify missing values instantly.</p>
-        </div>
-    """, unsafe_allow_html=True)
+        st.error(f"File Error: {str(e)}")
 
-# 5. Creator Footer
+else:
+    # Empty State - Professional Placeholder
+    st.warning("Awaiting Data Upload. Please select a CSV file from the sidebar.")
+    
+    # Feature Grid
+    st.markdown("#### Capabilities")
+    f_col1, f_col2, f_col3 = st.columns(3)
+    
+    with f_col1:
+        st.markdown("**Trend Analysis**")
+        st.caption("Identify temporal patterns.")
+        
+    with f_col2:
+        st.markdown("**Correlations**")
+        st.caption("Discover variable relationships.")
+        
+    with f_col3:
+        st.markdown("**Data Audit**")
+        st.caption("Detect anomalies and missing values.")
+
+# 5. Fixed Professional Footer
 st.markdown("""
     <div class="footer">
-        <p>Created with ❤️ by <b>Nithin Prasad</b> | Powered by CrewAI</p>
+        Designed by Nithin | Powered by CrewAI Engine
     </div>
 """, unsafe_allow_html=True)
