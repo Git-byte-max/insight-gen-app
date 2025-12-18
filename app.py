@@ -335,6 +335,7 @@ else:
 # 5. Fixed Professional Footer with subtle backdrop filter
 st.markdown("""
     <div class="footer">
-        Designed by Abhai | Enterprise Data Solutions | Powered by CrewAI
+        Designed by Nithin Prasad | ASIET  | Powered by CrewAI
     </div>
 """, unsafe_allow_html=True)
+
