@@ -5,14 +5,14 @@ from tools import execute_code_tool, get_columns_tool
 
 # --- 1. HARDCODED CONFIGURATION (The Nuclear Fix) ---
 # ⚠️ ACTION REQUIRED: Paste your new key inside the quotes below
-my_secret_key = "AIzaSyBKfX_p7GdrR6OjWLYCsH_q6BbPx6S46Yc"
+my_secret_key = "AIzaSyB_jJGQPzCuT6VPouUL4SGdiIz7GnhY5GI"
 
 # We force-set it into the environment so CrewAI can't miss it.
 os.environ["GOOGLE_API_KEY"] = my_secret_key
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 # Sanity Check: Stop the app if the key is still the placeholder
-if my_secret_key == "PASTE_YOUR_NEW_KEY_HERE":
+if my_secret_key == "AIzaSyB_jJGQPzCuT6VPouUL4SGdiIz7GnhY5GI":
     st.error("STOP! You forgot to paste your API Key in agents.py line 8!")
     st.stop()
 
@@ -55,5 +55,6 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
+
 
 
