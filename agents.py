@@ -23,7 +23,7 @@ my_llm = LLM(
     api_key=my_secret_key,
     temperature=0.5,
     verbose=True,
-    rpm=5
+    rpm=3
 )
 
 # --- 3. AGENT DEFINITIONS ---
@@ -55,4 +55,5 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
+
 
