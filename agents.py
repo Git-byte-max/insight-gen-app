@@ -3,35 +3,30 @@ import streamlit as st
 from crewai import Agent, LLM
 from tools import execute_code_tool, get_columns_tool
 
-# --- CONFIGURATION ---
+# --- 1. HARDCODED CONFIGURATION (The Nuclear Fix) ---
+# ⚠️ ACTION REQUIRED: Paste your new key inside the quotes below
+my_secret_key = "AIzaSyC3pM34OBNGUdAqOupn2-ni7jJGfk5GbAA"
 
-# 1. Disable Telemetry 
+# We force-set it into the environment so CrewAI can't miss it.
+os.environ["GOOGLE_API_KEY"] = my_secret_key
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
-# 2. Get API Key
-api_key = None
-if "GOOGLE_API_KEY" in st.secrets:
-    api_key = st.secrets["GOOGLE_API_KEY"]
-elif "GOOGLE_API_KEY" in os.environ:
-    api_key = os.environ["GOOGLE_API_KEY"]
-
-if not api_key:
-    st.error("⚠️ GOOGLE_API_KEY is missing! Add it to secrets.toml or .env")
+# Sanity Check: Stop the app if the key is still the placeholder
+if my_secret_key == "PASTE_YOUR_NEW_KEY_HERE":
+    st.error("STOP! You forgot to paste your API Key in agents.py line 8!")
     st.stop()
 
-# 3. Setup LLM
-# CRITICAL FIX: Set rpm=2. 
-# The free tier limit is 5 requests/min. Setting it to 2 ensures we NEVER hit it.
-# Tomorrow, use this configuration for maximum stability:
+# --- 2. SETUP LLM ---
+# Using the stable 'flash-latest' alias with safe rate limits
 my_llm = LLM(
     model="gemini/gemini-flash-latest", 
-    api_key=api_key,
+    api_key=my_secret_key,
     temperature=0.5,
     verbose=True,
-    rpm=5  # Safe speed (1 request every 12 seconds)
+    rpm=5
 )
 
-# --- AGENT DEFINITIONS ---
+# --- 3. AGENT DEFINITIONS ---
 
 planner = Agent(
     role='Senior Data Analyst',
@@ -60,9 +55,3 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
-
-
-
-
-
-
