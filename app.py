@@ -182,4 +182,5 @@ else:
     with f2: st.info("Correlation Matrix")
     with f3: st.info("Data Quality Audit")
 
-st.markdown("<div class='footer'>Designed by Abhai | Powered by CrewAI</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>Designed by Nithin Prasad | ASIET | Powered by CrewAI</div>", unsafe_allow_html=True)
+
