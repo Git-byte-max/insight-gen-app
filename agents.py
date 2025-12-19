@@ -24,11 +24,11 @@ if not api_key:
 # The free tier limit is 5 requests/min. Setting it to 2 ensures we NEVER hit it.
 # Tomorrow, use this configuration for maximum stability:
 my_llm = LLM(
-    model="gemini/gemini-1.5-flash-001",  # <--- This is the specific stable version
+    model="gemini/gemini-2.0-flash-001", 
     api_key=api_key,
     temperature=0.5,
     verbose=True,
-    rpm=10
+    rpm=4 
 )
 
 # --- AGENT DEFINITIONS ---
@@ -60,6 +60,7 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
+
 
 
 
