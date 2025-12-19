@@ -177,4 +177,5 @@ else:
     st.warning("Please upload a CSV or Excel file.")
 
 # Footer
-st.markdown("<div style='text-align:center; color:#666; padding:20px;'>Designed by Abhai | Powered by CrewAI</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align:center; color:#666; padding:20px;'>Designed by Nithin Prasad | ASIET | Powered by CrewAI</div>", unsafe_allow_html=True)
+
