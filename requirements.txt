@@ -3,8 +3,6 @@ crewai
 pandas
 matplotlib
 seaborn
-langchain-google-genai
-crewai-tools
-litellm
+openpyxl
 streamlit-lottie
-google-generativeai
+requests
