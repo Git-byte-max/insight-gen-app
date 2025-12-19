@@ -12,9 +12,6 @@ os.environ["GOOGLE_API_KEY"] = my_secret_key
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 # Sanity Check: Stop the app if the key is still the placeholder
-if my_secret_key == "AIzaSyB_jJGQPzCuT6VPouUL4SGdiIz7GnhY5GI":
-    st.error("STOP! You forgot to paste your API Key in agents.py line 8!")
-    st.stop()
 
 # --- 2. SETUP LLM ---
 # Using the stable 'flash-latest' alias with safe rate limits
@@ -55,6 +52,7 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
+
 
 
 
