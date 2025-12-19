@@ -22,7 +22,7 @@ def load_lottieurl(url: str):
         return r.json()
     except: return None
 
-# 1. Page Configuration (No Emojis)
+# 1. Page Configuration
 st.set_page_config(
     page_title="InsightGen Analyst",
     layout="wide",
@@ -151,7 +151,7 @@ with st.sidebar:
     else:
         st.info("AWAITING DATA")
     st.markdown("---")
-    st.caption("VERSION 2.0 | ENTERPRISE BUILD")
+    st.caption("VERSION 2.1 | ENTERPRISE BUILD")
 
 # 4. Main Interface
 st.markdown("<h2 class='main-title'>INSIGHTGEN ANALYST</h2>", unsafe_allow_html=True)
@@ -258,11 +258,15 @@ if uploaded_file is not None:
             
             st.markdown("---")
             
-            # 2. Distributions (CRASH FIXED HERE)
+            # 2. Distributions with DISTINCT COLORS
             st.markdown("#### DATA DISTRIBUTION PREVIEW")
             if not numeric_df.empty:
-                # FIX: Create a color list matching the number of columns
-                color_list = ["#4DB6AC"] * len(numeric_df.columns)
+                # Define a professional palette (Teal, Blue, Purple, Red, Orange, Cyan, Brown)
+                palette = ["#4DB6AC", "#42A5F5", "#AB47BC", "#EF5350", "#FFA726", "#26C6DA", "#8D6E63"]
+                
+                # Assign a distinct color to each column by cycling through the palette
+                color_list = [palette[i % len(palette)] for i in range(len(numeric_df.columns))]
+                
                 st.bar_chart(numeric_df.head(50), color=color_list)
             
     except Exception as e:
