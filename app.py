@@ -29,7 +29,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Professional CSS (Dark Theme, No Emojis, Smooth Animations)
+# 2. Professional CSS
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -42,7 +42,6 @@ st.markdown("""
     
     .stApp { background-color: #0F1116; }
     
-    /* Fade In Animation for Page Load */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
@@ -51,7 +50,7 @@ st.markdown("""
         animation: fadeInUp 0.8s ease-out both;
     }
 
-    /* Tabs Styling - Minimalist */
+    /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] { gap: 8px; }
     .stTabs [data-baseweb="tab"] {
         height: 50px;
@@ -72,7 +71,7 @@ st.markdown("""
         border-top: 2px solid #4DB6AC;
     }
 
-    /* Card/Container Styling with Hover Effect */
+    /* Container Styling */
     div[data-testid="stExpander"], div[data-testid="stContainer"], .stStatusWidget {
         background-color: #1E2129;
         border: 1px solid #2D313A;
@@ -87,7 +86,6 @@ st.markdown("""
         border-color: #4DB6AC;
     }
     
-    /* Metrics Styling */
     [data-testid="stMetricValue"] {
         color: #4DB6AC;
         font-size: 28px;
@@ -100,7 +98,6 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* Button Styling */
     .stButton>button {
         background: linear-gradient(135deg, #4DB6AC 0%, #26A69A 100%);
         color: #0F1116;
@@ -118,7 +115,6 @@ st.markdown("""
         color: #FFFFFF;
     }
 
-    /* Header Gradient */
     .main-title {
         background: linear-gradient(90deg, #E0E0E0 60%, #4DB6AC 100%);
         -webkit-background-clip: text;
@@ -127,12 +123,10 @@ st.markdown("""
         letter-spacing: -1px;
     }
     
-    /* Hide Default Elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: visible !important; background: transparent !important;}
     
-    /* Footer Styling */
     .custom-footer {
         text-align: center;
         color: #555;
@@ -162,20 +156,17 @@ with st.sidebar:
 # 4. Main Interface
 st.markdown("<h2 class='main-title'>INSIGHTGEN ANALYST</h2>", unsafe_allow_html=True)
 st.markdown("#### *Autonomous Data Intelligence Platform*")
-st.write("") # Spacer
+st.write("") 
 
-# Load Abstract Tech Animation (Clean, no cartoons)
 lottie_analyzing = load_lottieurl("https://lottie.host/5a83764b-a675-4c07-9e7f-b7696e5d8868/jR17l7u9jD.json") 
 
 if uploaded_file is not None:
     try:
-        # Load CSV or Excel
         if uploaded_file.name.endswith(".csv"):
             tools.df = pd.read_csv(uploaded_file)
         else:
             tools.df = pd.read_excel(uploaded_file)
         
-        # Metrics Row
         with st.container():
             st.subheader("DATASET METRICS")
             m1, m2, m3, m4 = st.columns(4)
@@ -187,10 +178,9 @@ if uploaded_file is not None:
         st.write("")
 
         # --- TABS INTERFACE ---
-        # Renamed to strictly professional uppercase labels
         tab1, tab2 = st.tabs(["AI ANALYST AGENT", "AUTOMATED DASHBOARD"])
 
-        # TAB 1: The Chatbot Agent
+        # TAB 1: Chatbot Agent
         with tab1:
             st.write("")
             c_in, c_btn = st.columns([3, 1])
@@ -204,14 +194,11 @@ if uploaded_file is not None:
                 status_container = st.container()
                 
                 with status_container:
-                    # Animation Container
                     with lottie_placeholder.container():
                         c_lot1, c_lot2, c_lot3 = st.columns([1, 1, 1])
                         with c_lot2:
-                            if lottie_analyzing: 
-                                st_lottie(lottie_analyzing, height=120, key="analyzing")
+                            if lottie_analyzing: st_lottie(lottie_analyzing, height=120, key="analyzing")
                     
-                    # Status Container (No Emojis)
                     with st.status("PROCESSING WORKFLOW...", expanded=True) as status:
                         st.write("PLANNER AGENT | Strategizing analysis path...")
                         task1 = Task(description=f"Plan analysis for: '{user_query}'", agent=planner, expected_output="Plan")
@@ -231,7 +218,6 @@ if uploaded_file is not None:
                             
                             st.markdown("---")
                             rc1, rc2 = st.columns([1.5, 1])
-                            
                             with rc1:
                                 with st.container():
                                     st.markdown("#### EXECUTIVE SUMMARY")
@@ -242,12 +228,12 @@ if uploaded_file is not None:
                                     if os.path.exists("plot.png"): 
                                         st.markdown('<img src="plot.png" style="width:100%; border-radius:4px; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">', unsafe_allow_html=True)
                                     else:
-                                        st.caption("No visual output required for this query.")
+                                        st.caption("No visual output required.")
                         except Exception as e:
                             lottie_placeholder.empty()
                             st.error(f"SYSTEM ERROR: {str(e)}")
 
-        # TAB 2: The Automatic Dashboard
+        # TAB 2: Automatic Dashboard
         with tab2:
             st.write("")
             
@@ -261,38 +247,31 @@ if uploaded_file is not None:
                     fig, ax = plt.subplots(figsize=(10, 5))
                     fig.patch.set_facecolor('#1E2129')
                     ax.set_facecolor('#1E2129')
-                    
-                    # Professional Color Scheme (Mako)
                     sns.heatmap(numeric_df.corr(), annot=True, cmap='mako', fmt=".2f", linewidths=0.5, linecolor='#1E2129', ax=ax, cbar=False)
-                    
-                    # White text for dark theme
                     plt.xticks(color='#E0E0E0', fontsize=8)
                     plt.yticks(color='#E0E0E0', fontsize=8, rotation=0)
-                    
                     st.pyplot(fig)
                 else:
-                    st.info("INSUFFICIENT NUMERIC DATA FOR CORRELATION.")
+                    st.info("INSUFFICIENT NUMERIC DATA.")
             else:
                 st.info("NO NUMERIC COLUMNS DETECTED.")
             
             st.markdown("---")
             
-            # 2. Distributions
+            # 2. Distributions (CRASH FIXED HERE)
             st.markdown("#### DATA DISTRIBUTION PREVIEW")
             if not numeric_df.empty:
-                st.bar_chart(numeric_df.head(50), color=["#4DB6AC"])
+                # FIX: Create a color list matching the number of columns
+                color_list = ["#4DB6AC"] * len(numeric_df.columns)
+                st.bar_chart(numeric_df.head(50), color=color_list)
             
     except Exception as e:
         st.error(f"FILE LOAD ERROR: {str(e)}")
 
 else:
-    # Empty State - Professional Text
     with st.container():
         st.warning("SYSTEM STANDBY: PLEASE UPLOAD DATA SOURCE.")
-        
     st.write("")
-    
-    # Feature Grid (No Emojis)
     c1, c2, c3 = st.columns(3)
     with c1: 
         st.markdown("**TREND ANALYSIS**")
@@ -304,5 +283,4 @@ else:
         st.markdown("**DATA AUDIT**")
         st.caption("Quality assessment")
 
-# Footer
 st.markdown("<div class='custom-footer'>DESIGNED BY NITHIN PRASAD | ASIET | POWERED BY CREWAI</div>", unsafe_allow_html=True)
