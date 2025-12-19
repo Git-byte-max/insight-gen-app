@@ -5,7 +5,7 @@ from tools import execute_code_tool, get_columns_tool
 
 # --- 1. HARDCODED CONFIGURATION (The Nuclear Fix) ---
 # ⚠️ ACTION REQUIRED: Paste your new key inside the quotes below
-my_secret_key = "AIzaSyC3pM34OBNGUdAqOupn2-ni7jJGfk5GbAA"
+my_secret_key = "AIzaSyBKfX_p7GdrR6OjWLYCsH_q6BbPx6S46Yc"
 
 # We force-set it into the environment so CrewAI can't miss it.
 os.environ["GOOGLE_API_KEY"] = my_secret_key
@@ -55,3 +55,4 @@ reporter = Agent(
     allow_delegation=False,
     llm=my_llm
 )
+
