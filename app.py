@@ -12,7 +12,7 @@ except ImportError:
     DEMO_MODE = True
 
 # --- 1. SETUP PAGE ---
-st.set_page_config(page_title="InsightGen Analyst", page_icon="📊", layout="wide")
+st.set_page_config(page_title="InsightGen Analyst", page_icon="", layout="wide")
 
 # Function to load Lottie Animation from URL
 def load_lottieurl(url):
@@ -115,3 +115,4 @@ if uploaded_file:
 
 else:
     st.info("Please upload a dataset to begin.")
+
