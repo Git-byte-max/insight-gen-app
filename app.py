@@ -1,9 +1,10 @@
 import os
 import streamlit as st
 import pandas as pd
-import seaborn as sns
+import plotly.express as px  # Interactive Charts
 import matplotlib.pyplot as plt
-import streamlit.components.v1 as components # Required for the Embed Link
+import seaborn as sns
+import streamlit.components.v1 as components 
 import time
 
 # --- 1. SETUP & CONFIGURATION ---
@@ -124,11 +125,7 @@ if uploaded_file:
         else:
             df = pd.read_excel(uploaded_file)
         
-        # Pass to tools if available
-        if tools:
-            tools.df = df
-        
-        # Save locally for safety
+        if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
         # B. METRICS GRID
@@ -156,62 +153,47 @@ if uploaded_file:
                 run_btn = st.button("EXECUTE ANALYSIS", use_container_width=True)
 
             if run_btn and query:
-                # 1. ANIMATION CONTAINER (Using Iframe Embed)
+                # 1. ANIMATION CONTAINER (IFrame Embed)
                 loader = st.empty()
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        # 🟢 YOUR SPECIFIC LOTTIE EMBED LINK
                         components.iframe(
                             "https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie",
-                            height=200,
-                            scrolling=False
+                            height=200, scrolling=False
                         )
                         st.markdown("<center>PROCESSING WORKFLOW...</center>", unsafe_allow_html=True)
 
-                # 2. EXECUTION (DEMO vs REAL)
+                # 2. EXECUTION
                 try:
                     if DEMO_MODE:
                         # === SIMULATION MODE ===
-                        time.sleep(4) # Allow animation to play
+                        time.sleep(4) 
                         loader.empty()
                         
                         st.success("ANALYSIS COMPLETE")
                         
                         res_col1, res_col2 = st.columns([1.5, 1])
-                        
                         with res_col1:
                             st.markdown("#### EXECUTIVE SUMMARY")
                             st.info(f"""
                             **Query:** {query}
-                            
                             **Key Insights:**
-                            1. **Trend Detected:** Significant upward trajectory observed in the primary metric.
-                            2. **Correlation:** Strong positive correlation (0.85) found between variables.
-                            
-                            *This result is simulated for demonstration purposes.*
+                            1. **Trend Detected:** Significant upward trajectory observed.
+                            2. **Correlation:** Strong positive correlation (0.85).
+                            *Simulated Result.*
                             """)
-                        
                         with res_col2:
                             st.markdown("#### VISUAL OUTPUT")
-                            # Generate a real chart based on data
                             numeric_df = df.select_dtypes(include=['number'])
                             if not numeric_df.empty:
-                                fig, ax = plt.subplots(figsize=(6,4))
-                                fig.patch.set_facecolor('#1E2129')
-                                ax.set_facecolor('#1E2129')
-                                col_name = numeric_df.columns[0]
-                                sns.histplot(df[col_name], color='#4DB6AC', kde=True, ax=ax)
-                                ax.tick_params(colors='white')
-                                ax.xaxis.label.set_color('white')
-                                ax.yaxis.label.set_color('white')
-                                st.pyplot(fig)
+                                fig = px.histogram(df, x=numeric_df.columns[0], color_discrete_sequence=['#4DB6AC'])
+                                fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
+                                st.plotly_chart(fig, use_container_width=True)
 
                     else:
                         # === REAL AI MODE ===
                         from crewai import Crew, Task
-                        
-                        # Create Tasks dynamically
                         task1 = Task(description=f"Plan analysis for: {query}", agent=planner, expected_output="Plan")
                         task2 = Task(description="Execute Python code on 'df'. Save 'plot.png'.", agent=coder, expected_output="Code")
                         task3 = Task(description="Summarize findings.", agent=reporter, expected_output="Summary")
@@ -236,65 +218,55 @@ if uploaded_file:
                     loader.empty()
                     st.error(f"SYSTEM ERROR: {e}")
 
-        # --- TAB 2: AUTOMATED DASHBOARD ---
+        # --- TAB 2: AUTOMATED DASHBOARD (INTERACTIVE) ---
         with tab2:
             st.write("")
             
-            numeric_df = df.select_dtypes(include=['float64', 'int64'])
+            # --- A. FILTERS ---
+            st.markdown("#### 1. DATA SLICING")
+            cat_cols = df.select_dtypes(include=['object', 'category']).columns
+            if len(cat_cols) > 0:
+                selected_cat = st.selectbox("Select Filter Category", cat_cols)
+                unique_vals = df[selected_cat].unique()
+                selected_val = st.multiselect(f"Filter {selected_cat}", unique_vals, default=unique_vals[:5])
+                filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
+            else:
+                filtered_df = df
+            
+            st.caption(f"Displaying {filtered_df.shape[0]} rows.")
+            st.markdown("---")
+
+            # --- B. CHARTS ---
+            numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             
             if not numeric_df.empty:
-                # SECTION 1: CORRELATION
-                st.markdown("#### 1. CORRELATION ANALYSIS")
-                fig, ax = plt.subplots(figsize=(10, 4))
-                fig.patch.set_facecolor('#1E2129')
-                ax.set_facecolor('#1E2129')
+                # Correlation
+                st.markdown("#### 2. CORRELATION MAP")
+                corr = numeric_df.corr()
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Teal')
+                fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
+                st.plotly_chart(fig_corr, use_container_width=True)
                 
-                sns.heatmap(numeric_df.corr(), annot=True, cmap='mako', fmt=".2f", 
-                            linewidths=0.5, linecolor='#1E2129', ax=ax, cbar=False)
-                
-                plt.xticks(color='#E0E0E0'); plt.yticks(color='#E0E0E0', rotation=0)
-                st.pyplot(fig)
-                
-                st.markdown("---")
-                
-                # SECTION 2: DISTRIBUTION GRAPHS
-                st.markdown("#### 2. VARIABLE DISTRIBUTION")
-                
+                # Distributions
+                st.markdown("#### 3. VARIABLE DISTRIBUTION")
                 target_col = numeric_df.columns[0]
-                col_g1, col_g2 = st.columns(2)
                 
-                # Graph 1: Histogram
+                col_g1, col_g2 = st.columns(2)
                 with col_g1:
-                    st.caption(f"DISTRIBUTION OF {target_col}")
-                    fig1, ax1 = plt.subplots(figsize=(6,4))
-                    fig1.patch.set_facecolor('#1E2129')
-                    ax1.set_facecolor('#1E2129')
-                    
-                    sns.histplot(df[target_col], kde=True, color="#4DB6AC", ax=ax1)
-                    
-                    ax1.tick_params(colors='white')
-                    ax1.spines['bottom'].set_color('white')
-                    ax1.spines['left'].set_color('white')
-                    st.pyplot(fig1)
+                    st.caption(f"Histogram: {target_col}")
+                    fig1 = px.histogram(filtered_df, x=target_col, nbins=20, color_discrete_sequence=['#26A69A'])
+                    fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
+                    st.plotly_chart(fig1, use_container_width=True)
 
-                # Graph 2: Box Plot (if 2nd column exists)
                 with col_g2:
                     if len(numeric_df.columns) > 1:
                         target_col2 = numeric_df.columns[1]
-                        st.caption(f"BOX PLOT OF {target_col2}")
-                        fig2, ax2 = plt.subplots(figsize=(6,4))
-                        fig2.patch.set_facecolor('#1E2129')
-                        ax2.set_facecolor('#1E2129')
-                        
-                        sns.boxplot(x=df[target_col2], color="#26A69A", ax=ax2)
-                        
-                        ax2.tick_params(colors='white')
-                        ax2.spines['bottom'].set_color('white')
-                        ax2.spines['left'].set_color('white')
-                        st.pyplot(fig2)
+                        st.caption(f"Scatter: {target_col} vs {target_col2}")
+                        fig2 = px.scatter(filtered_df, x=target_col, y=target_col2, color_discrete_sequence=['#4DB6AC'])
+                        fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
+                        st.plotly_chart(fig2, use_container_width=True)
                     else:
-                        st.info("Insufficient data for Box Plot")
-
+                        st.info("Need more data for Scatter Plot.")
             else:
                 st.info("NO NUMERIC DATA AVAILABLE FOR DASHBOARD")
 
@@ -302,6 +274,5 @@ if uploaded_file:
         st.error(f"FILE LOAD ERROR: {e}")
 
 else:
-    # Empty State
     with st.container():
         st.warning("SYSTEM STANDBY: PLEASE UPLOAD DATA SOURCE.")
