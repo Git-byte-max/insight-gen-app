@@ -2,8 +2,6 @@ import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px  # Interactive Charts
-import matplotlib.pyplot as plt
-import seaborn as sns
 import streamlit.components.v1 as components 
 import time
 
@@ -24,12 +22,11 @@ except ImportError:
     DEMO_MODE = True
     tools = None
 
-# --- 2. CUSTOM CSS (The Professional Look) ---
+# --- 2. CUSTOM CSS (Professional UI) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
     
-    /* Global Styles */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
         color: #E0E0E0;
@@ -44,7 +41,7 @@ st.markdown("""
     }
     .block-container { animation: fadeInUp 0.8s ease-out both; }
 
-    /* Custom Headers */
+    /* Headers */
     h1, h2, h3 { color: #FFFFFF !important; font-weight: 700; }
     .main-title {
         background: linear-gradient(90deg, #E0E0E0 60%, #4DB6AC 100%);
@@ -54,7 +51,7 @@ st.markdown("""
         font-weight: 800;
     }
 
-    /* Tabs Styling */
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] { gap: 10px; }
     .stTabs [data-baseweb="tab"] {
         height: 50px;
@@ -72,15 +69,17 @@ st.markdown("""
         border-top: 2px solid #4DB6AC;
     }
 
-    /* Metrics & Cards */
+    /* Metrics & Containers */
     div[data-testid="stMetricValue"] { color: #4DB6AC; font-size: 28px; font-weight: 700; }
     div[data-testid="stMetricLabel"] { color: #9CA3AF; font-size: 11px; letter-spacing: 1px; }
-    
     div[data-testid="stExpander"], div[data-testid="stContainer"] {
         background-color: #1E2129;
         border: 1px solid #2D313A;
         border-radius: 8px;
     }
+    
+    /* Dataframe Styling */
+    div[data-testid="stDataFrame"] { background-color: #161920; border-radius: 8px; }
 
     /* Buttons */
     .stButton>button {
@@ -111,7 +110,7 @@ with st.sidebar:
         st.success("MODE: AI AGENTS (ONLINE)")
         
     st.markdown("---")
-    st.caption("VERSION 2.1 | ENTERPRISE BUILD")
+    st.caption("VERSION 2.2 | ENTERPRISE BUILD")
 
 # --- 4. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -128,7 +127,7 @@ if uploaded_file:
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
-        # B. METRICS GRID
+        # B. METRICS GRID (Top of Page)
         st.write("")
         with st.container():
             st.subheader("DATASET METRICS")
@@ -153,7 +152,7 @@ if uploaded_file:
                 run_btn = st.button("EXECUTE ANALYSIS", use_container_width=True)
 
             if run_btn and query:
-                # 1. ANIMATION CONTAINER (IFrame Embed)
+                # 1. ANIMATION
                 loader = st.empty()
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
@@ -167,12 +166,10 @@ if uploaded_file:
                 # 2. EXECUTION
                 try:
                     if DEMO_MODE:
-                        # === SIMULATION MODE ===
                         time.sleep(4) 
                         loader.empty()
                         
                         st.success("ANALYSIS COMPLETE")
-                        
                         res_col1, res_col2 = st.columns([1.5, 1])
                         with res_col1:
                             st.markdown("#### EXECUTIVE SUMMARY")
@@ -192,7 +189,6 @@ if uploaded_file:
                                 st.plotly_chart(fig, use_container_width=True)
 
                     else:
-                        # === REAL AI MODE ===
                         from crewai import Crew, Task
                         task1 = Task(description=f"Plan analysis for: {query}", agent=planner, expected_output="Plan")
                         task2 = Task(description="Execute Python code on 'df'. Save 'plot.png'.", agent=coder, expected_output="Code")
@@ -200,7 +196,6 @@ if uploaded_file:
 
                         crew = Crew(agents=[planner, coder, reporter], tasks=[task1, task2, task3], verbose=True)
                         result = crew.kickoff()
-                        
                         loader.empty()
                         
                         r1, r2 = st.columns([1.5, 1])
@@ -213,42 +208,52 @@ if uploaded_file:
                                 st.image("plot.png")
                             else:
                                 st.caption("No image generated.")
-
                 except Exception as e:
                     loader.empty()
                     st.error(f"SYSTEM ERROR: {e}")
 
-        # --- TAB 2: AUTOMATED DASHBOARD (INTERACTIVE) ---
+        # --- TAB 2: AUTOMATED DASHBOARD ---
         with tab2:
             st.write("")
             
             # --- A. FILTERS ---
-            st.markdown("#### 1. DATA SLICING")
+            st.markdown("#### 1. DATA FILTERS")
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(cat_cols) > 0:
-                selected_cat = st.selectbox("Select Filter Category", cat_cols)
-                unique_vals = df[selected_cat].unique()
-                selected_val = st.multiselect(f"Filter {selected_cat}", unique_vals, default=unique_vals[:5])
+                col_f1, col_f2 = st.columns(2)
+                with col_f1:
+                    selected_cat = st.selectbox("Select Category", cat_cols)
+                with col_f2:
+                    unique_vals = df[selected_cat].unique()
+                    selected_val = st.multiselect(f"Select Values", unique_vals, default=unique_vals[:5])
+                
                 filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
             else:
                 filtered_df = df
             
-            st.caption(f"Displaying {filtered_df.shape[0]} rows.")
             st.markdown("---")
 
-            # --- B. CHARTS ---
+            # --- B. DATA TABLE (HEADER TABLE) ---
+            # 🟢 MOVED TO TOP as requested
+            st.markdown("#### 2. DATA PREVIEW (HEADER TABLE)")
+            st.dataframe(filtered_df.head(100), use_container_width=True, height=300)
+            st.caption(f"Showing top 100 rows of {filtered_df.shape[0]} filtered records.")
+            
+            st.markdown("---")
+
+            # --- C. CHARTS ---
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             
             if not numeric_df.empty:
                 # Correlation
-                st.markdown("#### 2. CORRELATION MAP")
+                st.markdown("#### 3. CORRELATION MAP")
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Teal')
                 fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                 st.plotly_chart(fig_corr, use_container_width=True)
                 
                 # Distributions
-                st.markdown("#### 3. VARIABLE DISTRIBUTION")
+                st.markdown("#### 4. VARIABLE DISTRIBUTION")
                 target_col = numeric_df.columns[0]
                 
                 col_g1, col_g2 = st.columns(2)
