@@ -1,8 +1,9 @@
 streamlit
 crewai
+crewai-tools
+google-generativeai
+openai
 pandas
 matplotlib
-seaborn
 openpyxl
-streamlit-lottie
-requests
+seaborn
