@@ -7,3 +7,5 @@ pandas
 matplotlib
 openpyxl
 seaborn
+streamlit-lottie
+requests
