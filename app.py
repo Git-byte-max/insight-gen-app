@@ -6,16 +6,29 @@ import time
 import requests
 from streamlit_lottie import st_lottie
 
-# Import Backend
+# Import Safety Flag
 try:
-    from agents import planner, coder, reporter, DEMO_MODE
+    from agents import DEMO_MODE
 except ImportError:
     DEMO_MODE = True
 
-# --- 1. SETUP PAGE ---
-st.set_page_config(page_title="InsightGen Analyst", layout="wide")
+# --- 1. PAGE CONFIGURATION ---
+st.set_page_config(
+    page_title="InsightGen Analyst",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Function to load Lottie Animation
+# Custom CSS for Professional Look (No Emojis, Clean Fonts)
+st.markdown("""
+    <style>
+    .stApp { background-color: #0e1117; color: #ffffff; }
+    h1, h2, h3 { font-family: 'Helvetica', sans-serif; font-weight: 600; }
+    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #2196F3; color: white; }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 2. HELPER FUNCTIONS ---
 def load_lottieurl(url):
     try:
         r = requests.get(url)
@@ -25,128 +38,127 @@ def load_lottieurl(url):
     except:
         return None
 
-# Load "AI Processing" Animation
-lottie_processing = load_lottieurl("https://lottie.host/6e058728-48d6-4e56-82f5-b6d8574c865e/2p6F3y8iB7.json")
+# Load "Sharp Brain" Animation
+# This is a clean, tech-focused brain animation
+lottie_brain = load_lottieurl("https://lottie.host/02e60436-a67b-4026-9d0d-b873df0d0061/aI3aXjY8k9.json")
 
-# --- 2. SIDEBAR ---
+# --- 3. SIDEBAR ---
 with st.sidebar:
     st.title("InsightGen")
-    st.caption("Autonomous Data Intelligence")
-    
+    st.write("Autonomous Data Intelligence")
     st.divider()
     
     uploaded_file = st.file_uploader("Upload Data Source (CSV/Excel)", type=["csv", "xlsx"])
     
     st.divider()
-    
     if DEMO_MODE:
-        st.info("MODE: SIMULATION (Automated Analysis)")
+        st.info("System Status: AUTOMATED ANALYSIS MODE")
+        st.caption("Running locally with Pandas/Seaborn")
     else:
-        st.success("MODE: LIVE AI (Agents Connected)")
+        st.success("System Status: AI AGENTS ONLINE")
 
-# --- 3. MAIN UI ---
+# --- 4. MAIN APPLICATION ---
 st.title("InsightGen Analyst")
-st.markdown("Upload a dataset to generate automated insights, correlation matrices, and visualizations.")
+st.markdown("##### Upload a dataset to generate automated statistical insights and visualizations.")
 
 if uploaded_file:
-    # Load Data
+    # A. LOAD DATA
     try:
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
         
-        # Save for backend access
+        # Save locally for reference
         df.to_csv("dataset.csv", index=False)
-        
-        # Data Preview
-        with st.expander("View Raw Data", expanded=True):
-            st.dataframe(df.head())
 
     except Exception as e:
-        st.error(f"Error loading file: {e}")
+        st.error(f"File Error: {e}")
         st.stop()
 
-    # --- ANALYSIS SECTION ---
+    # B. DATA PREVIEW
+    with st.expander("View Raw Dataset", expanded=False):
+        st.dataframe(df.head())
+
+    # C. ACTION BUTTON
     st.divider()
-    st.subheader("Analysis Configuration")
-    
-    query = st.text_input("Enter your analysis query:", placeholder="e.g., Analyze sales trends")
+    col_btn, col_blank = st.columns([1, 3])
+    with col_btn:
+        run_btn = st.button("Generate Comprehensive Analysis")
 
-    if st.button("Run Analysis"):
-        if not query:
-            st.warning("Please enter a query to proceed.")
-        else:
-            # === LOADING ANIMATION BLOCK ===
-            loader_placeholder = st.empty()
-            with loader_placeholder.container():
-                col1, col2, col3 = st.columns([1, 1, 1])
-                with col2:
-                    if lottie_processing:
-                        st_lottie(lottie_processing, height=150, key="loader")
-                    st.write("Processing Data...")
+    # D. ANALYSIS LOGIC
+    if run_btn:
+        # 1. LOADING SCREEN (Brain Animation)
+        placeholder = st.empty()
+        with placeholder.container():
+            c1, c2, c3 = st.columns([1, 1, 1])
+            with c2:
+                if lottie_brain:
+                    st_lottie(lottie_brain, height=200, key="brain_loading")
+                st.markdown("<center>Processing Data Structure...</center>", unsafe_allow_html=True)
+        
+        # Simulate processing time for effect
+        time.sleep(3.5)
+        
+        # Clear Loader
+        placeholder.empty()
 
-            # === EXECUTION LOGIC ===
-            try:
-                # Artificial delay to let the animation show (for demo effect)
-                time.sleep(3)
-                
-                if DEMO_MODE:
-                    # --- AUTOMATED ANALYSIS (Uses Real Data) ---
-                    # Instead of fake numbers, we calculate REAL stats from the uploaded file
-                    
-                    st.success("Analysis Complete")
-                    
-                    # 1. Identify Numeric Columns
-                    numeric_df = df.select_dtypes(include=['float64', 'int64'])
-                    
-                    if not numeric_df.empty:
-                        # 2. Generate Correlation Matrix
-                        st.subheader("Correlation Matrix")
-                        fig_corr, ax_corr = plt.subplots(figsize=(10, 5))
-                        sns.heatmap(numeric_df.corr(), annot=True, cmap='coolwarm', fmt=".2f", ax=ax_corr)
-                        st.pyplot(fig_corr)
-                        
-                        # 3. Generate Distribution Plot (First Numeric Column)
-                        first_col = numeric_df.columns[0]
-                        st.subheader(f"Distribution Analysis: {first_col}")
-                        fig_dist, ax_dist = plt.subplots(figsize=(10, 5))
-                        sns.histplot(df[first_col], kde=True, color="#4CAF50", ax=ax_dist)
-                        ax_dist.set_title(f"Distribution of {first_col}")
-                        st.pyplot(fig_dist)
-                        
-                        # 4. Generate Text Summary
-                        max_val = df[first_col].max()
-                        min_val = df[first_col].min()
-                        mean_val = df[first_col].mean()
-                        
-                        st.subheader("Executive Summary")
-                        st.markdown(f"""
-                        **Key Findings:**
-                        - The dataset contains **{df.shape[0]}** records and **{df.shape[1]}** attributes.
-                        - Strong correlations were detected in the numerical variables (see matrix above).
-                        - **{first_col} Analysis:**
-                            - Maximum Value: **{max_val}**
-                            - Minimum Value: **{min_val}**
-                            - Average: **{mean_val:.2f}**
-                        
-                        *Note: This analysis was generated using standard statistical libraries.*
-                        """)
-                    else:
-                        st.warning("No numeric data found for automated visualization.")
-
-                else:
-                    # --- REAL AI MODE (Requires API Key) ---
-                    # Placeholder for when you connect the API
-                    st.info("AI Agents are ready to process.")
-                    # (Insert CrewAI kickoff code here when ready)
-
-            except Exception as e:
-                st.error(f"An error occurred during analysis: {e}")
+        # 2. GENERATE RESULTS (Using Real Libraries)
+        
+        # --- Section 1: Data Structure ---
+        st.subheader("1. Executive Summary")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Total Records", df.shape[0])
+        m2.metric("Features (Columns)", df.shape[1])
+        m3.metric("Missing Values", df.isnull().sum().sum())
+        
+        # --- Section 2: Correlation Matrix ---
+        st.subheader("2. Correlation Analysis")
+        numeric_df = df.select_dtypes(include=['float64', 'int64'])
+        
+        if not numeric_df.empty:
+            fig_corr, ax_corr = plt.subplots(figsize=(10, 5))
+            # Create Heatmap
+            sns.heatmap(numeric_df.corr(), annot=True, cmap='Blues', fmt=".2f", ax=ax_corr)
+            st.pyplot(fig_corr)
             
-            finally:
-                # clear the loader
-                loader_placeholder.empty()
+            st.info("Insight: Darker squares indicate a stronger positive relationship between variables.")
+        else:
+            st.warning("Not enough numeric data for correlation analysis.")
+
+        # --- Section 3: Distribution Plots ---
+        st.subheader("3. Variable Distribution")
+        
+        if not numeric_df.empty:
+            target_col = numeric_df.columns[0] # Pick the first numeric column automatically
+            
+            col_chart1, col_chart2 = st.columns(2)
+            
+            # Chart 1: Histogram
+            with col_chart1:
+                st.write(f"**Distribution of {target_col}**")
+                fig1, ax1 = plt.subplots()
+                sns.histplot(df[target_col], kde=True, color="#2196F3", ax=ax1)
+                st.pyplot(fig1)
+
+            # Chart 2: Box Plot (if more columns exist)
+            with col_chart2:
+                if len(numeric_df.columns) > 1:
+                    target_col_2 = numeric_df.columns[1]
+                    st.write(f"**Box Plot of {target_col_2}**")
+                    fig2, ax2 = plt.subplots()
+                    sns.boxplot(x=df[target_col_2], color="#4CAF50", ax=ax2)
+                    st.pyplot(fig2)
+                else:
+                    st.write("Insufficient data for second chart.")
+        
+        # --- Section 4: Statistical Text ---
+        st.subheader("4. Statistical Highlights")
+        if not numeric_df.empty:
+            stats = numeric_df.describe().T
+            st.table(stats[['mean', 'min', 'max', 'std']])
+        else:
+            st.write("No numerical statistics available.")
 
 else:
-    st.info("Please upload a dataset from the sidebar to begin analysis.")
+    st.info("Please upload a CSV or Excel file to begin.")
