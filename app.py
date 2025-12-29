@@ -1,23 +1,34 @@
+import os
 import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import streamlit.components.v1 as components
+import streamlit.components.v1 as components # Required for the Embed Link
 import time
-import numpy as np
 
 # --- 1. SETUP & CONFIGURATION ---
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+
 st.set_page_config(
     page_title="InsightGen Analyst",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. PROFESSIONAL STYLING (CSS) ---
+# Import Backend (Safely)
+try:
+    from agents import planner, coder, reporter, DEMO_MODE
+    import tools
+except ImportError:
+    DEMO_MODE = True
+    tools = None
+
+# --- 2. CUSTOM CSS (The Professional Look) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
     
+    /* Global Styles */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
         color: #E0E0E0;
@@ -32,7 +43,7 @@ st.markdown("""
     }
     .block-container { animation: fadeInUp 0.8s ease-out both; }
 
-    /* Headers */
+    /* Custom Headers */
     h1, h2, h3 { color: #FFFFFF !important; font-weight: 700; }
     .main-title {
         background: linear-gradient(90deg, #E0E0E0 60%, #4DB6AC 100%);
@@ -42,7 +53,7 @@ st.markdown("""
         font-weight: 800;
     }
 
-    /* Tabs */
+    /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] { gap: 10px; }
     .stTabs [data-baseweb="tab"] {
         height: 50px;
@@ -60,7 +71,7 @@ st.markdown("""
         border-top: 2px solid #4DB6AC;
     }
 
-    /* Metrics & Containers */
+    /* Metrics & Cards */
     div[data-testid="stMetricValue"] { color: #4DB6AC; font-size: 28px; font-weight: 700; }
     div[data-testid="stMetricLabel"] { color: #9CA3AF; font-size: 11px; letter-spacing: 1px; }
     
@@ -87,52 +98,21 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. HELPER FUNCTIONS FOR AUTOMATED ANALYSIS ---
-def generate_automated_summary(df):
-    """
-    Generates a text summary based on real statistical properties of the dataframe.
-    """
-    numeric_df = df.select_dtypes(include=['number'])
-    if numeric_df.empty:
-        return "Dataset contains no numerical columns for statistical analysis."
-    
-    # Correlation Check
-    corr_matrix = numeric_df.corr().abs()
-    np.fill_diagonal(corr_matrix.values, 0)
-    
-    if not corr_matrix.empty:
-        max_corr = corr_matrix.max().max()
-        idx = corr_matrix.stack().idxmax()
-        col1, col2 = idx
-        corr_text = f"Strongest correlation detected between **{col1}** and **{col2}** ({max_corr:.2f})."
-    else:
-        corr_text = "No significant correlations detected."
-        
-    # Outlier Check (using first numeric column)
-    target_col = numeric_df.columns[0]
-    q1 = df[target_col].quantile(0.25)
-    q3 = df[target_col].quantile(0.75)
-    iqr = q3 - q1
-    outliers = ((df[target_col] < (q1 - 1.5 * iqr)) | (df[target_col] > (q3 + 1.5 * iqr))).sum()
-    
-    summary = f"""
-    **Automated Findings:**
-    1. **Primary Trend:** The dataset features {len(numeric_df.columns)} numerical variables.
-    2. **Correlation:** {corr_text}
-    3. **Data Quality:** Variable **{target_col}** contains {outliers} potential outliers based on IQR analysis.
-    """
-    return summary
-
-# --- 4. SIDEBAR ---
+# --- 3. SIDEBAR ---
 with st.sidebar:
     st.markdown("### SYSTEM CONFIGURATION")
     uploaded_file = st.file_uploader("Upload Data Source", type=["csv", "xlsx"])
     
     st.markdown("---")
-    st.info("SYSTEM STATUS: ONLINE")
+    if DEMO_MODE:
+        st.info("MODE: SIMULATION (OFFLINE)")
+    else:
+        st.success("MODE: AI AGENTS (ONLINE)")
+        
+    st.markdown("---")
     st.caption("VERSION 2.1 | ENTERPRISE BUILD")
 
-# --- 5. MAIN CONTENT ---
+# --- 4. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 st.markdown("#### *Autonomous Data Intelligence Platform*")
 
@@ -144,6 +124,13 @@ if uploaded_file:
         else:
             df = pd.read_excel(uploaded_file)
         
+        # Pass to tools if available
+        if tools:
+            tools.df = df
+        
+        # Save locally for safety
+        df.to_csv("dataset.csv", index=False)
+
         # B. METRICS GRID
         st.write("")
         with st.container():
@@ -157,65 +144,97 @@ if uploaded_file:
         st.write("")
 
         # C. TABS INTERFACE
-        tab1, tab2 = st.tabs(["DEEP PROFILING", "AUTOMATED DASHBOARD"])
+        tab1, tab2 = st.tabs(["AI ANALYST AGENT", "AUTOMATED DASHBOARD"])
 
-        # --- TAB 1: AUTOMATED PROFILER ---
+        # --- TAB 1: AGENT WORKFLOW ---
         with tab1:
             st.write("")
             col_q, col_b = st.columns([3, 1])
             with col_q:
-                # We use this to simulate selecting a target, though automation scans all
-                target_options = df.columns.tolist()
-                selected_target = st.selectbox("SELECT TARGET VARIABLE FOR DEEP DIVE", target_options, label_visibility="collapsed")
+                query = st.text_input("ANALYTICAL QUERY", placeholder="e.g., Analyze sales trends over time", label_visibility="collapsed")
             with col_b:
                 run_btn = st.button("EXECUTE ANALYSIS", use_container_width=True)
 
-            if run_btn:
-                # 1. ANIMATION CONTAINER
+            if run_btn and query:
+                # 1. ANIMATION CONTAINER (Using Iframe Embed)
                 loader = st.empty()
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
+                        # 🟢 YOUR SPECIFIC LOTTIE EMBED LINK
                         components.iframe(
                             "https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie",
                             height=200,
                             scrolling=False
                         )
-                        st.markdown("<center>PROCESSING STATISTICAL MODELS...</center>", unsafe_allow_html=True)
+                        st.markdown("<center>PROCESSING WORKFLOW...</center>", unsafe_allow_html=True)
 
-                # 2. PROCESSING (Real Calculation)
-                time.sleep(2.5) # Force visible delay for the animation to be appreciated
-                summary_text = generate_automated_summary(df)
-                loader.empty()
-                
-                # 3. RESULTS
-                res_col1, res_col2 = st.columns([1.5, 1])
-                
-                with res_col1:
-                    st.markdown("#### EXECUTIVE SUMMARY")
-                    st.info(summary_text)
-                
-                with res_col2:
-                    st.markdown(f"#### VISUAL OUTPUT: {selected_target}")
-                    
-                    fig, ax = plt.subplots(figsize=(6,4))
-                    fig.patch.set_facecolor('#1E2129')
-                    ax.set_facecolor('#1E2129')
-                    
-                    # Logic to choose plot type based on data type
-                    if pd.api.types.is_numeric_dtype(df[selected_target]):
-                        sns.histplot(df[selected_target], color='#4DB6AC', kde=True, ax=ax)
+                # 2. EXECUTION (DEMO vs REAL)
+                try:
+                    if DEMO_MODE:
+                        # === SIMULATION MODE ===
+                        time.sleep(4) # Allow animation to play
+                        loader.empty()
+                        
+                        st.success("ANALYSIS COMPLETE")
+                        
+                        res_col1, res_col2 = st.columns([1.5, 1])
+                        
+                        with res_col1:
+                            st.markdown("#### EXECUTIVE SUMMARY")
+                            st.info(f"""
+                            **Query:** {query}
+                            
+                            **Key Insights:**
+                            1. **Trend Detected:** Significant upward trajectory observed in the primary metric.
+                            2. **Correlation:** Strong positive correlation (0.85) found between variables.
+                            
+                            *This result is simulated for demonstration purposes.*
+                            """)
+                        
+                        with res_col2:
+                            st.markdown("#### VISUAL OUTPUT")
+                            # Generate a real chart based on data
+                            numeric_df = df.select_dtypes(include=['number'])
+                            if not numeric_df.empty:
+                                fig, ax = plt.subplots(figsize=(6,4))
+                                fig.patch.set_facecolor('#1E2129')
+                                ax.set_facecolor('#1E2129')
+                                col_name = numeric_df.columns[0]
+                                sns.histplot(df[col_name], color='#4DB6AC', kde=True, ax=ax)
+                                ax.tick_params(colors='white')
+                                ax.xaxis.label.set_color('white')
+                                ax.yaxis.label.set_color('white')
+                                st.pyplot(fig)
+
                     else:
-                        top_10 = df[selected_target].value_counts().head(10)
-                        sns.barplot(x=top_10.values, y=top_10.index, palette="viridis", ax=ax)
+                        # === REAL AI MODE ===
+                        from crewai import Crew, Task
                         
-                    ax.tick_params(colors='white')
-                    ax.xaxis.label.set_color('white')
-                    ax.yaxis.label.set_color('white')
-                    for spine in ax.spines.values():
-                        spine.set_color('white')
+                        # Create Tasks dynamically
+                        task1 = Task(description=f"Plan analysis for: {query}", agent=planner, expected_output="Plan")
+                        task2 = Task(description="Execute Python code on 'df'. Save 'plot.png'.", agent=coder, expected_output="Code")
+                        task3 = Task(description="Summarize findings.", agent=reporter, expected_output="Summary")
+
+                        crew = Crew(agents=[planner, coder, reporter], tasks=[task1, task2, task3], verbose=True)
+                        result = crew.kickoff()
                         
-                    st.pyplot(fig)
+                        loader.empty()
+                        
+                        r1, r2 = st.columns([1.5, 1])
+                        with r1:
+                            st.markdown("#### EXECUTIVE SUMMARY")
+                            st.markdown(result)
+                        with r2:
+                            st.markdown("#### VISUAL OUTPUT")
+                            if os.path.exists("plot.png"):
+                                st.image("plot.png")
+                            else:
+                                st.caption("No image generated.")
+
+                except Exception as e:
+                    loader.empty()
+                    st.error(f"SYSTEM ERROR: {e}")
 
         # --- TAB 2: AUTOMATED DASHBOARD ---
         with tab2:
@@ -225,15 +244,12 @@ if uploaded_file:
             
             if not numeric_df.empty:
                 # SECTION 1: CORRELATION
-                st.markdown("#### 1. CORRELATION MATRIX")
+                st.markdown("#### 1. CORRELATION ANALYSIS")
                 fig, ax = plt.subplots(figsize=(10, 4))
                 fig.patch.set_facecolor('#1E2129')
                 ax.set_facecolor('#1E2129')
                 
-                # Mask upper triangle for cleaner professional look
-                mask = np.triu(np.ones_like(numeric_df.corr(), dtype=bool))
-                
-                sns.heatmap(numeric_df.corr(), annot=True, mask=mask, cmap='mako', fmt=".2f", 
+                sns.heatmap(numeric_df.corr(), annot=True, cmap='mako', fmt=".2f", 
                             linewidths=0.5, linecolor='#1E2129', ax=ax, cbar=False)
                 
                 plt.xticks(color='#E0E0E0'); plt.yticks(color='#E0E0E0', rotation=0)
@@ -242,23 +258,43 @@ if uploaded_file:
                 st.markdown("---")
                 
                 # SECTION 2: DISTRIBUTION GRAPHS
-                st.markdown("#### 2. VARIABLE DISTRIBUTIONS")
+                st.markdown("#### 2. VARIABLE DISTRIBUTION")
                 
-                cols = st.columns(2)
-                # Automate: Plot first 2 numeric columns
-                for i, col_name in enumerate(numeric_df.columns[:2]):
-                    with cols[i]:
-                        st.caption(f"DISTRIBUTION: {col_name}")
-                        fig_d, ax_d = plt.subplots(figsize=(6,4))
-                        fig_d.patch.set_facecolor('#1E2129')
-                        ax_d.set_facecolor('#1E2129')
+                target_col = numeric_df.columns[0]
+                col_g1, col_g2 = st.columns(2)
+                
+                # Graph 1: Histogram
+                with col_g1:
+                    st.caption(f"DISTRIBUTION OF {target_col}")
+                    fig1, ax1 = plt.subplots(figsize=(6,4))
+                    fig1.patch.set_facecolor('#1E2129')
+                    ax1.set_facecolor('#1E2129')
+                    
+                    sns.histplot(df[target_col], kde=True, color="#4DB6AC", ax=ax1)
+                    
+                    ax1.tick_params(colors='white')
+                    ax1.spines['bottom'].set_color('white')
+                    ax1.spines['left'].set_color('white')
+                    st.pyplot(fig1)
+
+                # Graph 2: Box Plot (if 2nd column exists)
+                with col_g2:
+                    if len(numeric_df.columns) > 1:
+                        target_col2 = numeric_df.columns[1]
+                        st.caption(f"BOX PLOT OF {target_col2}")
+                        fig2, ax2 = plt.subplots(figsize=(6,4))
+                        fig2.patch.set_facecolor('#1E2129')
+                        ax2.set_facecolor('#1E2129')
                         
-                        sns.boxplot(x=df[col_name], color="#26A69A", ax=ax_d)
+                        sns.boxplot(x=df[target_col2], color="#26A69A", ax=ax2)
                         
-                        ax_d.tick_params(colors='white')
-                        for spine in ax_d.spines.values():
-                            spine.set_color('white')
-                        st.pyplot(fig_d)
+                        ax2.tick_params(colors='white')
+                        ax2.spines['bottom'].set_color('white')
+                        ax2.spines['left'].set_color('white')
+                        st.pyplot(fig2)
+                    else:
+                        st.info("Insufficient data for Box Plot")
+
             else:
                 st.info("NO NUMERIC DATA AVAILABLE FOR DASHBOARD")
 
