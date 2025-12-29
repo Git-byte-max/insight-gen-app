@@ -3,56 +3,60 @@ import streamlit as st
 from crewai import Agent, LLM
 from tools import execute_code_tool, get_columns_tool
 
-# --- 1. HARDCODED CONFIGURATION (The Nuclear Fix) ---
-# ⚠️ ACTION REQUIRED: Paste your new key inside the quotes below
-my_secret_key = "AIzaSyB_jJGQPzCuT6VPouUL4SGdiIz7GnhY5GI"
+# --- CONFIGURATION ---
+# Check if we have a key (from secrets or env). If not, we go into DEMO MODE.
+api_key = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
+google_key = os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
 
-# We force-set it into the environment so CrewAI can't miss it.
-os.environ["GOOGLE_API_KEY"] = my_secret_key
-os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+DEMO_MODE = False
 
-# Sanity Check: Stop the app if the key is still the placeholder
+if not api_key and not google_key:
+    # ⚠️ NO KEY FOUND -> ENABLE DEMO MODE
+    DEMO_MODE = True
+    my_llm = None
+    planner = None
+    coder = None
+    reporter = None
+    print("⚠️ No API Key found. Switching to DEMO MODE.")
 
-# --- 2. SETUP LLM ---
-# Using the stable 'flash-latest' alias with safe rate limits
-my_llm = LLM(
-    model="gemini/gemini-flash-latest", 
-    api_key=my_secret_key,
-    temperature=0.5,
-    verbose=True,
-    rpm=3
-)
+else:
+    # ✅ KEY FOUND -> SETUP REAL AGENTS
+    # Use OpenAI if available, otherwise Google
+    if api_key:
+        model_name = "gpt-4o-mini"
+        key_to_use = api_key
+    else:
+        model_name = "gemini/gemini-flash-latest"
+        key_to_use = google_key
 
-# --- 3. AGENT DEFINITIONS ---
+    my_llm = LLM(
+        model=model_name,
+        api_key=key_to_use,
+        temperature=0.5,
+        verbose=True
+    )
 
-planner = Agent(
-    role='Senior Data Analyst',
-    goal='Analyze the dataset structure and plan the analysis.',
-    backstory="You are an expert at understanding data schemas. You decide what charts are useful.",
-    verbose=True,
-    allow_delegation=False,
-    llm=my_llm
-)
+    planner = Agent(
+        role='Senior Data Analyst',
+        goal='Analyze data structure.',
+        backstory="Expert analyst.",
+        llm=my_llm,
+        allow_delegation=False
+    )
 
-coder = Agent(
-    role='Python Data Scientist',
-    goal='Write and execute Python code to visualize data.',
-    backstory="You write clean Pandas and Matplotlib code. You fix errors immediately.",
-    verbose=True,
-    allow_delegation=False,
-    llm=my_llm,
-    tools=[execute_code_tool, get_columns_tool]
-)
+    coder = Agent(
+        role='Python Data Scientist',
+        goal='Write plotting code.',
+        backstory="Python expert.",
+        llm=my_llm,
+        allow_delegation=False,
+        tools=[execute_code_tool]
+    )
 
-reporter = Agent(
-    role='Business Intelligence Analyst',
-    goal='Summarize findings in plain English.',
-    backstory="You interpret graphs and numbers for non-technical clients.",
-    verbose=True,
-    allow_delegation=False,
-    llm=my_llm
-)
-
-
-
-
+    reporter = Agent(
+        role='BI Analyst',
+        goal='Summarize findings.',
+        backstory="Business writer.",
+        llm=my_llm,
+        allow_delegation=False
+    )
