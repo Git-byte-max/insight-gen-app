@@ -78,6 +78,5 @@ else:
             allow_delegation=False
         )
     except Exception as e:
-        # If CrewAI fails to init for any other reason, fallback to demo
         print(f"CrewAI Init Error: {e}")
         DEMO_MODE = True
