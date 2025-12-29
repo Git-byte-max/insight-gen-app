@@ -3,8 +3,7 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import requests
-from streamlit_lottie import st_lottie
+import streamlit.components.v1 as components # Required for the Embed Link
 import time
 
 # --- 1. SETUP & CONFIGURATION ---
@@ -99,18 +98,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. HELPER FUNCTIONS ---
-def load_lottieurl(url: str):
-    try:
-        r = requests.get(url, timeout=5)
-        if r.status_code != 200: return None
-        return r.json()
-    except: return None
-
-# Load Animation
-lottie_tech = load_lottieurl("https://lottie.host/5a83764b-a675-4c07-9e7f-b7696e5d8868/jR17l7u9jD.json")
-
-# --- 4. SIDEBAR ---
+# --- 3. SIDEBAR ---
 with st.sidebar:
     st.markdown("### SYSTEM CONFIGURATION")
     uploaded_file = st.file_uploader("Upload Data Source", type=["csv", "xlsx"])
@@ -124,7 +112,7 @@ with st.sidebar:
     st.markdown("---")
     st.caption("VERSION 1.0 | ENTERPRISE BUILD")
 
-# --- 5. MAIN CONTENT ---
+# --- 4. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 st.markdown("#### *Autonomous Data Intelligence Platform*")
 
@@ -168,20 +156,24 @@ if uploaded_file:
                 run_btn = st.button("EXECUTE ANALYSIS", use_container_width=True)
 
             if run_btn and query:
-                # 1. ANIMATION CONTAINER
+                # 1. ANIMATION CONTAINER (Using Iframe Embed)
                 loader = st.empty()
                 with loader.container():
-                    lc1, lc2, lc3 = st.columns([1,1,1])
+                    lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        if lottie_tech:
-                            st_lottie(lottie_tech, height=150, key="loading")
+                        # 🟢 YOUR SPECIFIC LOTTIE EMBED LINK
+                        components.iframe(
+                            "https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie",
+                            height=200,
+                            scrolling=False
+                        )
                         st.markdown("<center>PROCESSING WORKFLOW...</center>", unsafe_allow_html=True)
 
                 # 2. EXECUTION (DEMO vs REAL)
                 try:
                     if DEMO_MODE:
                         # === SIMULATION MODE ===
-                        time.sleep(3) # Fake processing
+                        time.sleep(4) # Allow animation to play
                         loader.empty()
                         
                         st.success("ANALYSIS COMPLETE")
@@ -202,14 +194,14 @@ if uploaded_file:
                         
                         with res_col2:
                             st.markdown("#### VISUAL OUTPUT")
-                            # Generate a real chart based on data to make it look legit
+                            # Generate a real chart based on data
                             numeric_df = df.select_dtypes(include=['number'])
                             if not numeric_df.empty:
                                 fig, ax = plt.subplots(figsize=(6,4))
                                 fig.patch.set_facecolor('#1E2129')
                                 ax.set_facecolor('#1E2129')
                                 col_name = numeric_df.columns[0]
-                                sns.histplot(df[col_name], color='#4DB6AC', ax=ax)
+                                sns.histplot(df[col_name], color='#4DB6AC', kde=True, ax=ax)
                                 ax.tick_params(colors='white')
                                 ax.xaxis.label.set_color('white')
                                 ax.yaxis.label.set_color('white')
@@ -244,27 +236,67 @@ if uploaded_file:
                     loader.empty()
                     st.error(f"SYSTEM ERROR: {e}")
 
-        # --- TAB 2: DASHBOARD ---
+        # --- TAB 2: AUTOMATED DASHBOARD ---
         with tab2:
             st.write("")
-            st.markdown("#### CORRELATION HEATMAP")
             
             numeric_df = df.select_dtypes(include=['float64', 'int64'])
+            
             if not numeric_df.empty:
+                # SECTION 1: CORRELATION
+                st.markdown("#### 1. CORRELATION ANALYSIS")
                 fig, ax = plt.subplots(figsize=(10, 4))
-                # Dark Theme Styling for Plot
                 fig.patch.set_facecolor('#1E2129')
                 ax.set_facecolor('#1E2129')
                 
                 sns.heatmap(numeric_df.corr(), annot=True, cmap='mako', fmt=".2f", 
                             linewidths=0.5, linecolor='#1E2129', ax=ax, cbar=False)
                 
-                # Text Coloring
-                plt.xticks(color='#E0E0E0')
-                plt.yticks(color='#E0E0E0', rotation=0)
+                plt.xticks(color='#E0E0E0'); plt.yticks(color='#E0E0E0', rotation=0)
                 st.pyplot(fig)
+                
+                st.markdown("---")
+                
+                # SECTION 2: DISTRIBUTION GRAPHS
+                st.markdown("#### 2. VARIABLE DISTRIBUTION")
+                
+                target_col = numeric_df.columns[0]
+                col_g1, col_g2 = st.columns(2)
+                
+                # Graph 1: Histogram
+                with col_g1:
+                    st.caption(f"DISTRIBUTION OF {target_col}")
+                    fig1, ax1 = plt.subplots(figsize=(6,4))
+                    fig1.patch.set_facecolor('#1E2129')
+                    ax1.set_facecolor('#1E2129')
+                    
+                    sns.histplot(df[target_col], kde=True, color="#4DB6AC", ax=ax1)
+                    
+                    ax1.tick_params(colors='white')
+                    ax1.spines['bottom'].set_color('white')
+                    ax1.spines['left'].set_color('white')
+                    st.pyplot(fig1)
+
+                # Graph 2: Box Plot (if 2nd column exists)
+                with col_g2:
+                    if len(numeric_df.columns) > 1:
+                        target_col2 = numeric_df.columns[1]
+                        st.caption(f"BOX PLOT OF {target_col2}")
+                        fig2, ax2 = plt.subplots(figsize=(6,4))
+                        fig2.patch.set_facecolor('#1E2129')
+                        ax2.set_facecolor('#1E2129')
+                        
+                        sns.boxplot(x=df[target_col2], color="#26A69A", ax=ax2)
+                        
+                        ax2.tick_params(colors='white')
+                        ax2.spines['bottom'].set_color('white')
+                        ax2.spines['left'].set_color('white')
+                        st.pyplot(fig2)
+                    else:
+                        st.info("Insufficient data for Box Plot")
+
             else:
-                st.info("NO NUMERIC DATA AVAILABLE")
+                st.info("NO NUMERIC DATA AVAILABLE FOR DASHBOARD")
 
     except Exception as e:
         st.error(f"FILE LOAD ERROR: {e}")
