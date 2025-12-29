@@ -5,7 +5,7 @@ google-generativeai
 openai
 pandas
 matplotlib
-openpyxl
 seaborn
+plotly
 streamlit-lottie
 requests
