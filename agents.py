@@ -8,7 +8,7 @@ try:
     LIBS_INSTALLED = True
 except ImportError:
     LIBS_INSTALLED = False
-    # Create dummy classes so the file doesn't crash on import
+    # Create dummy classes to prevent import errors
     Agent = object
     LLM = object
     execute_code_tool = None
@@ -18,7 +18,7 @@ except ImportError:
 api_key = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 google_key = os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
 
-# DECISION: Do we run Real AI or Simulation?
+# DECISION: Real AI or Automated Simulation?
 if not LIBS_INSTALLED or (not api_key and not google_key):
     DEMO_MODE = True
     my_llm = None
