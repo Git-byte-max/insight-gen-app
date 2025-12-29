@@ -110,7 +110,7 @@ with st.sidebar:
         st.success("MODE: AI AGENTS (ONLINE)")
         
     st.markdown("---")
-    st.caption("VERSION 2.2 | ENTERPRISE BUILD")
+    st.caption("VERSION 1.0 | ENTERPRISE BUILD | CREATED BY NITHIN PRASAD")
 
 # --- 4. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -281,3 +281,4 @@ if uploaded_file:
 else:
     with st.container():
         st.warning("SYSTEM STANDBY: PLEASE UPLOAD DATA SOURCE.")
+
