@@ -22,7 +22,7 @@ except ImportError:
     DEMO_MODE = True
     tools = None
 
-# --- 2. "MATRIX TERMINAL" THEME CSS ---
+# --- 2. MATRIX / TERMINAL THEME CSS ---
 st.markdown("""
     <style>
     /* 1. NEW FONTS: 'VT323' (Header) & 'Share Tech Mono' (Body) */
@@ -339,40 +339,51 @@ if uploaded_file:
             
             st.markdown("---")
 
-            # --- C. MATRIX CHARTS ---
+            # --- C. MATRIX CHARTS (Hybrid: Automated + Dropdown) ---
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             
             if not numeric_df.empty:
-                # Correlation
+                # 1. Correlation Matrix (Always Automated)
                 st.markdown("#### > CORRELATION_MATRIX")
                 corr = numeric_df.corr()
-                # 'Viridis' or custom green scale fits best
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greens', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
                 st.plotly_chart(fig_corr, use_container_width=True)
                 
-                # Distributions
-                st.markdown("#### > VARIABLE_DISTRIBUTION")
-                target_col = numeric_df.columns[0]
+                st.markdown("---")
                 
+                # 2. Customizable Charts Section
+                st.markdown("#### > VARIABLE_DISTRIBUTION & RELATIONSHIPS")
+                
+                # --- DROPDOWNS FOR USER CONTROL ---
+                # Default logic: Index 0 is Automated. User can change it.
+                c_sel1, c_sel2 = st.columns(2)
+                
+                with c_sel1:
+                    x_axis_val = st.selectbox("SELECT X-AXIS (DISTRIBUTION)", numeric_df.columns, index=0)
+                
+                with c_sel2:
+                    default_ix = 1 if len(numeric_df.columns) > 1 else 0
+                    y_axis_val = st.selectbox("SELECT Y-AXIS (SCATTER)", numeric_df.columns, index=default_ix)
+
+                # --- PLOT THE CHARTS ---
                 col_g1, col_g2 = st.columns(2)
+                
+                # Chart 1: Histogram
                 with col_g1:
-                    st.caption(f"HISTOGRAM: {target_col}")
-                    fig1 = px.histogram(filtered_df, x=target_col, nbins=20, template="plotly_dark")
+                    st.caption(f"HISTOGRAM: {x_axis_val}")
+                    fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
                     fig1.update_traces(marker_color='#00FF41', marker_line_color='#003B00', marker_line_width=1)
                     fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
                     st.plotly_chart(fig1, use_container_width=True)
 
+                # Chart 2: Scatter
                 with col_g2:
-                    if len(numeric_df.columns) > 1:
-                        target_col2 = numeric_df.columns[1]
-                        st.caption(f"SCATTER: {target_col} vs {target_col2}")
-                        fig2 = px.scatter(filtered_df, x=target_col, y=target_col2, template="plotly_dark")
-                        fig2.update_traces(marker_color='#008F11')
-                        fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
-                        st.plotly_chart(fig2, use_container_width=True)
-                    else:
-                        st.info("INSUFFICIENT_DATA_FOR_PLOT")
+                    st.caption(f"SCATTER: {x_axis_val} vs {y_axis_val}")
+                    fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
+                    fig2.update_traces(marker_color='#008F11')
+                    fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
+                    st.plotly_chart(fig2, use_container_width=True)
             else:
                 st.info("NO_NUMERIC_DATA_FOUND")
 
