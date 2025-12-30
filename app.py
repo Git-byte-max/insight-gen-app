@@ -69,17 +69,33 @@ st.markdown("""
         border-top: 2px solid #4DB6AC;
     }
 
-    /* Metrics & Containers */
-    div[data-testid="stMetricValue"] { color: #4DB6AC; font-size: 28px; font-weight: 700; }
-    div[data-testid="stMetricLabel"] { color: #9CA3AF; font-size: 11px; letter-spacing: 1px; }
-    div[data-testid="stExpander"], div[data-testid="stContainer"] {
-        background-color: #1E2129;
+    /* Glassmorphism Metric Card CSS */
+    .metric-card {
+        background: rgba(30, 33, 41, 0.7);
         border: 1px solid #2D313A;
-        border-radius: 8px;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    
-    /* Dataframe Styling */
-    div[data-testid="stDataFrame"] { background-color: #161920; border-radius: 8px; }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        border-color: #4DB6AC;
+    }
+    .metric-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: #4DB6AC;
+        margin-bottom: 5px;
+    }
+    .metric-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #9CA3AF;
+    }
 
     /* Buttons */
     .stButton>button {
@@ -110,7 +126,7 @@ with st.sidebar:
         st.success("MODE: AI AGENTS (ONLINE)")
         
     st.markdown("---")
-    st.caption("VERSION 1.0 | ENTERPRISE BUILD | CREATED BY NITHIN PRASAD")
+    st.caption("VERSION 2.3 | VISUAL UPGRADE")
 
 # --- 4. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -127,15 +143,46 @@ if uploaded_file:
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
-        # B. METRICS GRID (Top of Page)
+        # B. METRICS GRID (✨ UPGRADED: GLASSMORPHISM CARDS)
         st.write("")
-        with st.container():
-            st.subheader("DATASET METRICS")
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("RECORDS", df.shape[0])
-            c2.metric("FEATURES", df.shape[1])
-            c3.metric("MISSING", df.isnull().sum().sum())
-            c4.metric("DUPLICATES", df.duplicated().sum())
+        st.subheader("DATASET METRICS")
+        
+        mc1, mc2, mc3, mc4 = st.columns(4)
+        
+        with mc1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">{df.shape[0]:,}</div>
+                <div class="metric-label">Total Records</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with mc2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">{df.shape[1]}</div>
+                <div class="metric-label">Features</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with mc3:
+            missing = df.isnull().sum().sum()
+            color = "#EF5350" if missing > 0 else "#4DB6AC"
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value" style="color: {color}">{missing}</div>
+                <div class="metric-label">Missing Values</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with mc4:
+            dupes = df.duplicated().sum()
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">{dupes}</div>
+                <div class="metric-label">Duplicates</div>
+            </div>
+            """, unsafe_allow_html=True)
 
         st.write("")
 
@@ -169,7 +216,11 @@ if uploaded_file:
                         time.sleep(4) 
                         loader.empty()
                         
-                        st.success("ANALYSIS COMPLETE")
+                        # ✨ UPGRADED: TOAST NOTIFICATIONS
+                        st.toast("Analysis Complete!", icon="✅")
+                        time.sleep(0.5)
+                        st.toast("Charts generated successfully.", icon="📊")
+                        
                         res_col1, res_col2 = st.columns([1.5, 1])
                         with res_col1:
                             st.markdown("#### EXECUTIVE SUMMARY")
@@ -197,6 +248,8 @@ if uploaded_file:
                         crew = Crew(agents=[planner, coder, reporter], tasks=[task1, task2, task3], verbose=True)
                         result = crew.kickoff()
                         loader.empty()
+                        
+                        st.toast("AI Analysis Complete!", icon="🤖")
                         
                         r1, r2 = st.columns([1.5, 1])
                         with r1:
@@ -233,11 +286,26 @@ if uploaded_file:
             
             st.markdown("---")
 
-            # --- B. DATA TABLE (HEADER TABLE) ---
-            # 🟢 MOVED TO TOP as requested
-            st.markdown("#### 2. DATA PREVIEW (HEADER TABLE)")
-            st.dataframe(filtered_df.head(100), use_container_width=True, height=300)
-            st.caption(f"Showing top 100 rows of {filtered_df.shape[0]} filtered records.")
+            # --- B. DATA TABLE (✨ UPGRADED: SMART PREVIEW) ---
+            st.markdown("#### 2. SMART DATA PREVIEW")
+            
+            # Create column config with progress bars
+            column_config = {}
+            for col in filtered_df.select_dtypes(include="number").columns:
+                column_config[col] = st.column_config.ProgressColumn(
+                    col,
+                    format="%.2f",
+                    min_value=float(filtered_df[col].min()),
+                    max_value=float(filtered_df[col].max()),
+                )
+
+            st.dataframe(
+                filtered_df.head(100), 
+                use_container_width=True, 
+                height=300,
+                column_config=column_config # Adds the visual bars
+            )
+            st.caption(f"Showing top 100 rows. Numerical columns include visual density bars.")
             
             st.markdown("---")
 
@@ -281,4 +349,3 @@ if uploaded_file:
 else:
     with st.container():
         st.warning("SYSTEM STANDBY: PLEASE UPLOAD DATA SOURCE.")
-
