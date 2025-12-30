@@ -22,94 +22,122 @@ except ImportError:
     DEMO_MODE = True
     tools = None
 
-# --- 2. CUSTOM CSS (Professional UI) ---
+# --- 2. ULTIMATE VISUAL CSS (CYBERPUNK THEME) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    /* 1. IMPORT MODERN FONT 'OUTFIT' */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
     
+    /* 2. GLOBAL STYLES & ANIMATED BACKGROUND */
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Outfit', sans-serif;
         color: #E0E0E0;
-        background-color: #0F1116;
     }
-    .stApp { background-color: #0F1116; }
     
-    /* Animations */
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+    .stApp {
+        background: linear-gradient(to bottom right, #0F1116, #13161C);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
     }
-    .block-container { animation: fadeInUp 0.8s ease-out both; }
+    
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
 
-    /* Headers */
-    h1, h2, h3 { color: #FFFFFF !important; font-weight: 700; }
+    /* 3. CUSTOM SCROLLBAR */
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #0F1116; }
+    ::-webkit-scrollbar-thumb { background: #4DB6AC; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #26A69A; }
+
+    /* 4. HEADERS & TITLES */
+    h1, h2, h3 { color: #FFFFFF !important; font-weight: 800; letter-spacing: 1px; }
+    
     .main-title {
-        background: linear-gradient(90deg, #E0E0E0 60%, #4DB6AC 100%);
+        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 3rem;
-        font-weight: 800;
-    }
-
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        background-color: #161920;
-        border-radius: 6px 6px 0px 0px;
-        color: #9CA3AF;
-        border: 1px solid #2D313A;
-        font-weight: 600;
+        font-size: 3.5rem;
+        font-weight: 900;
         text-transform: uppercase;
-        font-size: 12px;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #1E2129;
-        color: #4DB6AC;
-        border-top: 2px solid #4DB6AC;
+        text-shadow: 0px 0px 20px rgba(0, 201, 255, 0.3);
     }
 
-    /* Glassmorphism Metric Card CSS */
+    /* 5. GLASSMORPHISM CARDS (Metrics) */
     .metric-card {
-        background: rgba(30, 33, 41, 0.7);
-        border: 1px solid #2D313A;
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
         padding: 20px;
         text-align: center;
         backdrop-filter: blur(10px);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     .metric-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        border-color: #4DB6AC;
+        box-shadow: 0 10px 30px rgba(77, 182, 172, 0.2);
+        border: 1px solid #4DB6AC;
     }
     .metric-value {
-        font-size: 32px;
+        font-size: 36px;
         font-weight: 800;
-        color: #4DB6AC;
+        color: #00E5FF;
         margin-bottom: 5px;
     }
     .metric-label {
-        font-size: 12px;
+        font-size: 13px;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #9CA3AF;
+        letter-spacing: 2px;
+        color: #B0BEC5;
     }
 
-    /* Buttons */
+    /* 6. NEON GLOW BUTTONS */
     .stButton>button {
-        background: linear-gradient(135deg, #4DB6AC 0%, #26A69A 100%);
-        color: #0F1116;
+        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
+        color: #000000;
         font-weight: 700;
         border: none;
-        padding: 0.6rem 1.2rem;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
         text-transform: uppercase;
         letter-spacing: 1px;
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        box-shadow: 0 4px 12px rgba(77, 182, 172, 0.3);
-        color: #FFFFFF;
+        transform: scale(1.02);
+        box-shadow: 0 0 20px rgba(0, 201, 255, 0.6);
+        color: #000;
+    }
+
+    /* 7. UI ELEMENTS (Tabs, Expanders) */
+    .stTabs [data-baseweb="tab-list"] { gap: 15px; }
+    .stTabs [data-baseweb="tab"] {
+        height: 55px;
+        background-color: rgba(255,255,255,0.05);
+        border-radius: 8px;
+        color: #B0BEC5;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(90deg, rgba(0,201,255,0.2) 0%, rgba(146,254,157,0.2) 100%);
+        color: #00E5FF;
+        border: 1px solid #00E5FF;
+    }
+    
+    div[data-testid="stExpander"] {
+        background-color: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+    }
+    
+    div[data-testid="stDataFrame"] {
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -126,7 +154,7 @@ with st.sidebar:
         st.success("MODE: AI AGENTS (ONLINE)")
         
     st.markdown("---")
-    st.caption("VERSION 2.3 | VISUAL UPGRADE")
+    st.caption("VERSION 3.0 | CYBERPUNK EDITION")
 
 # --- 4. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -143,9 +171,9 @@ if uploaded_file:
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
-        # B. METRICS GRID (✨ UPGRADED: GLASSMORPHISM CARDS)
+        # B. METRICS GRID (GLASSMORPHISM)
         st.write("")
-        st.subheader("DATASET METRICS")
+        st.subheader("SYSTEM METRICS")
         
         mc1, mc2, mc3, mc4 = st.columns(4)
         
@@ -153,7 +181,7 @@ if uploaded_file:
             st.markdown(f"""
             <div class="metric-card">
                 <div class="metric-value">{df.shape[0]:,}</div>
-                <div class="metric-label">Total Records</div>
+                <div class="metric-label">Records</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -167,11 +195,11 @@ if uploaded_file:
             
         with mc3:
             missing = df.isnull().sum().sum()
-            color = "#EF5350" if missing > 0 else "#4DB6AC"
+            color = "#FF5252" if missing > 0 else "#00E5FF"
             st.markdown(f"""
             <div class="metric-card">
                 <div class="metric-value" style="color: {color}">{missing}</div>
-                <div class="metric-label">Missing Values</div>
+                <div class="metric-label">Missing</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -208,7 +236,7 @@ if uploaded_file:
                             "https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie",
                             height=200, scrolling=False
                         )
-                        st.markdown("<center>PROCESSING WORKFLOW...</center>", unsafe_allow_html=True)
+                        st.markdown("<center style='color: #00E5FF;'>PROCESSING WORKFLOW...</center>", unsafe_allow_html=True)
 
                 # 2. EXECUTION
                 try:
@@ -216,7 +244,6 @@ if uploaded_file:
                         time.sleep(4) 
                         loader.empty()
                         
-                        # ✨ UPGRADED: TOAST NOTIFICATIONS
                         st.toast("Analysis Complete!", icon="✅")
                         time.sleep(0.5)
                         st.toast("Charts generated successfully.", icon="📊")
@@ -235,7 +262,8 @@ if uploaded_file:
                             st.markdown("#### VISUAL OUTPUT")
                             numeric_df = df.select_dtypes(include=['number'])
                             if not numeric_df.empty:
-                                fig = px.histogram(df, x=numeric_df.columns[0], color_discrete_sequence=['#4DB6AC'])
+                                fig = px.histogram(df, x=numeric_df.columns[0], template="plotly_dark")
+                                fig.update_traces(marker_color='#00C9FF')
                                 fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                                 st.plotly_chart(fig, use_container_width=True)
 
@@ -286,10 +314,9 @@ if uploaded_file:
             
             st.markdown("---")
 
-            # --- B. DATA TABLE (✨ UPGRADED: SMART PREVIEW) ---
-            st.markdown("#### 2. SMART DATA PREVIEW")
+            # --- B. SMART DATA PREVIEW ---
+            st.markdown("#### 2. DATA PREVIEW (LIVE)")
             
-            # Create column config with progress bars
             column_config = {}
             for col in filtered_df.select_dtypes(include="number").columns:
                 column_config[col] = st.column_config.ProgressColumn(
@@ -303,20 +330,20 @@ if uploaded_file:
                 filtered_df.head(100), 
                 use_container_width=True, 
                 height=300,
-                column_config=column_config # Adds the visual bars
+                column_config=column_config
             )
-            st.caption(f"Showing top 100 rows. Numerical columns include visual density bars.")
+            st.caption(f"Showing top 100 rows.")
             
             st.markdown("---")
 
-            # --- C. CHARTS ---
+            # --- C. CYBERPUNK CHARTS ---
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             
             if not numeric_df.empty:
                 # Correlation
                 st.markdown("#### 3. CORRELATION MAP")
                 corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Teal')
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Tealgrn', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                 st.plotly_chart(fig_corr, use_container_width=True)
                 
@@ -327,7 +354,8 @@ if uploaded_file:
                 col_g1, col_g2 = st.columns(2)
                 with col_g1:
                     st.caption(f"Histogram: {target_col}")
-                    fig1 = px.histogram(filtered_df, x=target_col, nbins=20, color_discrete_sequence=['#26A69A'])
+                    fig1 = px.histogram(filtered_df, x=target_col, nbins=20, template="plotly_dark")
+                    fig1.update_traces(marker_color='#00E5FF') # Neon Cyan
                     fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                     st.plotly_chart(fig1, use_container_width=True)
 
@@ -335,7 +363,8 @@ if uploaded_file:
                     if len(numeric_df.columns) > 1:
                         target_col2 = numeric_df.columns[1]
                         st.caption(f"Scatter: {target_col} vs {target_col2}")
-                        fig2 = px.scatter(filtered_df, x=target_col, y=target_col2, color_discrete_sequence=['#4DB6AC'])
+                        fig2 = px.scatter(filtered_df, x=target_col, y=target_col2, template="plotly_dark")
+                        fig2.update_traces(marker_color='#92FE9D') # Neon Green
                         fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                         st.plotly_chart(fig2, use_container_width=True)
                     else:
