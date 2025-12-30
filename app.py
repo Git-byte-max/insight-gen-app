@@ -22,121 +22,111 @@ except ImportError:
     DEMO_MODE = True
     tools = None
 
-# --- 2. "COSMIC INTELLIGENCE" CSS THEME ---
+# --- 2. "OBSIDIAN GOLD" THEME CSS ---
 st.markdown("""
     <style>
-    /* 1. NEW FONTS: 'Orbitron' (Title) & 'Rajdhani' (Body) */
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Rajdhani:wght@300;500;700&display=swap');
+    /* 1. NEW FONTS: 'Audiowide' (Title) & 'Space Grotesk' (Body) */
+    @import url('https://fonts.googleapis.com/css2?family=Audiowide&family=Space+Grotesk:wght@300;500;700&display=swap');
     
-    /* 2. GLOBAL STYLES & DEEP SPACE BACKGROUND */
+    /* 2. GLOBAL STYLES & OBSIDIAN BACKGROUND */
     html, body, [class*="css"] {
-        font-family: 'Rajdhani', sans-serif; /* Clean, Techy Body Font */
+        font-family: 'Space Grotesk', sans-serif;
         color: #E0E0E0;
-        font-size: 18px;
+        font-size: 17px;
     }
     
     .stApp {
-        background: radial-gradient(circle at top left, #1a1a2e, #16213e, #0f3460);
-        background-size: 150% 150%;
-        animation: cosmicBG 20s ease infinite;
+        background: radial-gradient(circle at 50% 10%, #2b2b2b, #000000);
     }
     
-    @keyframes cosmicBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    /* 3. CUSTOM SCROLLBAR (Cyan & Purple) */
+    /* 3. CUSTOM SCROLLBAR (Gold) */
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #1a1a2e; }
-    ::-webkit-scrollbar-thumb { background: linear-gradient(#e94560, #0f3460); border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #FFD700; border-radius: 4px; }
 
-    /* 4. HEADERS (Orbitron Font) */
-    h1, h2, h3 { 
-        font-family: 'Orbitron', sans-serif !important; 
-        color: #FFFFFF !important; 
-        letter-spacing: 2px;
-    }
-    
-    /* THE TITLE GRADIENT (Blue -> Pink) */
+    /* 4. TITLE STYLE (Audiowide Font + Gold Gradient) */
     .main-title {
-        background: linear-gradient(90deg, #4CC9F0 0%, #7209B7 100%);
+        font-family: 'Audiowide', cursive;
+        background: linear-gradient(to bottom, #FFD700 0%, #FDB931 50%, #9f7928 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 4rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        filter: drop-shadow(0px 0px 5px rgba(114, 9, 183, 0.5));
+        font-size: 4.2rem;
+        letter-spacing: 4px;
+        font-weight: 400; /* Audiowide is naturally bold */
+        text-shadow: 0px 4px 10px rgba(255, 215, 0, 0.3);
     }
-
-    /* 5. METRIC CARDS (Frosted Purple Glass) */
-    .metric-card {
-        background: rgba(22, 33, 62, 0.6);
-        border: 1px solid rgba(76, 201, 240, 0.2);
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease-in-out;
-    }
-    .metric-card:hover {
-        transform: translateY(-8px);
-        border-color: #F72585; /* Neon Pink Border on Hover */
-        box-shadow: 0 0 20px rgba(247, 37, 133, 0.4);
-    }
-    .metric-value {
-        font-family: 'Orbitron', sans-serif;
-        font-size: 34px;
-        font-weight: 700;
-        color: #4CC9F0; /* Neon Blue Text */
-    }
-    .metric-label {
-        font-size: 14px;
+    
+    h1, h2, h3 { 
+        font-family: 'Space Grotesk', sans-serif !important; 
+        color: #FDB931 !important; 
         text-transform: uppercase;
         letter-spacing: 2px;
-        color: #b0bec5;
-        font-weight: 500;
     }
 
-    /* 6. BUTTONS (Gradient Purple) */
+    /* 5. METRIC CARDS (Black Glass & Gold Borders) */
+    .metric-card {
+        background: rgba(10, 10, 10, 0.8);
+        border: 1px solid #333;
+        border-bottom: 3px solid #FFD700; /* Gold Underline */
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        transition: transform 0.2s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        border-color: #FFD700;
+    }
+    .metric-value {
+        font-family: 'Audiowide', cursive;
+        font-size: 32px;
+        color: #FFFFFF;
+    }
+    .metric-label {
+        font-size: 13px;
+        color: #888;
+        letter-spacing: 1px;
+    }
+
+    /* 6. BUTTONS (Luxury Gold Gradient) */
     .stButton>button {
-        background: linear-gradient(90deg, #3A0CA3 0%, #F72585 100%);
-        color: white;
-        font-family: 'Orbitron', sans-serif;
-        font-weight: 600;
+        background: linear-gradient(45deg, #FFD700, #FDB931);
+        color: #000000;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 800;
         border: none;
         padding: 0.8rem 1.5rem;
-        border-radius: 30px; /* Rounded Buttons */
-        letter-spacing: 1.5px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
         transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 0 25px rgba(247, 37, 133, 0.6);
+        transform: scale(1.02);
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
     }
 
-    /* 7. TABS & CONTAINERS */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    /* 7. TABS & INPUTS */
+    .stTabs [data-baseweb="tab-list"] { gap: 5px; }
     .stTabs [data-baseweb="tab"] {
         height: 50px;
-        background-color: rgba(255,255,255,0.05);
-        border-radius: 8px;
-        color: #B0BEC5;
-        font-family: 'Rajdhani', sans-serif;
+        background-color: #111;
+        border: 1px solid #333;
+        color: #666;
+        font-family: 'Space Grotesk', sans-serif;
         font-weight: 700;
-        font-size: 18px;
-        border: none;
+        border-radius: 4px;
     }
     .stTabs [aria-selected="true"] {
-        background: #F72585; /* Active Tab Pink */
-        color: white;
+        background: #FDB931;
+        color: #000;
+        border: 1px solid #FFD700;
     }
     
     div[data-testid="stDataFrame"] {
-        border: 1px solid rgba(76, 201, 240, 0.3);
-        border-radius: 10px;
+        border: 1px solid #333;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -153,7 +143,7 @@ with st.sidebar:
         st.success("MODE: AI AGENTS (ONLINE)")
         
     st.markdown("---")
-    st.caption("THEME: COSMIC INTELLIGENCE")
+    st.caption("THEME: OBSIDIAN & GOLD")
 
 # --- 4. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -170,7 +160,7 @@ if uploaded_file:
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
-        # B. METRICS GRID (COSMIC THEME)
+        # B. METRICS GRID (Gold Theme)
         st.write("")
         st.subheader("SYSTEM METRICS")
         
@@ -194,7 +184,7 @@ if uploaded_file:
             
         with mc3:
             missing = df.isnull().sum().sum()
-            color = "#FF2E63" if missing > 0 else "#4CC9F0"
+            color = "#FF5252" if missing > 0 else "#FFFFFF"
             st.markdown(f"""
             <div class="metric-card">
                 <div class="metric-value" style="color: {color}">{missing}</div>
@@ -235,7 +225,7 @@ if uploaded_file:
                             "https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie",
                             height=200, scrolling=False
                         )
-                        st.markdown("<center style='color: #4CC9F0; font-family: Orbitron;'>PROCESSING WORKFLOW...</center>", unsafe_allow_html=True)
+                        st.markdown("<center style='color: #FDB931;'>PROCESSING WORKFLOW...</center>", unsafe_allow_html=True)
 
                 # 2. EXECUTION
                 try:
@@ -262,7 +252,7 @@ if uploaded_file:
                             numeric_df = df.select_dtypes(include=['number'])
                             if not numeric_df.empty:
                                 fig = px.histogram(df, x=numeric_df.columns[0], template="plotly_dark")
-                                fig.update_traces(marker_color='#F72585') # Neon Pink
+                                fig.update_traces(marker_color='#FDB931') # Gold
                                 fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                                 st.plotly_chart(fig, use_container_width=True)
 
@@ -335,15 +325,15 @@ if uploaded_file:
             
             st.markdown("---")
 
-            # --- C. COSMIC CHARTS ---
+            # --- C. CHARTS (Gold & Orange) ---
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             
             if not numeric_df.empty:
                 # Correlation
                 st.markdown("#### 3. CORRELATION MAP")
                 corr = numeric_df.corr()
-                # 'Plasma' is a great Purple/Blue/Yellow scale for this theme
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Plasma', template="plotly_dark")
+                # 'Solar' or 'Thermal' fits the Gold theme
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Solar', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                 st.plotly_chart(fig_corr, use_container_width=True)
                 
@@ -355,7 +345,7 @@ if uploaded_file:
                 with col_g1:
                     st.caption(f"Histogram: {target_col}")
                     fig1 = px.histogram(filtered_df, x=target_col, nbins=20, template="plotly_dark")
-                    fig1.update_traces(marker_color='#4CC9F0') # Neon Blue
+                    fig1.update_traces(marker_color='#FFD700') # Pure Gold
                     fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                     st.plotly_chart(fig1, use_container_width=True)
 
@@ -364,7 +354,7 @@ if uploaded_file:
                         target_col2 = numeric_df.columns[1]
                         st.caption(f"Scatter: {target_col} vs {target_col2}")
                         fig2 = px.scatter(filtered_df, x=target_col, y=target_col2, template="plotly_dark")
-                        fig2.update_traces(marker_color='#7209B7') # Deep Purple
+                        fig2.update_traces(marker_color='#FFA500') # Orange Gold
                         fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="white")
                         st.plotly_chart(fig2, use_container_width=True)
                     else:
