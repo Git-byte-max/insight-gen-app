@@ -2,7 +2,7 @@ streamlit
 crewai
 crewai-tools
 langchain
-pysqlite3-binary   <-- CRITICAL FIX
+pysqlite3-binary
 google-generativeai
 openai
 pandas
@@ -13,3 +13,4 @@ streamlit-lottie
 requests
 fpdf
 kaleido==0.2.1
+
