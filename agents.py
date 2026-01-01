@@ -42,13 +42,12 @@ else:
         else:
             my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
 
-        # AGENT 1: PLANNER (Fast & Direct)
+        # AGENT 1: PLANNER
         planner = Agent(
             role='Architect',
             goal='Plan analysis. IF "VS" OR "COMPARE", PLAN PLOT.',
             backstory="""
             You are a Data Architect. Plan the Python steps.
-            
             1. INSPECT: `print(df.head())` & `print(df.columns)`.
             2. VERIFY: Print unique values of categorical columns.
             3. PLOT: If comparison requested, Generate Plot using matplotlib.
@@ -59,7 +58,7 @@ else:
             verbose=True
         )
 
-        # AGENT 2: CODER (The Path Finder)
+        # AGENT 2: CODER
         coder = Agent(
             role='Python Dev',
             goal='Execute code. FORCE FILE SAVING.',
@@ -70,8 +69,39 @@ else:
             1. SETUP: 
                `import matplotlib.pyplot as plt`
                `import os`
-               `plt.switch_backend('Agg')` (Prevents crashes)
+               `plt.switch_backend('Agg')`
             
-            2. SAVING (THE MOST IMPORTANT STEP):
+            2. SAVING:
                You MUST save the file using the absolute path:
-               `save_path = os.path.join(os.getcwd(), 'plot.png')
+               `save_path = os.path.join(os.getcwd(), 'plot.png')`
+               `plt.savefig(save_path)`
+               `print(f"PLOT SAVED TO: {save_path}")`
+            
+            3. DATA:
+               Always verify columns using `df.columns`.
+            """,
+            llm=my_llm,
+            allow_delegation=False,
+            tools=[execute_code_tool], 
+            verbose=True
+        )
+
+        # AGENT 3: REPORTER
+        reporter = Agent(
+            role='Analyst',
+            goal='Report insights from logs. NO META-TALK.',
+            backstory="""
+            Read the logs.
+            1. Report the Numbers found in the logs.
+            2. If logs show "Male/Female", talk about Gender.
+            3. If logs show "Action/Horror", talk about Movies.
+            4. If the log says "PLOT SAVED", tell the user "Visual generated successfully."
+            """,
+            llm=my_llm,
+            allow_delegation=False,
+            verbose=True
+        )
+
+    except Exception as e:
+        print(f"Agent Init Error: {e}")
+        DEMO_MODE = True
