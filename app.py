@@ -1,3 +1,7 @@
+import sys
+# 1. PATCH SQLITE (Fix for Streamlit Cloud / CrewAI Crash)
+__import__('pysqlite3')
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import os
 import streamlit as st
 import pandas as pd
@@ -377,3 +381,4 @@ if uploaded_file:
 else:
     with st.container():
         st.warning("SYSTEM STANDBY: AWAITING DATA UPLOAD...")
+
