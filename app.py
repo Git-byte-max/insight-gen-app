@@ -32,11 +32,11 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 3. PDF GENERATOR FUNCTION ---
+# --- 3. PDF GENERATOR ENGINE ---
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
-        self.cell(0, 10, 'InsightGen: Autonomous Data Report', 0, 1, 'C')
+        self.cell(0, 10, 'InsightGen: Intelligence Report', 0, 1, 'C')
         self.ln(10)
 
     def footer(self):
@@ -44,46 +44,46 @@ class PDFReport(FPDF):
         self.set_font('Arial', 'I', 8)
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
-def generate_pdf(query, ai_text, plot_path, df_stats):
+def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None):
     pdf = PDFReport()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", size=12)
-
-    # SECTION 1: AI ANALYSIS
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "1. Executive AI Analysis", 0, 1)
-    pdf.ln(2)
     
-    pdf.set_font("Arial", 'B', 11)
-    pdf.cell(0, 10, f"Query: {query}", 0, 1)
-    
-    pdf.set_font("Arial", size=10)
-    # Clean text for PDF (remove heavy markdown or emojis that break FPDF)
-    clean_text = ai_text.replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
-    pdf.multi_cell(0, 6, clean_text)
-    pdf.ln(5)
-
-    # ADD PLOT IF EXISTS
-    if plot_path and os.path.exists(plot_path):
-        pdf.image(plot_path, x=10, w=170)
+    # --- SECTION A: AI ANALYSIS (Only for "Full" Report) ---
+    if report_type == "full":
+        pdf.set_font("Arial", 'B', 14)
+        pdf.cell(0, 10, "1. Executive AI Analysis", 0, 1)
+        pdf.ln(2)
+        
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 10, f"Query: {query}", 0, 1)
+        
+        pdf.set_font("Arial", size=10)
+        # Clean text
+        clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
+        pdf.multi_cell(0, 6, clean_text)
         pdf.ln(5)
-    
-    pdf.add_page()
 
-    # SECTION 2: DATA STATISTICS (Tab 2 Summary)
+        # Plot
+        if plot_path and os.path.exists(plot_path):
+            pdf.image(plot_path, x=10, w=170)
+            pdf.ln(10)
+        
+        pdf.add_page() # Start Stats on new page for full report
+
+    # --- SECTION B: DASHBOARD STATS (For "Dashboard" & "Full") ---
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "2. Data Statistics (Dashboard)", 0, 1)
+    title = "2. Automated Data Statistics" if report_type == "full" else "Automated Data Dashboard Report"
+    pdf.cell(0, 10, title, 0, 1)
     pdf.ln(2)
 
     pdf.set_font("Courier", size=9)
-    # Convert dataframe describe() to string for the PDF
     stats_str = df_stats.to_string()
     pdf.multi_cell(0, 5, stats_str)
     
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 4. MATRIX / TERMINAL THEME CSS ---
+# --- 4. MATRIX THEME CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
@@ -94,18 +94,16 @@ st.markdown("""
         background-color: #0D0208;
         font-size: 16px;
     }
-    
     .stApp {
         background-color: #000000;
         background-image: linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
         background-size: 20px 20px; 
     }
-
     ::-webkit-scrollbar { width: 10px; }
     ::-webkit-scrollbar-track { background: #000; }
     ::-webkit-scrollbar-thumb { background: #003B00; border: 1px solid #00FF41; }
-
+    
     .main-title {
         font-family: 'VT323', monospace;
         color: #00FF41;
@@ -115,12 +113,7 @@ st.markdown("""
         letter-spacing: -2px;
         text-transform: uppercase;
     }
-    
-    h1, h2, h3 { 
-        font-family: 'VT323', monospace !important; 
-        color: #00FF41 !important; 
-        text-transform: uppercase;
-    }
+    h1, h2, h3 { font-family: 'VT323', monospace !important; color: #00FF41 !important; text-transform: uppercase; }
 
     .metric-card {
         background-color: #000;
@@ -128,20 +121,9 @@ st.markdown("""
         padding: 15px;
         text-align: center;
         box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
-        position: relative;
     }
-    .metric-value {
-        font-family: 'VT323', monospace;
-        font-size: 42px;
-        color: #00FF41;
-        text-shadow: 0 0 5px #00FF41;
-    }
-    .metric-label {
-        font-size: 14px;
-        color: #008F11;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
+    .metric-value { font-family: 'VT323', monospace; font-size: 42px; color: #00FF41; text-shadow: 0 0 5px #00FF41; }
+    .metric-label { font-size: 14px; color: #008F11; text-transform: uppercase; letter-spacing: 2px; }
 
     .stButton>button {
         background-color: #000000;
@@ -152,34 +134,18 @@ st.markdown("""
         border-radius: 0px; 
         text-transform: uppercase;
     }
-    .stButton>button:hover {
-        background-color: #00FF41;
-        color: #000000;
-        box-shadow: 0 0 15px #00FF41;
-    }
+    .stButton>button:hover { background-color: #00FF41; color: #000000; box-shadow: 0 0 15px #00FF41; }
 
     .stTabs [data-baseweb="tab-list"] { gap: 0px; border-bottom: 2px solid #003B00; }
-    .stTabs [data-baseweb="tab"] {
-        height: 45px;
-        background-color: #000;
-        border: 1px solid #003B00;
-        color: #003B00;
-        font-family: 'Share Tech Mono', monospace;
-        border-radius: 0px;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #001100;
-        color: #00FF41;
-        border: 1px solid #00FF41;
-        border-bottom: none;
-    }
+    .stTabs [data-baseweb="tab"] { height: 45px; background-color: #000; border: 1px solid #003B00; color: #003B00; font-family: 'Share Tech Mono', monospace; border-radius: 0px; }
+    .stTabs [aria-selected="true"] { background-color: #001100; color: #00FF41; border: 1px solid #00FF41; border-bottom: none; }
     
     div[data-testid="stDataFrame"] { border: 1px solid #00FF41; font-family: 'Share Tech Mono', monospace; }
     input[type="text"] { background-color: #000 !important; color: #00FF41 !important; border: 1px solid #00FF41 !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 5. SIDEBAR ---
+# --- 5. SIDEBAR (CONFIG & FULL REPORT) ---
 with st.sidebar:
     st.markdown("### > SYSTEM_CONFIG")
     uploaded_file = st.file_uploader("UPLOAD DATA SOURCE", type=["csv", "xlsx"])
@@ -192,12 +158,12 @@ with st.sidebar:
         
     st.markdown("---")
     
-    # 🟢 REPORT DOWNLOAD BUTTON LOCATION
-    # We place a placeholder here, but we will populate it only after data is loaded
-    report_container = st.container()
+    # 🟢 REPORT 1: FULL REPORT (Analysis + Dashboard)
+    # Only appears if AI analysis has been run
+    full_report_container = st.container()
 
     st.markdown("---")
-    st.caption("TERMINAL_V5.0 | PDF MODULE")
+    st.caption("TERMINAL_V5.1 | DUAL PDF EXPORT")
 
 # --- 6. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHT_GEN</div>", unsafe_allow_html=True)
@@ -218,15 +184,12 @@ if uploaded_file:
         st.write("")
         st.subheader("> SYSTEM_METRICS")
         mc1, mc2, mc3, mc4 = st.columns(4)
-        with mc1:
-            st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">ROWS_LOADED</div></div>""", unsafe_allow_html=True)
-        with mc2:
-            st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">VARIABLES</div></div>""", unsafe_allow_html=True)
-        with mc3:
-            missing = df.isnull().sum().sum()
-            color = "#FF0000" if missing > 0 else "#00FF41"
+        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">ROWS_LOADED</div></div>""", unsafe_allow_html=True)
+        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">VARIABLES</div></div>""", unsafe_allow_html=True)
+        with mc3: 
+            missing = df.isnull().sum().sum(); color = "#FF0000" if missing > 0 else "#00FF41"
             st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">ERRORS_NULL</div></div>""", unsafe_allow_html=True)
-        with mc4:
+        with mc4: 
             dupes = df.duplicated().sum()
             st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
         st.write("")
@@ -273,7 +236,6 @@ if uploaded_file:
                     loader.empty()
                     st.error(f"RUNTIME ERROR: {e}")
 
-            # DISPLAY TAB 1 RESULTS
             if st.session_state.analysis_result:
                 st.markdown("---")
                 st.caption(f"LAST COMMAND: {st.session_state.last_query}")
@@ -298,15 +260,29 @@ if uploaded_file:
         # --- TAB 2: AUTOMATED DASHBOARD ---
         with tab2:
             st.write("")
-            st.markdown("#### > DATA_FILTERS")
+            # 🟢 REPORT 2: DASHBOARD ONLY (Visible Immediately)
+            d_col1, d_col2 = st.columns([4, 1])
+            with d_col1: st.markdown("#### > DATA_FILTERS")
+            with d_col2:
+                # GENERATE DASHBOARD PDF BUTTON
+                try:
+                    stats_summary = df.describe()
+                    dash_pdf = generate_pdf("dashboard", stats_summary)
+                    st.download_button(
+                        label="[ DOWNLOAD STATS ]",
+                        data=dash_pdf,
+                        file_name="Dashboard_Stats.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+                except Exception as e:
+                    st.error("PDF Error")
+
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(cat_cols) > 0:
                 col_f1, col_f2 = st.columns(2)
-                with col_f1:
-                    selected_cat = st.selectbox("SELECT PARAMETER", cat_cols)
-                with col_f2:
-                    unique_vals = df[selected_cat].unique()
-                    selected_val = st.multiselect(f"SELECT VALUES", unique_vals, default=unique_vals[:5])
+                with col_f1: selected_cat = st.selectbox("SELECT PARAMETER", cat_cols)
+                with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"SELECT VALUES", unique_vals, default=unique_vals[:5])
                 filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
             else:
                 filtered_df = df
@@ -347,26 +323,18 @@ if uploaded_file:
             else:
                 st.info("NO_NUMERIC_DATA_FOUND")
 
-        # 🟢 GENERATE PDF LOGIC (IN SIDEBAR)
-        with report_container:
+        # 🟢 SIDEBAR LOGIC: FULL REPORT (Requires Analysis)
+        with full_report_container:
             if st.session_state.analysis_result:
-                # Prepare data for PDF
                 plot_to_use = "plot.png" if st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png") else None
                 stats_summary = filtered_df.describe()
                 
-                # Generate PDF Bytes
                 try:
-                    pdf_bytes = generate_pdf(
-                        st.session_state.last_query,
-                        str(st.session_state.analysis_result),
-                        plot_to_use,
-                        stats_summary
-                    )
-                    
+                    full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use)
                     st.download_button(
-                        label="[ DOWNLOAD_REPORT.PDF ]",
-                        data=pdf_bytes,
-                        file_name="InsightGen_Report.pdf",
+                        label="[ DOWNLOAD_FULL_REPORT.PDF ]",
+                        data=full_pdf,
+                        file_name="InsightGen_Full_Report.pdf",
                         mime="application/pdf",
                         use_container_width=True
                     )
