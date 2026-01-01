@@ -248,19 +248,12 @@ if uploaded_file:
                     if DEMO_MODE:
                         time.sleep(4) 
                         loader.empty()
-                        
                         st.toast("PROCESS COMPLETE", icon="🟩")
                         
                         res_col1, res_col2 = st.columns([1.5, 1])
                         with res_col1:
                             st.markdown("#### > EXEC_SUMMARY")
-                            st.code(f"""
-                            Query: {query}
-                            --------------------------------
-                            [+] Trend Detected: POSITIVE
-                            [+] Correlation Coefficient: 0.85
-                            [+] Status: SIMULATED_RESPONSE
-                            """, language="bash")
+                            st.info("Demo Mode: System simulated a successful response.")
                         with res_col2:
                             st.markdown("#### > VISUAL_OUTPUT")
                             numeric_df = df.select_dtypes(include=['number'])
@@ -271,15 +264,44 @@ if uploaded_file:
                                 st.plotly_chart(fig, use_container_width=True)
 
                     else:
-                        from crewai import Crew, Task
-                        task1 = Task(description=f"Plan analysis for: {query}", agent=planner, expected_output="Plan")
-                        task2 = Task(description="Execute Python code on 'df'. Save 'plot.png'.", agent=coder, expected_output="Code")
-                        task3 = Task(description="Summarize findings.", agent=reporter, expected_output="Summary")
-
-                        crew = Crew(agents=[planner, coder, reporter], tasks=[task1, task2, task3], verbose=True)
-                        result = crew.kickoff()
-                        loader.empty()
+                        # 🟢 CRITICAL UPDATE: FIXED 3-AGENT LOGIC
+                        from crewai import Crew, Task, Process
+                        from agents import planner, coder, reporter # Import all 3
                         
+                        # TASK 1: PLAN
+                        task_plan = Task(
+                            description=f"Create a step-by-step Python analysis plan for: '{query}'. Focus on which columns to use.",
+                            expected_output="A numbered list of Python steps.",
+                            agent=planner
+                        )
+
+                        # TASK 2: CODE (Takes Task 1 Output)
+                        task_code = Task(
+                            description="Execute the plan using the `execute_code_tool`. Use 'df'. Save 'plot.png' if needed. Return the numeric results.",
+                            expected_output="Raw execution logs and calculated numbers.",
+                            agent=coder,
+                            context=[task_plan] # Coder listens to Planner
+                        )
+
+                        # TASK 3: REPORT (Takes Task 2 Output)
+                        task_report = Task(
+                            description="Summarize the raw numbers provided by the Coder into a business insight.",
+                            expected_output="A concise executive summary.",
+                            agent=reporter,
+                            context=[task_code] # Reporter listens to Coder
+                        )
+
+                        # SEQUENTIAL PROCESS (Forces 1->2->3 Order)
+                        crew = Crew(
+                            agents=[planner, coder, reporter],
+                            tasks=[task_plan, task_code, task_report],
+                            process=Process.sequential, 
+                            verbose=True
+                        )
+                        
+                        result = crew.kickoff()
+                        
+                        loader.empty()
                         st.toast("TASK COMPLETE", icon="🟩")
                         
                         r1, r2 = st.columns([1.5, 1])
@@ -292,6 +314,7 @@ if uploaded_file:
                                 st.image("plot.png")
                             else:
                                 st.caption("NO_IMAGE_GENERATED")
+
                 except Exception as e:
                     loader.empty()
                     st.error(f"RUNTIME ERROR: {e}")
@@ -356,13 +379,14 @@ if uploaded_file:
                 st.markdown("#### > VARIABLE_DISTRIBUTION & RELATIONSHIPS")
                 
                 # --- DROPDOWNS FOR USER CONTROL ---
-                # Default logic: Index 0 is Automated. User can change it.
                 c_sel1, c_sel2 = st.columns(2)
                 
                 with c_sel1:
+                    # Default index=0 (First column) -> Automated start
                     x_axis_val = st.selectbox("SELECT X-AXIS (DISTRIBUTION)", numeric_df.columns, index=0)
                 
                 with c_sel2:
+                    # Default index=1 (Second column) if available, else 0 -> Automated start
                     default_ix = 1 if len(numeric_df.columns) > 1 else 0
                     y_axis_val = st.selectbox("SELECT Y-AXIS (SCATTER)", numeric_df.columns, index=default_ix)
 
