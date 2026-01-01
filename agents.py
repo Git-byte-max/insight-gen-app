@@ -3,7 +3,7 @@ import streamlit as st
 import signal
 import threading
 
-# --- 1. SIGNAL PATCH ---
+# --- 1. SIGNAL PATCH (Prevents Streamlit Cloud Crashes) ---
 if threading.current_thread() is not threading.main_thread():
     _original_signal = signal.signal
     def _safe_signal_handler(sig, handler):
@@ -42,71 +42,36 @@ else:
         else:
             my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
 
-        # AGENT 1: PLANNER (The Agnostic Architect)
+        # AGENT 1: PLANNER (Fast & Direct)
         planner = Agent(
-            role='Data Architect',
-            goal='Plan analysis for ANY dataset. IF COMPARISON/TREND, PLAN PLOT.',
+            role='Architect',
+            goal='Plan analysis. IF "VS" OR "COMPARE", PLAN PLOT.',
             backstory="""
-            You are a Data Architect. You do not know what is in the file.
+            You are a Data Architect. Plan the Python steps.
             
-            Your Plan MUST follow this strict structure:
-            1. INSPECT: Print the column names and the first 3 rows of data to understand the content.
-            2. VERIFY: Print unique values for any text/categorical column involved in the query.
-            3. ANALYZE: Calculate the requested metrics (mean, sum, count, etc.).
-            4. VISUALIZE: If the user asks for "vs", "trend", "plot", or "compare", generate a chart.
-            5. SAVE: Always save charts as 'plot.png'.
+            1. INSPECT: `print(df.head())` & `print(df.columns)`.
+            2. VERIFY: Print unique values of categorical columns.
+            3. PLOT: If comparison requested, Generate Plot using matplotlib.
+            4. SAVE: CRITICAL - Save plot to `os.path.join(os.getcwd(), 'plot.png')`.
             """,
             llm=my_llm,
             allow_delegation=False,
             verbose=True
         )
 
-        # AGENT 2: CODER (The Defensive Engineer)
+        # AGENT 2: CODER (The Path Finder)
         coder = Agent(
-            role='Python Developer',
-            goal='Execute code. FIX PLOTTING ISSUES. VERIFY DATA.',
+            role='Python Dev',
+            goal='Execute code. FORCE FILE SAVING.',
             backstory="""
-            You are a Python Expert. You treat the dataset as a "black box".
+            You are a Python Expert. Treat the data as a black box.
             
-            MANDATORY RULES:
-            1. COLUMN SEARCH: Do not assume column names. Use `[c for c in df.columns if keyword in c.lower()]` to find them.
-            2. DATA TRUTH: Always run `print(df['target_col'].unique())` or `print(df.head())`. 
-               - The Reporter relies on these prints to know if a column contains "Apples", "Diseases", or "Dollars".
+            MANDATORY PLOTTING RULES:
+            1. SETUP: 
+               `import matplotlib.pyplot as plt`
+               `import os`
+               `plt.switch_backend('Agg')` (Prevents crashes)
             
-            3. PLOTTING PROTOCOL (Crucial):
-               - START with: `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
-               - END with: `plt.savefig('plot.png')`
-               - This ensures charts work on any server.
-            
-            Output: The execution logs containing the RAW DATA values.
-            """,
-            llm=my_llm,
-            allow_delegation=False,
-            tools=[execute_code_tool], 
-            verbose=True
-        )
-
-        # AGENT 3: REPORTER (The Objective Analyst)
-        reporter = Agent(
-            role='Insight Analyst',
-            goal='Report ONLY what is printed in the logs.',
-            backstory="""
-            You are a Fact-Checker. 
-            
-            STRICT REPORTING GUIDELINES:
-            1. IGNORE your internal training knowledge.
-            2. Look at the logs provided by the Coder. 
-            3. If the log shows the data is about "Temperatures", talk about weather.
-            4. If the log shows the data is about "Stock Prices", talk about finance.
-            5. If the log shows "Male/Female", talk about gender.
-            
-            Your summary must be derived 100% from the printed numbers and lists in the code output.
-            """,
-            llm=my_llm,
-            allow_delegation=False,
-            verbose=True
-        )
-
-    except Exception as e:
-        print(f"Agent Init Error: {e}")
-        DEMO_MODE = True
+            2. SAVING (THE MOST IMPORTANT STEP):
+               You MUST save the file using the absolute path:
+               `save_path = os.path.join(os.getcwd(), 'plot.png')
