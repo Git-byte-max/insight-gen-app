@@ -13,4 +13,3 @@ streamlit-lottie
 requests
 fpdf
 kaleido==0.2.1
-
