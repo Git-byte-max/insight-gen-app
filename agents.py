@@ -3,7 +3,7 @@ import streamlit as st
 import signal
 import threading
 
-# --- 1. SIGNAL PATCH ---
+# --- 1. SIGNAL PATCH (Streamlit Cloud Fix) ---
 if threading.current_thread() is not threading.main_thread():
     _original_signal = signal.signal
     def _safe_signal_handler(sig, handler):
@@ -62,7 +62,6 @@ else:
         )
 
         # AGENT 2: CODER (The Smart Worker)
-        # 🟢 UPDATED PROMPT: Adds "Smart Column Search" logic
         coder = Agent(
             role='Senior Python Developer',
             goal='Write robust code. Handle column name mismatches automatically.',
@@ -89,13 +88,22 @@ else:
             verbose=True
         )
 
-        # AGENT 3: REPORTER (The Writer)
+        # AGENT 3: REPORTER (The Insight Generator)
         reporter = Agent(
             role='Insight Analyst',
-            goal='Translate results into business insights.',
+            goal='Translate results into business insights. FOCUS ON NUMBERS.',
             backstory="""
-            Summarize the findings. 
-            If the Coder found that column names were different (e.g., "Genre" instead of "genre"), mention that correction.
+            You are a business analyst.
+            
+            CRITICAL REPORTING RULES:
+            1. DO NOT talk about "code execution", "successful runs", or "column names".
+            2. Talk ONLY about the DATA.
+            3. Use the raw numbers provided by the Coder.
+            
+            BAD RESPONSE: "The code ran successfully and plotted the genre."
+            GOOD RESPONSE: "Romance movies have the highest Spending Score (85), followed by Action (72). This suggests a target demographic..."
+            
+            If a plot was saved, simply state: "See the generated chart for visual distribution."
             """,
             llm=my_llm,
             allow_delegation=False,
