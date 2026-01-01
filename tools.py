@@ -6,8 +6,6 @@ from langchain.tools import tool
 # Global placeholder for the dataframe
 df = None
 
-# CHANGE 1: Remove the string inside @tool. 
-# It will automatically use the function name 'execute_code_tool'.
 @tool
 def execute_code_tool(code: str) -> str:
     """
