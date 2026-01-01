@@ -42,36 +42,43 @@ else:
         else:
             my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
 
-        # AGENT 1: PLANNER (Token-Optimized)
+        # AGENT 1: PLANNER (The Agnostic Architect)
         planner = Agent(
             role='Data Architect',
-            goal='Plan analysis. IF "vs/trend/compare", PLAN PLOT.',
+            goal='Plan analysis for ANY dataset. IF COMPARISON/TREND, PLAN PLOT.',
             backstory="""
-            Task: Convert query to Python steps.
-            Rules:
-            1. Step 1 MUST be: "Inspect column names and print unique values of categorical columns."
-            2. If comparison requested, plan a plot (seaborn/matplotlib).
-            3. Save plot as 'plot.png'.
-            4. Keep steps concise.
+            You are a Data Architect. You do not know what is in the file.
+            
+            Your Plan MUST follow this strict structure:
+            1. INSPECT: Print the column names and the first 3 rows of data to understand the content.
+            2. VERIFY: Print unique values for any text/categorical column involved in the query.
+            3. ANALYZE: Calculate the requested metrics (mean, sum, count, etc.).
+            4. VISUALIZE: If the user asks for "vs", "trend", "plot", or "compare", generate a chart.
+            5. SAVE: Always save charts as 'plot.png'.
             """,
             llm=my_llm,
             allow_delegation=False,
             verbose=True
         )
 
-        # AGENT 2: CODER (Strict & Defensive)
+        # AGENT 2: CODER (The Defensive Engineer)
         coder = Agent(
-            role='Python dev',
-            goal='Execute code. PRINT DATA VALUES TO LOGS.',
+            role='Python Developer',
+            goal='Execute code. FIX PLOTTING ISSUES. VERIFY DATA.',
             backstory="""
-            Task: Execute Python on dataframe 'df'.
+            You are a Python Expert. You treat the dataset as a "black box".
             
-            MANDATORY ANTI-HALLUCINATION PROTOCOL:
-            1. FIND COLUMNS: Use `df.columns` to find the real names (case-insensitive).
-            2. VERIFY DATA: Before analyzing, run `print(df[col].unique())` for categories.
-            3. PLOT: If requested, save to 'plot.png'.
+            MANDATORY RULES:
+            1. COLUMN SEARCH: Do not assume column names. Use `[c for c in df.columns if keyword in c.lower()]` to find them.
+            2. DATA TRUTH: Always run `print(df['target_col'].unique())` or `print(df.head())`. 
+               - The Reporter relies on these prints to know if a column contains "Apples", "Diseases", or "Dollars".
             
-            Your output MUST contain the PRINTED VALUES from the dataframe.
+            3. PLOTTING PROTOCOL (Crucial):
+               - START with: `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
+               - END with: `plt.savefig('plot.png')`
+               - This ensures charts work on any server.
+            
+            Output: The execution logs containing the RAW DATA values.
             """,
             llm=my_llm,
             allow_delegation=False,
@@ -79,18 +86,21 @@ else:
             verbose=True
         )
 
-        # AGENT 3: REPORTER (Fact-Checker)
+        # AGENT 3: REPORTER (The Objective Analyst)
         reporter = Agent(
-            role='Analyst',
-            goal='Report ONLY numbers/values found in execution logs.',
+            role='Insight Analyst',
+            goal='Report ONLY what is printed in the logs.',
             backstory="""
-            Task: Summarize the Coder's logs.
+            You are a Fact-Checker. 
             
-            STRICT RULES:
-            1. Read the unique values printed in the logs. USE THEM EXACTLY.
-            2. If logs say "Genre" contains ["Male", "Female"], report that. DO NOT assume movies.
-            3. If logs say "Class" contains ["1", "2", "3"], do NOT assume "First Class/Economy".
-            4. Only report trends supported by the printed numbers.
+            STRICT REPORTING GUIDELINES:
+            1. IGNORE your internal training knowledge.
+            2. Look at the logs provided by the Coder. 
+            3. If the log shows the data is about "Temperatures", talk about weather.
+            4. If the log shows the data is about "Stock Prices", talk about finance.
+            5. If the log shows "Male/Female", talk about gender.
+            
+            Your summary must be derived 100% from the printed numbers and lists in the code output.
             """,
             llm=my_llm,
             allow_delegation=False,
