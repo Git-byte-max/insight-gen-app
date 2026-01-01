@@ -3,7 +3,7 @@ import streamlit as st
 import signal
 import threading
 
-# --- 1. SIGNAL PATCH ---
+# --- 1. SIGNAL PATCH (Streamlit Cloud Fix) ---
 if threading.current_thread() is not threading.main_thread():
     _original_signal = signal.signal
     def _safe_signal_handler(sig, handler):
@@ -30,7 +30,7 @@ except ImportError:
 api_key = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 google_key = os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
 
-# --- 4. AGENT DEFINITIONS (Strict 3-Agent Flow) ---
+# --- 4. AGENT DEFINITIONS ---
 if not LIBS_INSTALLED or (not api_key and not google_key):
     DEMO_MODE = True
     planner = coder = reporter = None
@@ -43,15 +43,18 @@ else:
             my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
 
         # AGENT 1: PLANNER (The Architect)
-        # STRICT RULE: Do not analyze data. Only write steps.
+        # 🟢 UPDATED PROMPT: Forces visualization for "vs" queries
         planner = Agent(
             role='Lead Data Strategist',
-            goal='Create a Python execution plan. DO NOT ANALYZE DATA YOURSELF.',
+            goal='Create a Python execution plan. IF USER ASKS FOR COMPARISON, PLAN A PLOT.',
             backstory="""
-            You are a technical lead. You receive a user query and translate it into a list of Python steps.
-            You DO NOT have access to the data. You DO NOT write code.
-            Your only job is to tell the Python Developer what to calculate.
-            Output must be a numbered list of steps.
+            You are a technical lead.
+            CRITICAL RULE: If the user's query contains "vs", "relationship", "trend", "compare", or "plot",
+            you MUST include a specific step in your plan to:
+            "Generate a chart using seaborn/matplotlib and save it as 'plot.png'."
+            
+            Do not just describe the data. Plan the Visualization.
+            Output must be a numbered list of Python steps.
             """,
             llm=my_llm,
             allow_delegation=False,
@@ -59,31 +62,39 @@ else:
         )
 
         # AGENT 2: CODER (The Worker)
-        # STRICT RULE: Execute the plan. Save plots.
+        # 🟢 UPDATED PROMPT: Forces 'plot.png' generation
         coder = Agent(
             role='Senior Python Developer',
-            goal='Execute Python code to inspect data and generate plots.',
+            goal='Execute Python code. GENERATE AND SAVE PLOTS IF REQUESTED.',
             backstory="""
-            You are a Python expert. You take the plan from the Strategist and execute it using the 'execute_code_tool'.
-            You MUST use the tool to see the dataframe 'df'.
-            If a plot is requested, save it as 'plot.png'.
-            Your output must be the RAW NUMBERS and execution logs.
+            You are a Python expert. You execute the plan.
+            
+            VISUALIZATION RULES:
+            1. If the plan asks for a plot, use 'matplotlib.pyplot' or 'seaborn'.
+            2. ALWAYS save the figure using `plt.savefig('plot.png')`.
+            3. Do not use `plt.show()`.
+            
+            DATA RULES:
+            1. Use the 'execute_code_tool'.
+            2. The dataframe is available as variable `df`.
+            3. Check column names first using `df.columns`.
+            
+            Return the execution logs and any raw numbers calculated.
             """,
             llm=my_llm,
             allow_delegation=False,
-            tools=[execute_code_tool], # Only the Coder gets the tool
+            tools=[execute_code_tool], 
             verbose=True
         )
 
         # AGENT 3: REPORTER (The Writer)
-        # STRICT RULE: Summarize the Coder's raw numbers.
         reporter = Agent(
             role='Insight Analyst',
-            goal='Translate raw numbers into a business summary.',
+            goal='Translate results into business insights.',
             backstory="""
-            You receive raw execution logs and numbers from the Python Developer.
-            Your job is to write a clean, human-readable summary.
-            Do not hallucinate. Only report what the Coder calculated.
+            Summarize the findings from the Coder.
+            If a plot was generated, mention what it shows.
+            Keep it professional and concise.
             """,
             llm=my_llm,
             allow_delegation=False,
