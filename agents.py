@@ -3,7 +3,7 @@ import streamlit as st
 import signal
 import threading
 
-# --- 1. SIGNAL PATCH (Streamlit Cloud Fix) ---
+# --- 1. SIGNAL PATCH ---
 if threading.current_thread() is not threading.main_thread():
     _original_signal = signal.signal
     def _safe_signal_handler(sig, handler):
@@ -43,43 +43,45 @@ else:
             my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
 
         # AGENT 1: PLANNER (The Architect)
-        # 🟢 UPDATED PROMPT: Forces visualization for "vs" queries
         planner = Agent(
             role='Lead Data Strategist',
-            goal='Create a Python execution plan. IF USER ASKS FOR COMPARISON, PLAN A PLOT.',
+            goal='Create a detailed Python execution plan. IF COMPARISON, PLAN A PLOT.',
             backstory="""
             You are a technical lead.
-            CRITICAL RULE: If the user's query contains "vs", "relationship", "trend", "compare", or "plot",
-            you MUST include a specific step in your plan to:
-            "Generate a chart using seaborn/matplotlib and save it as 'plot.png'."
+            CRITICAL RULE: If the user query implies a visual comparison (e.g., "vs", "trend", "compare"),
+            you MUST plan to Generate a Plot.
             
-            Do not just describe the data. Plan the Visualization.
-            Output must be a numbered list of Python steps.
+            Your plan must include:
+            1. Identify the correct column names using case-insensitive search.
+            2. Generate the plot using the identified columns.
+            3. Save the plot as 'plot.png'.
             """,
             llm=my_llm,
             allow_delegation=False,
             verbose=True
         )
 
-        # AGENT 2: CODER (The Worker)
-        # 🟢 UPDATED PROMPT: Forces 'plot.png' generation
+        # AGENT 2: CODER (The Smart Worker)
+        # 🟢 UPDATED PROMPT: Adds "Smart Column Search" logic
         coder = Agent(
             role='Senior Python Developer',
-            goal='Execute Python code. GENERATE AND SAVE PLOTS IF REQUESTED.',
+            goal='Write robust code. Handle column name mismatches automatically.',
             backstory="""
-            You are a Python expert. You execute the plan.
+            You are a Python expert.
+            When you write code to access 'df', you must be DEFENSIVE.
+            
+            SMART COLUMN LOGIC:
+            The user might say "genre" but the column is "Genre" or "Genre ".
+            Write code that finds the column similar to the user's request.
+            Example:
+            `col_name = next((c for c in df.columns if 'genre' in c.lower()), None)`
             
             VISUALIZATION RULES:
-            1. If the plan asks for a plot, use 'matplotlib.pyplot' or 'seaborn'.
-            2. ALWAYS save the figure using `plt.savefig('plot.png')`.
-            3. Do not use `plt.show()`.
+            1. If a plot is requested, use seaborn/matplotlib.
+            2. Use the ACTUAL column names found by your logic.
+            3. Save as `plt.savefig('plot.png')`.
             
-            DATA RULES:
-            1. Use the 'execute_code_tool'.
-            2. The dataframe is available as variable `df`.
-            3. Check column names first using `df.columns`.
-            
-            Return the execution logs and any raw numbers calculated.
+            Return the execution logs and any raw numbers.
             """,
             llm=my_llm,
             allow_delegation=False,
@@ -92,9 +94,8 @@ else:
             role='Insight Analyst',
             goal='Translate results into business insights.',
             backstory="""
-            Summarize the findings from the Coder.
-            If a plot was generated, mention what it shows.
-            Keep it professional and concise.
+            Summarize the findings. 
+            If the Coder found that column names were different (e.g., "Genre" instead of "genre"), mention that correction.
             """,
             llm=my_llm,
             allow_delegation=False,
