@@ -1,7 +1,11 @@
+# --- 1. SQLITE FIX FOR STREAMLIT CLOUD (MUST BE AT THE VERY TOP) ---
 import sys
-# 1. PATCH SQLITE (Fix for Streamlit Cloud / CrewAI Crash)
-__import__('pysqlite3')
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+try:
+    __import__('pysqlite3')
+    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+except ImportError:
+    pass
+
 import os
 import streamlit as st
 import pandas as pd
@@ -11,7 +15,7 @@ import time
 from fpdf import FPDF
 import tempfile
 
-# --- 1. SETUP & CONFIGURATION ---
+# --- 2. SETUP & CONFIGURATION ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
@@ -28,7 +32,7 @@ except ImportError:
     DEMO_MODE = True
     tools = None
 
-# --- 2. INITIALIZE MEMORY BANK ---
+# --- 3. INITIALIZE MEMORY BANK ---
 if "analysis_result" not in st.session_state:
     st.session_state.analysis_result = None
 if "analysis_plot" not in st.session_state:
@@ -36,7 +40,7 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 3. PDF GENERATOR ENGINE ---
+# --- 4. PDF GENERATOR ENGINE ---
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
@@ -63,7 +67,6 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
         pdf.cell(0, 10, f"Query: {query}", 0, 1)
         
         pdf.set_font("Arial", size=10)
-        # Clean text for PDF
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(5)
@@ -79,7 +82,6 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
     pdf.cell(0, 10, title, 0, 1)
     pdf.ln(5)
 
-    # 1. Statistics
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, "Statistical Summary:", 0, 1)
     pdf.set_font("Courier", size=8)
@@ -87,12 +89,10 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
     pdf.multi_cell(0, 5, stats_str)
     pdf.ln(10)
 
-    # 2. Dashboard Images
     if dashboard_imgs:
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, "Visual Analytics:", 0, 1)
         pdf.ln(5)
-        
         for img_path in dashboard_imgs:
             if os.path.exists(img_path):
                 pdf.image(img_path, x=10, w=180)
@@ -100,7 +100,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 4. MATRIX THEME CSS ---
+# --- 5. MATRIX THEME CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
@@ -162,7 +162,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 5. SIDEBAR (CONFIG & FULL REPORT) ---
+# --- 6. SIDEBAR ---
 with st.sidebar:
     st.markdown("### > SYSTEM_CONFIG")
     uploaded_file = st.file_uploader("UPLOAD DATA SOURCE", type=["csv", "xlsx"])
@@ -170,6 +170,7 @@ with st.sidebar:
     st.markdown("---")
     if DEMO_MODE:
         st.code("STATUS: OFFLINE (SIMULATION)")
+        st.caption("Error: Check API Key or Libraries")
     else:
         st.code("STATUS: ONLINE (CONNECTED)")
         
@@ -179,9 +180,9 @@ with st.sidebar:
     full_report_container = st.container()
 
     st.markdown("---")
-    st.caption("TERMINAL_V7.0 | FINAL GOLD MASTER")
+    st.caption("TERMINAL_V8.0 | CLOUD PATCHED")
 
-# --- 6. MAIN CONTENT ---
+# --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHT_GEN</div>", unsafe_allow_html=True)
 st.markdown("#### *// EXECUTING AUTONOMOUS DATA PROTOCOLS...*")
 
@@ -238,7 +239,7 @@ if uploaded_file:
                         st.session_state.analysis_result = f"Query: {query}\nStatus: SIMULATED RESPONSE\n1. Trend Detected: Positive.\n2. Correlation: Strong (0.85)."
                         st.session_state.analysis_plot = "simulated"
                     else:
-                        # 🟢 CLEANUP: Remove old plot before starting
+                        # 🟢 CLEANUP OLD PLOT
                         if os.path.exists("plot.png"):
                             os.remove("plot.png")
                             
@@ -291,7 +292,6 @@ if uploaded_file:
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             
             if not numeric_df.empty:
-                # 1. Correlation Matrix
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greens', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
@@ -300,7 +300,6 @@ if uploaded_file:
                     dashboard_images.append("dash_corr.png")
                 except: pass
 
-                # 2. Histogram
                 x_axis_val = numeric_df.columns[0]
                 fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
                 fig1.update_traces(marker_color='#00FF41', marker_line_color='#003B00')
@@ -310,7 +309,6 @@ if uploaded_file:
                     dashboard_images.append("dash_hist.png")
                 except: pass
 
-                # 3. Scatter
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
                 fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
                 fig2.update_traces(marker_color='#008F11')
@@ -320,7 +318,6 @@ if uploaded_file:
                     dashboard_images.append("dash_scatter.png")
                 except: pass
 
-            # 🟢 DASHBOARD PDF BUTTON
             d_col1, d_col2 = st.columns([4, 1])
             with d_col1: 
                 st.markdown(f"**Live Records:** {len(filtered_df)}") 
@@ -345,7 +342,6 @@ if uploaded_file:
                 column_config[col] = st.column_config.ProgressColumn(col, format="%.2f", min_value=float(filtered_df[col].min()), max_value=float(filtered_df[col].max()))
             st.dataframe(filtered_df.head(100), use_container_width=True, height=300, column_config=column_config)
             
-            # DISPLAY CHARTS ON SCREEN
             st.markdown("---")
             if not numeric_df.empty:
                 st.markdown("#### > VISUAL_ANALYTICS_HUB")
@@ -381,4 +377,3 @@ if uploaded_file:
 else:
     with st.container():
         st.warning("SYSTEM STANDBY: AWAITING DATA UPLOAD...")
-
