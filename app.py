@@ -4,6 +4,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit.components.v1 as components 
 import time
+from fpdf import FPDF
+import tempfile
 
 # --- 1. SETUP & CONFIGURATION ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
@@ -22,16 +24,73 @@ except ImportError:
     DEMO_MODE = True
     tools = None
 
-# --- 2. MATRIX / TERMINAL THEME CSS ---
+# --- 2. INITIALIZE MEMORY BANK (SESSION STATE) ---
+if "analysis_result" not in st.session_state:
+    st.session_state.analysis_result = None
+if "analysis_plot" not in st.session_state:
+    st.session_state.analysis_plot = None
+if "last_query" not in st.session_state:
+    st.session_state.last_query = ""
+
+# --- 3. PDF GENERATOR FUNCTION ---
+class PDFReport(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 15)
+        self.cell(0, 10, 'InsightGen: Autonomous Data Report', 0, 1, 'C')
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+def generate_pdf(query, ai_text, plot_path, df_stats):
+    pdf = PDFReport()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", size=12)
+
+    # SECTION 1: AI ANALYSIS
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "1. Executive AI Analysis", 0, 1)
+    pdf.ln(2)
+    
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(0, 10, f"Query: {query}", 0, 1)
+    
+    pdf.set_font("Arial", size=10)
+    # Clean text for PDF (remove heavy markdown or emojis that break FPDF)
+    clean_text = ai_text.replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
+    pdf.multi_cell(0, 6, clean_text)
+    pdf.ln(5)
+
+    # ADD PLOT IF EXISTS
+    if plot_path and os.path.exists(plot_path):
+        pdf.image(plot_path, x=10, w=170)
+        pdf.ln(5)
+    
+    pdf.add_page()
+
+    # SECTION 2: DATA STATISTICS (Tab 2 Summary)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "2. Data Statistics (Dashboard)", 0, 1)
+    pdf.ln(2)
+
+    pdf.set_font("Courier", size=9)
+    # Convert dataframe describe() to string for the PDF
+    stats_str = df_stats.to_string()
+    pdf.multi_cell(0, 5, stats_str)
+    
+    return pdf.output(dest='S').encode('latin-1')
+
+# --- 4. MATRIX / TERMINAL THEME CSS ---
 st.markdown("""
     <style>
-    /* 1. NEW FONTS: 'VT323' (Header) & 'Share Tech Mono' (Body) */
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
     
-    /* 2. GLOBAL STYLES (Terminal Look) */
     html, body, [class*="css"] {
         font-family: 'Share Tech Mono', monospace;
-        color: #00FF41; /* Classic Terminal Green */
+        color: #00FF41; 
         background-color: #0D0208;
         font-size: 16px;
     }
@@ -40,16 +99,13 @@ st.markdown("""
         background-color: #000000;
         background-image: linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
-        background-size: 20px 20px; /* Grid Pattern */
+        background-size: 20px 20px; 
     }
 
-    /* 3. CUSTOM SCROLLBAR (Green) */
     ::-webkit-scrollbar { width: 10px; }
     ::-webkit-scrollbar-track { background: #000; }
     ::-webkit-scrollbar-thumb { background: #003B00; border: 1px solid #00FF41; }
-    ::-webkit-scrollbar-thumb:hover { background: #00FF41; }
 
-    /* 4. TITLE STYLE (Pixelated Glitch) */
     .main-title {
         font-family: 'VT323', monospace;
         color: #00FF41;
@@ -64,10 +120,8 @@ st.markdown("""
         font-family: 'VT323', monospace !important; 
         color: #00FF41 !important; 
         text-transform: uppercase;
-        letter-spacing: 1px;
     }
 
-    /* 5. METRIC CARDS (Wireframe Style) */
     .metric-card {
         background-color: #000;
         border: 1px solid #00FF41;
@@ -75,14 +129,6 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
         position: relative;
-    }
-    .metric-card::before {
-        content: ">>";
-        position: absolute;
-        top: 5px;
-        left: 5px;
-        font-size: 10px;
-        color: #003B00;
     }
     .metric-value {
         font-family: 'VT323', monospace;
@@ -97,17 +143,14 @@ st.markdown("""
         letter-spacing: 2px;
     }
 
-    /* 6. BUTTONS (Hollow Terminal Style) */
     .stButton>button {
         background-color: #000000;
         color: #00FF41;
         font-family: 'Share Tech Mono', monospace;
         font-size: 18px;
         border: 2px solid #00FF41;
-        border-radius: 0px; /* Sharp Edges */
-        padding: 0.5rem 1.5rem;
+        border-radius: 0px; 
         text-transform: uppercase;
-        transition: all 0.2s;
     }
     .stButton>button:hover {
         background-color: #00FF41;
@@ -115,7 +158,6 @@ st.markdown("""
         box-shadow: 0 0 15px #00FF41;
     }
 
-    /* 7. UI ELEMENTS */
     .stTabs [data-baseweb="tab-list"] { gap: 0px; border-bottom: 2px solid #003B00; }
     .stTabs [data-baseweb="tab"] {
         height: 45px;
@@ -132,22 +174,12 @@ st.markdown("""
         border-bottom: none;
     }
     
-    div[data-testid="stDataFrame"] {
-        border: 1px solid #00FF41;
-        font-family: 'Share Tech Mono', monospace;
-    }
-    
-    /* Input Fields */
-    input[type="text"] {
-        background-color: #000 !important;
-        color: #00FF41 !important;
-        border: 1px solid #00FF41 !important;
-        font-family: 'Share Tech Mono', monospace !important;
-    }
+    div[data-testid="stDataFrame"] { border: 1px solid #00FF41; font-family: 'Share Tech Mono', monospace; }
+    input[type="text"] { background-color: #000 !important; color: #00FF41 !important; border: 1px solid #00FF41 !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. SIDEBAR ---
+# --- 5. SIDEBAR ---
 with st.sidebar:
     st.markdown("### > SYSTEM_CONFIG")
     uploaded_file = st.file_uploader("UPLOAD DATA SOURCE", type=["csv", "xlsx"])
@@ -159,9 +191,15 @@ with st.sidebar:
         st.code("STATUS: ONLINE (CONNECTED)")
         
     st.markdown("---")
-    st.caption("TERMINAL_V4.0 | MATRIX BUILD")
+    
+    # 🟢 REPORT DOWNLOAD BUTTON LOCATION
+    # We place a placeholder here, but we will populate it only after data is loaded
+    report_container = st.container()
 
-# --- 4. MAIN CONTENT ---
+    st.markdown("---")
+    st.caption("TERMINAL_V5.0 | PDF MODULE")
+
+# --- 6. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHT_GEN</div>", unsafe_allow_html=True)
 st.markdown("#### *// EXECUTING AUTONOMOUS DATA PROTOCOLS...*")
 
@@ -176,47 +214,21 @@ if uploaded_file:
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
-        # B. METRICS GRID (Matrix Style)
+        # B. METRICS GRID
         st.write("")
         st.subheader("> SYSTEM_METRICS")
-        
         mc1, mc2, mc3, mc4 = st.columns(4)
-        
         with mc1:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{df.shape[0]}</div>
-                <div class="metric-label">ROWS_LOADED</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
+            st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">ROWS_LOADED</div></div>""", unsafe_allow_html=True)
         with mc2:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{df.shape[1]}</div>
-                <div class="metric-label">VARIABLES</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
+            st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">VARIABLES</div></div>""", unsafe_allow_html=True)
         with mc3:
             missing = df.isnull().sum().sum()
-            color = "#FF0000" if missing > 0 else "#00FF41" # Red warning if missing
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value" style="color: {color}">{missing}</div>
-                <div class="metric-label">ERRORS_NULL</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
+            color = "#FF0000" if missing > 0 else "#00FF41"
+            st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">ERRORS_NULL</div></div>""", unsafe_allow_html=True)
         with mc4:
             dupes = df.duplicated().sum()
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{dupes}</div>
-                <div class="metric-label">DUPLICATES</div>
-            </div>
-            """, unsafe_allow_html=True)
-
+            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
         st.write("")
 
         # C. TABS INTERFACE
@@ -232,98 +244,60 @@ if uploaded_file:
                 run_btn = st.button("RUN_SCRIPT.EXE", use_container_width=True)
 
             if run_btn and query:
-                # 1. ANIMATION (Using IFrame)
+                st.session_state.last_query = query
                 loader = st.empty()
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        components.iframe(
-                            "https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie",
-                            height=200, scrolling=False
-                        )
-                        st.markdown("<center style='color: #00FF41; font-family: Share Tech Mono;'>[ PROCESSING_DATA_STREAMS... ]</center>", unsafe_allow_html=True)
+                        components.iframe("https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie", height=200, scrolling=False)
+                        st.markdown("<center style='color: #00FF41;'>[ PROCESSING... ]</center>", unsafe_allow_html=True)
 
-                # 2. EXECUTION
                 try:
                     if DEMO_MODE:
                         time.sleep(4) 
                         loader.empty()
-                        st.toast("PROCESS COMPLETE", icon="🟩")
-                        
-                        res_col1, res_col2 = st.columns([1.5, 1])
-                        with res_col1:
-                            st.markdown("#### > EXEC_SUMMARY")
-                            st.info("Demo Mode: System simulated a successful response.")
-                        with res_col2:
-                            st.markdown("#### > VISUAL_OUTPUT")
-                            numeric_df = df.select_dtypes(include=['number'])
-                            if not numeric_df.empty:
-                                fig = px.histogram(df, x=numeric_df.columns[0], template="plotly_dark")
-                                fig.update_traces(marker_color='#00FF41', marker_line_color='#003B00', marker_line_width=1.5) 
-                                fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
-                                st.plotly_chart(fig, use_container_width=True)
-
+                        st.session_state.analysis_result = f"Query: {query}\nStatus: SIMULATED RESPONSE\n1. Trend Detected: Positive.\n2. Correlation: Strong (0.85)."
+                        st.session_state.analysis_plot = "simulated"
                     else:
-                        # 🟢 CRITICAL UPDATE: FIXED 3-AGENT LOGIC
                         from crewai import Crew, Task, Process
-                        from agents import planner, coder, reporter # Import all 3
-                        
-                        # TASK 1: PLAN
-                        task_plan = Task(
-                            description=f"Create a step-by-step Python analysis plan for: '{query}'. Focus on which columns to use.",
-                            expected_output="A numbered list of Python steps.",
-                            agent=planner
-                        )
-
-                        # TASK 2: CODE (Takes Task 1 Output)
-                        task_code = Task(
-                            description="Execute the plan using the `execute_code_tool`. Use 'df'. Save 'plot.png' if needed. Return the numeric results.",
-                            expected_output="Raw execution logs and calculated numbers.",
-                            agent=coder,
-                            context=[task_plan] # Coder listens to Planner
-                        )
-
-                        # TASK 3: REPORT (Takes Task 2 Output)
-                        task_report = Task(
-                            description="Summarize the raw numbers provided by the Coder into a business insight.",
-                            expected_output="A concise executive summary.",
-                            agent=reporter,
-                            context=[task_code] # Reporter listens to Coder
-                        )
-
-                        # SEQUENTIAL PROCESS (Forces 1->2->3 Order)
-                        crew = Crew(
-                            agents=[planner, coder, reporter],
-                            tasks=[task_plan, task_code, task_report],
-                            process=Process.sequential, 
-                            verbose=True
-                        )
-                        
+                        from agents import planner, coder, reporter 
+                        task_plan = Task(description=f"Create Python plan for: '{query}'", expected_output="Step list", agent=planner)
+                        task_code = Task(description="Execute plan. Save 'plot.png'.", expected_output="Numbers", agent=coder, context=[task_plan])
+                        task_report = Task(description="Summarize findings.", expected_output="Summary", agent=reporter, context=[task_code])
+                        crew = Crew(agents=[planner, coder, reporter], tasks=[task_plan, task_code, task_report], process=Process.sequential, verbose=True)
                         result = crew.kickoff()
-                        
                         loader.empty()
-                        st.toast("TASK COMPLETE", icon="🟩")
-                        
-                        r1, r2 = st.columns([1.5, 1])
-                        with r1:
-                            st.markdown("#### > EXEC_SUMMARY")
-                            st.markdown(result)
-                        with r2:
-                            st.markdown("#### > VISUAL_OUTPUT")
-                            if os.path.exists("plot.png"):
-                                st.image("plot.png")
-                            else:
-                                st.caption("NO_IMAGE_GENERATED")
-
+                        st.session_state.analysis_result = str(result)
+                        st.session_state.analysis_plot = "plot.png" if os.path.exists("plot.png") else None
                 except Exception as e:
                     loader.empty()
                     st.error(f"RUNTIME ERROR: {e}")
 
+            # DISPLAY TAB 1 RESULTS
+            if st.session_state.analysis_result:
+                st.markdown("---")
+                st.caption(f"LAST COMMAND: {st.session_state.last_query}")
+                r1, r2 = st.columns([1.5, 1])
+                with r1:
+                    st.markdown("#### > EXEC_SUMMARY")
+                    st.markdown(st.session_state.analysis_result)
+                with r2:
+                    st.markdown("#### > VISUAL_OUTPUT")
+                    if st.session_state.analysis_plot == "simulated":
+                        numeric_df = df.select_dtypes(include=['number'])
+                        if not numeric_df.empty:
+                            fig = px.histogram(df, x=numeric_df.columns[0], template="plotly_dark")
+                            fig.update_traces(marker_color='#00FF41', marker_line_color='#003B00') 
+                            fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
+                            st.plotly_chart(fig, use_container_width=True)
+                    elif st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png"):
+                        st.image("plot.png")
+                    else:
+                        st.caption("NO_IMAGE_GENERATED")
+
         # --- TAB 2: AUTOMATED DASHBOARD ---
         with tab2:
             st.write("")
-            
-            # --- A. FILTERS ---
             st.markdown("#### > DATA_FILTERS")
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(cat_cols) > 0:
@@ -333,40 +307,20 @@ if uploaded_file:
                 with col_f2:
                     unique_vals = df[selected_cat].unique()
                     selected_val = st.multiselect(f"SELECT VALUES", unique_vals, default=unique_vals[:5])
-                
                 filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
             else:
                 filtered_df = df
             
             st.markdown("---")
-
-            # --- B. SMART DATA PREVIEW ---
             st.markdown("#### > LIVE_DATA_FEED")
-            
             column_config = {}
             for col in filtered_df.select_dtypes(include="number").columns:
-                column_config[col] = st.column_config.ProgressColumn(
-                    col,
-                    format="%.2f",
-                    min_value=float(filtered_df[col].min()),
-                    max_value=float(filtered_df[col].max()),
-                )
-
-            st.dataframe(
-                filtered_df.head(100), 
-                use_container_width=True, 
-                height=300,
-                column_config=column_config
-            )
-            st.caption(f"DISPLAYING TOP 100 RECORDS.")
+                column_config[col] = st.column_config.ProgressColumn(col, format="%.2f", min_value=float(filtered_df[col].min()), max_value=float(filtered_df[col].max()))
+            st.dataframe(filtered_df.head(100), use_container_width=True, height=300, column_config=column_config)
             
             st.markdown("---")
-
-            # --- C. MATRIX CHARTS (Hybrid: Automated + Dropdown) ---
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
-            
             if not numeric_df.empty:
-                # 1. Correlation Matrix (Always Automated)
                 st.markdown("#### > CORRELATION_MATRIX")
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greens', template="plotly_dark")
@@ -374,42 +328,50 @@ if uploaded_file:
                 st.plotly_chart(fig_corr, use_container_width=True)
                 
                 st.markdown("---")
-                
-                # 2. Customizable Charts Section
                 st.markdown("#### > VARIABLE_DISTRIBUTION & RELATIONSHIPS")
-                
-                # --- DROPDOWNS FOR USER CONTROL ---
                 c_sel1, c_sel2 = st.columns(2)
-                
-                with c_sel1:
-                    # Default index=0 (First column) -> Automated start
-                    x_axis_val = st.selectbox("SELECT X-AXIS (DISTRIBUTION)", numeric_df.columns, index=0)
-                
-                with c_sel2:
-                    # Default index=1 (Second column) if available, else 0 -> Automated start
-                    default_ix = 1 if len(numeric_df.columns) > 1 else 0
-                    y_axis_val = st.selectbox("SELECT Y-AXIS (SCATTER)", numeric_df.columns, index=default_ix)
+                with c_sel1: x_axis_val = st.selectbox("SELECT X-AXIS", numeric_df.columns, index=0)
+                with c_sel2: default_ix = 1 if len(numeric_df.columns) > 1 else 0; y_axis_val = st.selectbox("SELECT Y-AXIS", numeric_df.columns, index=default_ix)
 
-                # --- PLOT THE CHARTS ---
                 col_g1, col_g2 = st.columns(2)
-                
-                # Chart 1: Histogram
                 with col_g1:
-                    st.caption(f"HISTOGRAM: {x_axis_val}")
                     fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
-                    fig1.update_traces(marker_color='#00FF41', marker_line_color='#003B00', marker_line_width=1)
+                    fig1.update_traces(marker_color='#00FF41', marker_line_color='#003B00')
                     fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
                     st.plotly_chart(fig1, use_container_width=True)
-
-                # Chart 2: Scatter
                 with col_g2:
-                    st.caption(f"SCATTER: {x_axis_val} vs {y_axis_val}")
                     fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
                     fig2.update_traces(marker_color='#008F11')
                     fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
                     st.plotly_chart(fig2, use_container_width=True)
             else:
                 st.info("NO_NUMERIC_DATA_FOUND")
+
+        # 🟢 GENERATE PDF LOGIC (IN SIDEBAR)
+        with report_container:
+            if st.session_state.analysis_result:
+                # Prepare data for PDF
+                plot_to_use = "plot.png" if st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png") else None
+                stats_summary = filtered_df.describe()
+                
+                # Generate PDF Bytes
+                try:
+                    pdf_bytes = generate_pdf(
+                        st.session_state.last_query,
+                        str(st.session_state.analysis_result),
+                        plot_to_use,
+                        stats_summary
+                    )
+                    
+                    st.download_button(
+                        label="[ DOWNLOAD_REPORT.PDF ]",
+                        data=pdf_bytes,
+                        file_name="InsightGen_Report.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+                except Exception as e:
+                    st.error(f"PDF Error: {e}")
 
     except Exception as e:
         st.error(f"FATAL_ERROR: {e}")
