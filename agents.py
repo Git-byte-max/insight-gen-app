@@ -3,7 +3,7 @@ import streamlit as st
 import signal
 import threading
 
-# --- 1. SIGNAL PATCH ---
+# --- 1. SIGNAL PATCH (Prevents Streamlit Cloud Crashes) ---
 if threading.current_thread() is not threading.main_thread():
     _original_signal = signal.signal
     def _safe_signal_handler(sig, handler):
@@ -13,40 +13,41 @@ if threading.current_thread() is not threading.main_thread():
             pass
     signal.signal = _safe_signal_handler
 
-# --- 2. SETUP & DEBUGGING ---
+# --- 2. SETUP ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
-
-# DEBUG: Initialize variables to catch the specific error
-import_error_message = None
-api_key_error = False
 
 try:
     from crewai import Agent, LLM
     from tools import execute_code_tool
     LIBS_INSTALLED = True
-except ImportError as e:
+except ImportError:
     LIBS_INSTALLED = False
-    import_error_message = str(e)  # Capture the exact missing library name
+    Agent = object
+    LLM = object
+    execute_code_tool = None
 
 # --- 3. API KEYS ---
-# Try to get key from Environment or Streamlit Secrets
 api_key = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 google_key = os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
 
-# --- 4. DETERMINE STATUS ---
-if not LIBS_INSTALLED:
+# --- 4. AGENT DEFINITIONS ---
+if not LIBS_INSTALLED or (not api_key and not google_key):
     DEMO_MODE = True
-    # PRINT THE ERROR TO THE APP so you can see it!
-    st.error(f"CRITICAL ERROR: Library Import Failed. Details: {import_error_message}")
-elif not api_key and not google_key:
-    DEMO_MODE = True
-    st.error("CRITICAL ERROR: API Key not found in Streamlit Secrets.")
+    planner = coder = reporter = None
 else:
     DEMO_MODE = False
+    try:
+        if api_key:
+            my_llm = LLM(model="gpt-4o-mini", api_key=api_key)
+        else:
+            my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
+
+        # AGENT 1: PLANNER
         planner = Agent(
             role='Architect',
             goal='Plan analysis. IF "VS" OR "COMPARE", PLAN PLOT.',
             backstory="""
+            You are a Data Architect. Plan the Python steps.
             1. INSPECT: `print(df.head())` & `print(df.columns)`.
             2. VERIFY: Print unique values of categorical columns.
             3. PLOT: If comparison requested, Generate Plot using matplotlib.
@@ -57,14 +58,27 @@ else:
             verbose=True
         )
 
+        # AGENT 2: CODER
         coder = Agent(
             role='Python Dev',
             goal='Execute code. FORCE FILE SAVING.',
             backstory="""
+            You are a Python Expert. Treat the data as a black box.
+            
             MANDATORY PLOTTING RULES:
-            1. SETUP: `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
-            2. SAVING: `save_path = os.path.join(os.getcwd(), 'plot.png'); plt.savefig(save_path)`
-            3. DATA: Verify columns using `df.columns`.
+            1. SETUP: 
+               `import matplotlib.pyplot as plt`
+               `import os`
+               `plt.switch_backend('Agg')` (Prevents crashes)
+            
+            2. SAVING (THE MOST IMPORTANT STEP):
+               You MUST save the file using the absolute path:
+               `save_path = os.path.join(os.getcwd(), 'plot.png')`
+               `plt.savefig(save_path)`
+               `print(f"PLOT SAVED TO: {save_path}")`
+            
+            3. DATA:
+               Always verify columns using `df.columns`. Do not guess names.
             """,
             llm=my_llm,
             allow_delegation=False,
@@ -72,12 +86,14 @@ else:
             verbose=True
         )
 
+        # AGENT 3: REPORTER
         reporter = Agent(
             role='Analyst',
             goal='Report insights from logs. NO META-TALK.',
             backstory="""
+            Read the logs.
             1. Report the Numbers found in the logs.
-            2. Trust the logs 100%. Do not assume movies/gender.
+            2. Trust the logs 100%. If logs say "Male/Female", talk about Gender.
             3. If the log says "PLOT SAVED", confirm visualization.
             """,
             llm=my_llm,
@@ -86,6 +102,6 @@ else:
         )
 
     except Exception as e:
+        # Debugging: Print error to console if agents fail to load
         print(f"Agent Init Error: {e}")
         DEMO_MODE = True
-
