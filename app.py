@@ -32,7 +32,7 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 3. PDF GENERATOR ENGINE (UPDATED FOR IMAGES) ---
+# --- 3. PDF GENERATOR ENGINE ---
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
@@ -59,6 +59,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
         pdf.cell(0, 10, f"Query: {query}", 0, 1)
         
         pdf.set_font("Arial", size=10)
+        # Clean text for PDF
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(5)
@@ -82,7 +83,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
     pdf.multi_cell(0, 5, stats_str)
     pdf.ln(10)
 
-    # 2. Dashboard Images (Correlation, Hist, Scatter)
+    # 2. Dashboard Images
     if dashboard_imgs:
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, "Visual Analytics:", 0, 1)
@@ -90,7 +91,6 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
         
         for img_path in dashboard_imgs:
             if os.path.exists(img_path):
-                # Add image, ensure it fits page
                 pdf.image(img_path, x=10, w=180)
                 pdf.ln(5)
 
@@ -171,11 +171,11 @@ with st.sidebar:
         
     st.markdown("---")
     
-    # 🟢 FULL REPORT CONTAINER (To be populated later)
+    # 🟢 FULL REPORT CONTAINER
     full_report_container = st.container()
 
     st.markdown("---")
-    st.caption("TERMINAL_V6.0 | VISUAL REPORTS")
+    st.caption("TERMINAL_V7.0 | FINAL GOLD MASTER")
 
 # --- 6. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHT_GEN</div>", unsafe_allow_html=True)
@@ -234,6 +234,10 @@ if uploaded_file:
                         st.session_state.analysis_result = f"Query: {query}\nStatus: SIMULATED RESPONSE\n1. Trend Detected: Positive.\n2. Correlation: Strong (0.85)."
                         st.session_state.analysis_plot = "simulated"
                     else:
+                        # 🟢 CLEANUP: Remove old plot before starting
+                        if os.path.exists("plot.png"):
+                            os.remove("plot.png")
+                            
                         from crewai import Crew, Task, Process
                         from agents import planner, coder, reporter 
                         task_plan = Task(description=f"Create Python plan for: '{query}'", expected_output="Step list", agent=planner)
@@ -278,7 +282,7 @@ if uploaded_file:
             else:
                 filtered_df = df
 
-            # 🟢 GENERATE DASHBOARD CHARTS (FOR PDF & DISPLAY)
+            # 🟢 GENERATE DASHBOARD CHARTS
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             
@@ -287,7 +291,6 @@ if uploaded_file:
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greens', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
-                # Save static image for PDF
                 try:
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
@@ -313,14 +316,13 @@ if uploaded_file:
                     dashboard_images.append("dash_scatter.png")
                 except: pass
 
-            # 🟢 DASHBOARD PDF BUTTON (With Images)
+            # 🟢 DASHBOARD PDF BUTTON
             d_col1, d_col2 = st.columns([4, 1])
             with d_col1: 
                 st.markdown(f"**Live Records:** {len(filtered_df)}") 
             with d_col2:
                 try:
                     stats_summary = df.describe()
-                    # Pass the images list to PDF
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
                     st.download_button(
                         label="[ DOWNLOAD_DASHBOARD.PDF ]",
@@ -351,14 +353,13 @@ if uploaded_file:
             else:
                 st.info("NO_NUMERIC_DATA")
 
-        # 🟢 SIDEBAR: FULL REPORT (Combine AI + Dashboard Images)
+        # 🟢 SIDEBAR: FULL REPORT
         with full_report_container:
             if st.session_state.analysis_result:
                 plot_to_use = "plot.png" if st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png") else None
                 stats_summary = filtered_df.describe()
                 
                 try:
-                    # Pass BOTH AI plot AND Dashboard images
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
                     st.download_button(
                         label="[ DOWNLOAD_FULL_REPORT.PDF ]",
