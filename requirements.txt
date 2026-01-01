@@ -2,7 +2,7 @@ streamlit
 crewai
 crewai-tools
 langchain
-langchain_community
+pysqlite3-binary   <-- CRITICAL FIX
 google-generativeai
 openai
 pandas
