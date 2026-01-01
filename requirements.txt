@@ -1,6 +1,7 @@
 streamlit
 crewai
 crewai-tools
+langchain
 google-generativeai
 openai
 pandas
