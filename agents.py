@@ -3,6 +3,7 @@ import streamlit as st
 import signal
 import threading
 
+# --- 1. SIGNAL PATCH ---
 if threading.current_thread() is not threading.main_thread():
     _original_signal = signal.signal
     def _safe_signal_handler(sig, handler):
@@ -12,32 +13,36 @@ if threading.current_thread() is not threading.main_thread():
             pass
     signal.signal = _safe_signal_handler
 
+# --- 2. SETUP & DEBUGGING ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+
+# DEBUG: Initialize variables to catch the specific error
+import_error_message = None
+api_key_error = False
 
 try:
     from crewai import Agent, LLM
     from tools import execute_code_tool
     LIBS_INSTALLED = True
-except ImportError:
+except ImportError as e:
     LIBS_INSTALLED = False
-    Agent = object
-    LLM = object
-    execute_code_tool = None
+    import_error_message = str(e)  # Capture the exact missing library name
 
+# --- 3. API KEYS ---
+# Try to get key from Environment or Streamlit Secrets
 api_key = os.environ.get("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 google_key = os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
 
-if not LIBS_INSTALLED or (not api_key and not google_key):
+# --- 4. DETERMINE STATUS ---
+if not LIBS_INSTALLED:
     DEMO_MODE = True
-    planner = coder = reporter = None
+    # PRINT THE ERROR TO THE APP so you can see it!
+    st.error(f"CRITICAL ERROR: Library Import Failed. Details: {import_error_message}")
+elif not api_key and not google_key:
+    DEMO_MODE = True
+    st.error("CRITICAL ERROR: API Key not found in Streamlit Secrets.")
 else:
     DEMO_MODE = False
-    try:
-        if api_key:
-            my_llm = LLM(model="gpt-4o-mini", api_key=api_key)
-        else:
-            my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
-
         planner = Agent(
             role='Architect',
             goal='Plan analysis. IF "VS" OR "COMPARE", PLAN PLOT.',
@@ -83,3 +88,4 @@ else:
     except Exception as e:
         print(f"Agent Init Error: {e}")
         DEMO_MODE = True
+
