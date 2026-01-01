@@ -24,7 +24,7 @@ except ImportError:
     DEMO_MODE = True
     tools = None
 
-# --- 2. INITIALIZE MEMORY BANK (SESSION STATE) ---
+# --- 2. INITIALIZE MEMORY BANK ---
 if "analysis_result" not in st.session_state:
     st.session_state.analysis_result = None
 if "analysis_plot" not in st.session_state:
@@ -32,7 +32,7 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 3. PDF GENERATOR ENGINE ---
+# --- 3. PDF GENERATOR ENGINE (UPDATED FOR IMAGES) ---
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
@@ -44,43 +44,56 @@ class PDFReport(FPDF):
         self.set_font('Arial', 'I', 8)
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
-def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None):
+def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None, dashboard_imgs=None):
     pdf = PDFReport()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # --- SECTION A: AI ANALYSIS (Only for "Full" Report) ---
+    # --- A. FULL AI REPORT ---
     if report_type == "full":
         pdf.set_font("Arial", 'B', 14)
         pdf.cell(0, 10, "1. Executive AI Analysis", 0, 1)
-        pdf.ln(2)
+        pdf.ln(5)
         
         pdf.set_font("Arial", 'B', 11)
         pdf.cell(0, 10, f"Query: {query}", 0, 1)
         
         pdf.set_font("Arial", size=10)
-        # Clean text
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(5)
 
-        # Plot
         if plot_path and os.path.exists(plot_path):
             pdf.image(plot_path, x=10, w=170)
-            pdf.ln(10)
         
-        pdf.add_page() # Start Stats on new page for full report
+        pdf.add_page()
 
-    # --- SECTION B: DASHBOARD STATS (For "Dashboard" & "Full") ---
+    # --- B. DASHBOARD STATS & CHARTS ---
     pdf.set_font("Arial", 'B', 14)
-    title = "2. Automated Data Statistics" if report_type == "full" else "Automated Data Dashboard Report"
+    title = "2. Automated Data Dashboard" if report_type == "full" else "Automated Dashboard Report"
     pdf.cell(0, 10, title, 0, 1)
-    pdf.ln(2)
+    pdf.ln(5)
 
-    pdf.set_font("Courier", size=9)
+    # 1. Statistics
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Statistical Summary:", 0, 1)
+    pdf.set_font("Courier", size=8)
     stats_str = df_stats.to_string()
     pdf.multi_cell(0, 5, stats_str)
-    
+    pdf.ln(10)
+
+    # 2. Dashboard Images (Correlation, Hist, Scatter)
+    if dashboard_imgs:
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "Visual Analytics:", 0, 1)
+        pdf.ln(5)
+        
+        for img_path in dashboard_imgs:
+            if os.path.exists(img_path):
+                # Add image, ensure it fits page
+                pdf.image(img_path, x=10, w=180)
+                pdf.ln(5)
+
     return pdf.output(dest='S').encode('latin-1')
 
 # --- 4. MATRIX THEME CSS ---
@@ -158,12 +171,11 @@ with st.sidebar:
         
     st.markdown("---")
     
-    # 🟢 REPORT 1: FULL REPORT (Analysis + Dashboard)
-    # Only appears if AI analysis has been run
+    # 🟢 FULL REPORT CONTAINER (To be populated later)
     full_report_container = st.container()
 
     st.markdown("---")
-    st.caption("TERMINAL_V5.1 | DUAL PDF EXPORT")
+    st.caption("TERMINAL_V6.0 | VISUAL REPORTS")
 
 # --- 6. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHT_GEN</div>", unsafe_allow_html=True)
@@ -246,12 +258,7 @@ if uploaded_file:
                 with r2:
                     st.markdown("#### > VISUAL_OUTPUT")
                     if st.session_state.analysis_plot == "simulated":
-                        numeric_df = df.select_dtypes(include=['number'])
-                        if not numeric_df.empty:
-                            fig = px.histogram(df, x=numeric_df.columns[0], template="plotly_dark")
-                            fig.update_traces(marker_color='#00FF41', marker_line_color='#003B00') 
-                            fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
-                            st.plotly_chart(fig, use_container_width=True)
+                        st.info("Simulated Plot")
                     elif st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png"):
                         st.image("plot.png")
                     else:
@@ -260,24 +267,8 @@ if uploaded_file:
         # --- TAB 2: AUTOMATED DASHBOARD ---
         with tab2:
             st.write("")
-            # 🟢 REPORT 2: DASHBOARD ONLY (Visible Immediately)
-            d_col1, d_col2 = st.columns([4, 1])
-            with d_col1: st.markdown("#### > DATA_FILTERS")
-            with d_col2:
-                # GENERATE DASHBOARD PDF BUTTON
-                try:
-                    stats_summary = df.describe()
-                    dash_pdf = generate_pdf("dashboard", stats_summary)
-                    st.download_button(
-                        label="[ DOWNLOAD STATS ]",
-                        data=dash_pdf,
-                        file_name="Dashboard_Stats.pdf",
-                        mime="application/pdf",
-                        use_container_width=True
-                    )
-                except Exception as e:
-                    st.error("PDF Error")
-
+            st.markdown("#### > DATA_FILTERS")
+            
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(cat_cols) > 0:
                 col_f1, col_f2 = st.columns(2)
@@ -286,7 +277,61 @@ if uploaded_file:
                 filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
             else:
                 filtered_df = df
+
+            # 🟢 GENERATE DASHBOARD CHARTS (FOR PDF & DISPLAY)
+            dashboard_images = []
+            numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             
+            if not numeric_df.empty:
+                # 1. Correlation Matrix
+                corr = numeric_df.corr()
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greens', template="plotly_dark")
+                fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
+                # Save static image for PDF
+                try:
+                    fig_corr.write_image("dash_corr.png")
+                    dashboard_images.append("dash_corr.png")
+                except: pass
+
+                # 2. Histogram
+                x_axis_val = numeric_df.columns[0]
+                fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
+                fig1.update_traces(marker_color='#00FF41', marker_line_color='#003B00')
+                fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
+                try:
+                    fig1.write_image("dash_hist.png")
+                    dashboard_images.append("dash_hist.png")
+                except: pass
+
+                # 3. Scatter
+                y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
+                fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
+                fig2.update_traces(marker_color='#008F11')
+                fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
+                try:
+                    fig2.write_image("dash_scatter.png")
+                    dashboard_images.append("dash_scatter.png")
+                except: pass
+
+            # 🟢 DASHBOARD PDF BUTTON (With Images)
+            d_col1, d_col2 = st.columns([4, 1])
+            with d_col1: 
+                st.markdown(f"**Live Records:** {len(filtered_df)}") 
+            with d_col2:
+                try:
+                    stats_summary = df.describe()
+                    # Pass the images list to PDF
+                    dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
+                    st.download_button(
+                        label="[ DOWNLOAD_DASHBOARD.PDF ]",
+                        data=dash_pdf,
+                        file_name="Dashboard_Visuals.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+                except Exception as e:
+                    st.error(f"PDF Gen Error: {e}")
+
             st.markdown("---")
             st.markdown("#### > LIVE_DATA_FEED")
             column_config = {}
@@ -294,43 +339,27 @@ if uploaded_file:
                 column_config[col] = st.column_config.ProgressColumn(col, format="%.2f", min_value=float(filtered_df[col].min()), max_value=float(filtered_df[col].max()))
             st.dataframe(filtered_df.head(100), use_container_width=True, height=300, column_config=column_config)
             
+            # DISPLAY CHARTS ON SCREEN
             st.markdown("---")
-            numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                st.markdown("#### > CORRELATION_MATRIX")
-                corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greens', template="plotly_dark")
-                fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
+                st.markdown("#### > VISUAL_ANALYTICS_HUB")
                 st.plotly_chart(fig_corr, use_container_width=True)
                 
-                st.markdown("---")
-                st.markdown("#### > VARIABLE_DISTRIBUTION & RELATIONSHIPS")
-                c_sel1, c_sel2 = st.columns(2)
-                with c_sel1: x_axis_val = st.selectbox("SELECT X-AXIS", numeric_df.columns, index=0)
-                with c_sel2: default_ix = 1 if len(numeric_df.columns) > 1 else 0; y_axis_val = st.selectbox("SELECT Y-AXIS", numeric_df.columns, index=default_ix)
-
-                col_g1, col_g2 = st.columns(2)
-                with col_g1:
-                    fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
-                    fig1.update_traces(marker_color='#00FF41', marker_line_color='#003B00')
-                    fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
-                    st.plotly_chart(fig1, use_container_width=True)
-                with col_g2:
-                    fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
-                    fig2.update_traces(marker_color='#008F11')
-                    fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00FF41")
-                    st.plotly_chart(fig2, use_container_width=True)
+                gc1, gc2 = st.columns(2)
+                with gc1: st.plotly_chart(fig1, use_container_width=True)
+                with gc2: st.plotly_chart(fig2, use_container_width=True)
             else:
-                st.info("NO_NUMERIC_DATA_FOUND")
+                st.info("NO_NUMERIC_DATA")
 
-        # 🟢 SIDEBAR LOGIC: FULL REPORT (Requires Analysis)
+        # 🟢 SIDEBAR: FULL REPORT (Combine AI + Dashboard Images)
         with full_report_container:
             if st.session_state.analysis_result:
                 plot_to_use = "plot.png" if st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png") else None
                 stats_summary = filtered_df.describe()
                 
                 try:
-                    full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use)
+                    # Pass BOTH AI plot AND Dashboard images
+                    full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
                     st.download_button(
                         label="[ DOWNLOAD_FULL_REPORT.PDF ]",
                         data=full_pdf,
@@ -339,7 +368,7 @@ if uploaded_file:
                         use_container_width=True
                     )
                 except Exception as e:
-                    st.error(f"PDF Error: {e}")
+                    st.error(f"Full PDF Error: {e}")
 
     except Exception as e:
         st.error(f"FATAL_ERROR: {e}")
