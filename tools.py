@@ -1,35 +1,41 @@
-# CORRECT IMPORT: BaseTool is in crewai.tools, not crewai_tools
-from crewai.tools import BaseTool
 import pandas as pd
-import matplotlib.pyplot as plt
+import sys
+from io import StringIO
+from langchain.tools import tool
 
-# Global variable to hold the dataframe
-df = None 
+# Global placeholder for the dataframe
+# This gets updated by app.py when a file is uploaded
+df = None
 
-class ExecuteCodeTool(BaseTool):
-    name: str = "Execute Python Code"
-    description: str = "Executes python code. The dataframe is available as variable 'df'. If the code generates a plot, save it as 'plot.png'."
+@tool("execute_code_tool")
+def execute_code_tool(code: str):
+    """
+    Executes the given Python code string.
+    The code has access to a pandas dataframe named 'df'.
+    It captures and returns any content printed to stdout (print statements).
+    """
+    global df
+    
+    # Create a buffer to capture print() statements
+    old_stdout = sys.stdout
+    redirected_output = sys.stdout = StringIO()
+    
+    try:
+        # Create a safe execution environment with access to 'df' and 'pd'
+        local_vars = {"df": df, "pd": pd}
+        
+        # Execute the code
+        exec(code, globals(), local_vars)
+        
+        # Restore stdout
+        sys.stdout = old_stdout
+        
+        # Return the captured logs
+        output = redirected_output.getvalue()
+        if not output:
+            return "Code executed successfully (No output printed)."
+        return output
 
-    def _run(self, code_string: str) -> str:
-        global df
-        try:
-            # Safe-ish execution environment
-            local_vars = {"df": df, "pd": pd, "plt": plt}
-            exec(code_string, {}, local_vars)
-            return "Code executed successfully. If a plot was created, it is saved as plot.png."
-        except Exception as e:
-            return f"Error executing code: {str(e)}. Please rewrite the code to fix this."
-
-class GetColumnsTool(BaseTool):
-    name: str = "Read Dataset Columns"
-    description: str = "Returns the columns of the current dataset."
-
-    def _run(self, dummy_input: str) -> str:
-        global df
-        if df is not None:
-            return str(list(df.columns))
-        return "No dataframe loaded."
-
-# Instantiate tools so agents can use them
-execute_code_tool = ExecuteCodeTool()
-get_columns_tool = GetColumnsTool()
+    except Exception as e:
+        sys.stdout = old_stdout
+        return f"Execution Error: {e}"
