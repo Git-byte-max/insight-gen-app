@@ -253,7 +253,7 @@ with st.sidebar:
     st.caption("INSIGHTGEN | ANALYTICS V3.0 (MOBILE)")
 
 # --- 7. MAIN CONTENT ---
-st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 st.markdown("#### *// ADVANCED DATA ANALYTICS*")
 
 if uploaded_file:
@@ -443,3 +443,4 @@ if uploaded_file:
 else:
     with st.container():
         st.info("READY: UPLOAD DATASET TO BEGIN...")
+
