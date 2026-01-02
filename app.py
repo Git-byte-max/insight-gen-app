@@ -28,7 +28,6 @@ try:
     from agents import planner, coder, reporter, DEMO_MODE, debug_error
     import tools
 except Exception as e:
-    # CATCH THE REAL ERROR
     DEMO_MODE = True
     tools = None
     planner = coder = reporter = None
@@ -135,7 +134,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("TERMINAL_V10.1 | FIX_IMPORT")
+    st.caption("TERMINAL_V11.0 | PLATINUM BUILD")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHT_GEN</div>", unsafe_allow_html=True)
@@ -192,12 +191,36 @@ if uploaded_file:
                         st.session_state.analysis_plot = "simulated"
                     else:
                         if os.path.exists("plot.png"): os.remove("plot.png")
+                        
                         from crewai import Crew, Task, Process
                         from agents import planner, coder, reporter 
-                        task_plan = Task(description=f"Create Python plan for: '{query}'", expected_output="Step list", agent=planner)
-                        task_code = Task(description="Execute plan. Save 'plot.png'.", expected_output="Numbers", agent=coder, context=[task_plan])
-                        task_report = Task(description="Summarize findings.", expected_output="Summary", agent=reporter, context=[task_code])
-                        crew = Crew(agents=[planner, coder, reporter], tasks=[task_plan, task_code, task_report], process=Process.sequential, verbose=True)
+                        
+                        # 3-Step Scrum Workflow
+                        task_plan = Task(
+                            description=f"Create a plan to analyze: '{query}'", 
+                            expected_output="Step-by-step plan", 
+                            agent=planner
+                        )
+                        task_code = Task(
+                            description="Execute the plan. PRINT ALL RESULTS. Save 'plot.png' if needed.", 
+                            expected_output="Execution Logs with Numbers", 
+                            agent=coder, 
+                            context=[task_plan]
+                        )
+                        task_report = Task(
+                            description="Summarize the findings from the code logs.", 
+                            expected_output="Data-driven Summary", 
+                            agent=reporter, 
+                            context=[task_code]
+                        )
+                        
+                        crew = Crew(
+                            agents=[planner, coder, reporter], 
+                            tasks=[task_plan, task_code, task_report], 
+                            process=Process.sequential, 
+                            verbose=True
+                        )
+                        
                         result = crew.kickoff()
                         loader.empty()
                         st.session_state.analysis_result = str(result)
@@ -269,7 +292,7 @@ if uploaded_file:
                 try:
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ DOWNLOAD_DASHBOARD.PDF ]", data=dash_pdf, file_name="Dashboard_Visuals.pdf", mime="application/pdf", use_container_width=True)
+                    st.download_button(label="[ DOWNLOAD_DASHBOARD.PDF ]", data=dash_pdf, file_name="Dashboard_Visuals.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -277,15 +300,15 @@ if uploaded_file:
             column_config = {}
             for col in filtered_df.select_dtypes(include="number").columns:
                 column_config[col] = st.column_config.ProgressColumn(col, format="%.2f", min_value=float(filtered_df[col].min()), max_value=float(filtered_df[col].max()))
-            st.dataframe(filtered_df.head(100), use_container_width=True, height=300, column_config=column_config)
+            st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
             
             st.markdown("---")
             if not numeric_df.empty:
                 st.markdown("#### > VISUAL_ANALYTICS_HUB")
-                st.plotly_chart(fig_corr, use_container_width=True)
+                st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
-                with gc1: st.plotly_chart(fig1, use_container_width=True)
-                with gc2: st.plotly_chart(fig2, use_container_width=True)
+                with gc1: st.plotly_chart(fig1, width="stretch")
+                with gc2: st.plotly_chart(fig2, width="stretch")
             else:
                 st.info("NO_NUMERIC_DATA")
 
@@ -295,7 +318,7 @@ if uploaded_file:
                 stats_summary = filtered_df.describe()
                 try:
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    st.download_button(label="[ DOWNLOAD_FULL_REPORT.PDF ]", data=full_pdf, file_name="InsightGen_Full_Report.pdf", mime="application/pdf", use_container_width=True)
+                    st.download_button(label="[ DOWNLOAD_FULL_REPORT.PDF ]", data=full_pdf, file_name="InsightGen_Full_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
 
