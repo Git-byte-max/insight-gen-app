@@ -92,7 +92,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. CSS ---
+# --- 5. CSS (Matrix Theme) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
@@ -134,7 +134,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("TERMINAL_V11.0 | PLATINUM BUILD")
+    st.caption("TERMINAL_V12.0 | UNIVERSAL STORYTELLER")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHT_GEN</div>", unsafe_allow_html=True)
@@ -202,14 +202,14 @@ if uploaded_file:
                             agent=planner
                         )
                         task_code = Task(
-                            description="Execute the plan. PRINT ALL RESULTS. Save 'plot.png' if needed.", 
+                            description="Execute the plan. PRINT ALL RESULTS (Correlations, Differences). Save 'plot.png' if needed.", 
                             expected_output="Execution Logs with Numbers", 
                             agent=coder, 
                             context=[task_plan]
                         )
                         task_report = Task(
-                            description="Summarize the findings from the code logs.", 
-                            expected_output="Data-driven Summary", 
+                            description="Summarize findings into a Business Narrative (Trends, Implications).", 
+                            expected_output="Data Story", 
                             agent=reporter, 
                             context=[task_code]
                         )
@@ -292,7 +292,7 @@ if uploaded_file:
                 try:
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ DOWNLOAD_DASHBOARD.PDF ]", data=dash_pdf, file_name="Dashboard_Visuals.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ DOWNLOAD_DASHBOARD.PDF ]", data=dash_pdf, file_name="Dashboard_Visuals.pdf", mime="application/pdf", use_container_width=True)
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -300,15 +300,15 @@ if uploaded_file:
             column_config = {}
             for col in filtered_df.select_dtypes(include="number").columns:
                 column_config[col] = st.column_config.ProgressColumn(col, format="%.2f", min_value=float(filtered_df[col].min()), max_value=float(filtered_df[col].max()))
-            st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
+            st.dataframe(filtered_df.head(100), use_container_width=True, height=300, column_config=column_config)
             
             st.markdown("---")
             if not numeric_df.empty:
                 st.markdown("#### > VISUAL_ANALYTICS_HUB")
-                st.plotly_chart(fig_corr, width="stretch")
+                st.plotly_chart(fig_corr, use_container_width=True)
                 gc1, gc2 = st.columns(2)
-                with gc1: st.plotly_chart(fig1, width="stretch")
-                with gc2: st.plotly_chart(fig2, width="stretch")
+                with gc1: st.plotly_chart(fig1, use_container_width=True)
+                with gc2: st.plotly_chart(fig2, use_container_width=True)
             else:
                 st.info("NO_NUMERIC_DATA")
 
@@ -318,7 +318,7 @@ if uploaded_file:
                 stats_summary = filtered_df.describe()
                 try:
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    st.download_button(label="[ DOWNLOAD_FULL_REPORT.PDF ]", data=full_pdf, file_name="InsightGen_Full_Report.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ DOWNLOAD_FULL_REPORT.PDF ]", data=full_pdf, file_name="InsightGen_Full_Report.pdf", mime="application/pdf", use_container_width=True)
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
 
