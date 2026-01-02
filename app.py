@@ -23,14 +23,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Import Backend
+# Import Backend (Safe Loader)
 try:
     from agents import planner, coder, reporter, DEMO_MODE, debug_error
     import tools
-except ImportError:
+except Exception as e:
+    # CATCH THE REAL ERROR
     DEMO_MODE = True
     tools = None
-    debug_error = "Could not import agents.py"
+    planner = coder = reporter = None
+    debug_error = f"CRITICAL IMPORT FAILURE: {e}"
 
 # --- 3. SESSION STATE ---
 if "analysis_result" not in st.session_state:
@@ -121,11 +123,11 @@ with st.sidebar:
     uploaded_file = st.file_uploader("UPLOAD DATA SOURCE", type=["csv", "xlsx"])
     st.markdown("---")
     
-    # 🟢 DEBUGGER: THIS TELLS YOU WHY IT IS OFFLINE
+    # 🟢 DEBUGGER
     if DEMO_MODE:
         st.code("STATUS: OFFLINE (SIMULATION)")
         st.error(f"Reason: {debug_error}")
-        if debug_error == "API Key Missing":
+        if "API Key Missing" in str(debug_error):
             st.warning("Check 'Secrets' in Streamlit Settings.")
     else:
         st.code("STATUS: ONLINE (CONNECTED)")
@@ -133,7 +135,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("TERMINAL_V10.0 | FINAL GOLD")
+    st.caption("TERMINAL_V10.1 | FIX_IMPORT")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHT_GEN</div>", unsafe_allow_html=True)
