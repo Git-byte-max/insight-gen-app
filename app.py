@@ -93,7 +93,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS ---
+# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS (ROUNDED) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;900&display=swap');
@@ -102,11 +102,13 @@ st.markdown("""
     html, body, [class*="css"] {
         font-family: 'Roboto', sans-serif;
         color: #E0E0E0;
-        background-color: #121212;
+        background-color: #0a0a0a; /* Deep Matte Black */
     }
+    
+    /* 🔴 CHANGED: SOLID MATTE BLACK BACKGROUND */
     .stApp {
-        background-color: #000000;
-        background-image: linear-gradient(315deg, #000000 0%, #1e1e1e 74%);
+        background-color: #0a0a0a;
+        background-image: none; /* Removed gradient for matte look */
     }
 
     /* === SCROLLBARS === */
@@ -121,26 +123,31 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
+    /* 🔴 CHANGED: LEFT ALIGNED TITLE */
     .main-title {
         color: #D32F2F !important;
         font-weight: 900;
-        font-size: 4.5rem; /* Desktop Size */
+        font-size: 4.5rem; 
         letter-spacing: -2px;
         text-shadow: 2px 2px 0px #333;
         line-height: 1.1;
+        text-align: left; /* FORCE LEFT ALIGN */
+        width: 100%;
+        display: block;
     }
 
-    /* === CARDS (RESPONSIVE) === */
+    /* === CARDS (ROUNDED + HOVER) === */
+    /* 🔴 CHANGED: BORDER RADIUS 20px */
     .metric-card {
         background-color: #1E1E1E;
         border-left: 5px solid #D32F2F;
-        border-radius: 4px;
+        border-radius: 20px; /* ROUNDED EDGES */
         padding: 20px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.5);
         text-align: center;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         cursor: pointer;
-        margin-bottom: 15px; /* Spacing for mobile stacking */
+        margin-bottom: 15px; 
     }
     .metric-card:hover {
         transform: translateY(-8px);
@@ -150,7 +157,7 @@ st.markdown("""
     }
     .metric-value { 
         color: #FFF; 
-        font-size: 38px; /* Desktop Size */
+        font-size: 38px;
         font-weight: 900; 
     }
     .metric-label { 
@@ -159,78 +166,71 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* === COMPONENTS === */
+    /* === COMPONENTS (ROUNDED) === */
+    /* 🔴 CHANGED: ROUNDED BUTTONS */
     .stButton>button {
         background-color: #D32F2F;
         color: white;
-        border-radius: 4px;
+        border-radius: 20px; /* ROUNDED */
         border: none;
         font-weight: 900;
         text-transform: uppercase;
         padding: 10px 20px;
         transition: all 0.2s ease;
-        width: auto; /* Default width */
+        width: auto; 
     }
     .stButton>button:hover { 
         background-color: #B71C1C; 
         transform: translateY(-2px);
     }
 
+    /* 🔴 CHANGED: ROUNDED TABLE */
     div[data-testid="stDataFrame"] {
         background-color: #1E1E1E;
         border: 1px solid #333;
         border-top: 3px solid #D32F2F;
+        border-radius: 20px; /* ROUNDED */
+        padding: 10px;
     }
     
+    /* 🔴 CHANGED: ROUNDED INPUTS */
     input[type="text"] {
         background: #111 !important;
         color: #FFF !important;
         border: 1px solid #444 !important;
         border-left: 3px solid #D32F2F !important;
-        border-radius: 0px;
+        border-radius: 20px; /* ROUNDED */
+        padding-left: 15px;
     }
     
-    .stTabs [data-baseweb="tab-list"] { background-color: #000; padding: 5px; }
+    /* 🔴 CHANGED: ROUNDED TABS */
+    .stTabs [data-baseweb="tab-list"] { 
+        background-color: #000; 
+        padding: 8px; 
+        border-radius: 20px; /* ROUNDED */
+        border: 1px solid #333;
+    }
     .stTabs [data-baseweb="tab"] { color: #666; font-weight: 700; text-transform: uppercase; }
-    .stTabs [aria-selected="true"] { background-color: #D32F2F; color: #FFF; }
+    .stTabs [aria-selected="true"] { 
+        background-color: #D32F2F; 
+        color: #FFF; 
+        border-radius: 15px; /* ROUNDED ACTIVE TAB */
+    }
 
     /* ================================= */
     /* === 📱 MOBILE RESPONSIVENESS === */
     /* ================================= */
     
     @media only screen and (max-width: 768px) {
-        /* Shrink massive titles */
         .main-title {
             font-size: 2.8rem !important;
-            text-align: center;
+            text-align: left; /* Keep left align on mobile too */
         }
-        
-        /* Adjust metric fonts */
-        .metric-value {
-            font-size: 28px !important;
-        }
-        
-        /* Reduce padding in cards */
-        .metric-card {
-            padding: 15px !important;
-            margin-bottom: 10px !important;
-        }
-        
-        /* Full width buttons for easy tapping */
-        .stButton>button {
-            width: 100% !important;
-            margin-top: 10px;
-        }
-        
-        /* Hide complex hover effects on touch devices to prevent sticky states */
-        .metric-card:hover {
-            transform: none !important;
-        }
-        
-        /* Adjust Lottie size */
-        iframe {
-            height: 150px !important;
-        }
+        .metric-value { font-size: 28px !important; }
+        .metric-card { padding: 15px !important; margin-bottom: 10px !important; }
+        .stButton>button { width: 100% !important; margin-top: 10px; }
+        .metric-card:hover { transform: none !important; }
+        iframe { height: 150px !important; }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -250,10 +250,10 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS V3.0 (MOBILE)")
+    st.caption("INSIGHTGEN | ANALYTICS V3.1")
 
 # --- 7. MAIN CONTENT ---
-st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
 st.markdown("#### *// ADVANCED DATA ANALYTICS*")
 
 if uploaded_file:
@@ -296,6 +296,7 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
+                        # LOTTIE ANIMATION
                         components.iframe("https://lottie.host/embed/4f0b35e7-c2d8-4026-a494-11d54fa5e4f2/edm0jSn651.lottie", height=200, scrolling=False)
                         st.markdown("<center style='color: #D32F2F; font-family: Roboto;'>PROCESSING DATA...</center>", unsafe_allow_html=True)
 
@@ -443,4 +444,3 @@ if uploaded_file:
 else:
     with st.container():
         st.info("READY: UPLOAD DATASET TO BEGIN...")
-
