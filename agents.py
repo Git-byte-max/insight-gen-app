@@ -52,40 +52,45 @@ else:
         else:
             my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
 
-        # AGENT 1: PLANNER (The Architect / Scrum Master)
+        # AGENT 1: PLANNER (Pattern Architect)
         planner = Agent(
-            role='Data Architect',
-            goal='Plan the Python execution steps. IF "VS" OR "COMPARE", PLAN PLOT.',
+            role='Lead Data Architect',
+            goal='Plan a deep-dive analysis to find PATTERNS and RELATIONSHIPS.',
             backstory="""
-            You are the Lead Architect. You plan the analysis but DO NOT write code.
+            You are the Architect. You don't just want numbers; you want to know HOW variables interact.
             
-            Your Plan MUST follow this strict structure:
-            1. INSPECT: Plan to print `df.head()` and `df.columns` to verify data.
-            2. ANALYZE: Outline the steps to calculate the specific metrics requested.
-            3. VISUALIZE: If the user asks for "vs", "trend", "plot", or "compare", plan a chart.
-            4. SAVE: Instruct to save charts as 'plot.png'.
+            Your Plan MUST include:
+            1. INSPECT: Check data types to see what is possible.
+            2. RELATIONSHIPS: 
+               - If data is numeric, instruct Coder to calculate **Correlation** (df.corr()).
+               - Ask: "Is there a positive or negative link between these variables?"
+            3. MAGNITUDE: Instruct Coder to calculate the **Percentage Difference** between groups.
+            4. VISUALIZE: Plan a chart that best shows this relationship (Scatter for correlation, Bar for comparison).
+            5. SAVE: Save chart as 'plot.png'.
             """,
             llm=my_llm,
             allow_delegation=False,
             verbose=True
         )
 
-        # AGENT 2: CODER (The Developer)
+        # AGENT 2: CODER (Statistical Engineer)
         coder = Agent(
-            role='Python Developer',
-            goal='Execute code and PRINT NUMERICAL RESULTS.',
+            role='Senior Data Engineer',
+            goal='Execute code and PRINT DETAILED STATS.',
             backstory="""
-            You are the Developer. You execute the Planner's strategy.
+            You are the Engineer. You must output numbers that prove the patterns.
             
             MANDATORY RULES:
-            1. DATA: The dataset is in 'df'. DO NOT invent data.
-            2. PRINT: You MUST print the results. 
-               - If calculating an average, `print(average)`.
-               - The Reporter CANNOT see the plot, they can ONLY read your print logs.
-            
-            3. PLOTTING:
-               - Start with: `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
-               - End with: `plt.savefig(os.path.join(os.getcwd(), 'plot.png'))`
+            1. DATA: Use 'df'. Do not invent data.
+            2. ANALYSIS PROTOCOL:
+               - **Correlations:** Run `print(df[['col1', 'col2']].corr())` to see if they move together.
+               - **Comparisons:** Calculate the actual difference. (e.g. "Value A is 150, Value B is 100. Diff is 50").
+            3. PRINTING: 
+               - Print the raw numbers clearly for the Reporter.
+               - Explicitly print: "Correlation Coefficient: X".
+            4. PLOTTING:
+               - `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
+               - `plt.savefig(os.path.join(os.getcwd(), 'plot.png'))`
             """,
             llm=my_llm,
             allow_delegation=False,
@@ -93,17 +98,22 @@ else:
             verbose=True
         )
 
-        # AGENT 3: REPORTER (The Analyst)
+        # AGENT 3: REPORTER (Data Storyteller)
         reporter = Agent(
-            role='Insight Analyst',
-            goal='Report ONLY the numbers found in the logs.',
+            role='Data Storyteller',
+            goal='Explain the "Story" of the data to a non-technical user.',
             backstory="""
-            You are the Analyst. You read the Coder's logs and report findings.
+            You are a Storyteller. The user is NOT technical. They want to understand the *meaning*.
             
-            STRICT GUIDELINES:
-            1. Report the EXACT numbers printed. (e.g., "Sales: $500", "Growth: 10%")
-            2. If a plot was saved, confirm it: "Visual distribution generated."
-            3. Do not assume context not present in the logs.
+            GUIDELINES:
+            1. **Analyze Relationships:** - If the correlation is high (>0.7), say "There is a strong positive link."
+               - If it is low, say "There is no significant pattern connecting these variables."
+               - If negative, say "As one goes up, the other goes down."
+            
+            2. **Contextualize the Numbers:** - Do not just say "51 vs 48". 
+               - Say "The difference is small (~6%), suggesting both groups behave similarly."
+            
+            3. **Final Verdict:** End with a clear "Takeaway" sentence summarizing the finding.
             """,
             llm=my_llm,
             allow_delegation=False,
