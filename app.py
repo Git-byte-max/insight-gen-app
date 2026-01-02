@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit.components.v1 as components 
 import time
+from datetime import datetime
 from fpdf import FPDF
 
 # --- 2. CONFIGURATION ---
@@ -41,56 +42,110 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. PDF ENGINE ---
+# --- 4. ADVANCED PDF ENGINE (ORGANIZED LAYOUT) ---
 class PDFReport(FPDF):
     def header(self):
-        self.set_font('Arial', 'B', 15)
-        self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
-        self.ln(10)
+        # Black Background for Header
+        self.set_fill_color(10, 10, 10) 
+        self.rect(0, 0, 210, 25, 'F')
+        
+        # Crimson Text
+        self.set_font('Arial', 'B', 16)
+        self.set_text_color(211, 47, 47) # Crimson
+        self.cell(0, 10, 'INSIGHTGEN | ANALYTICS DOSSIER', 0, 1, 'C')
+        
+        # Subtitle
+        self.set_font('Arial', 'I', 10)
+        self.set_text_color(200, 200, 200) # Light Grey
+        self.cell(0, 0, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
+        self.ln(20)
+
     def footer(self):
         self.set_y(-15)
         self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+        self.set_text_color(128, 128, 128)
+        self.cell(0, 10, f'CONFIDENTIAL // Page {self.page_no()}', 0, 0, 'C')
 
-def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None, dashboard_imgs=None):
+    def section_title(self, title):
+        self.set_font('Arial', 'B', 14)
+        self.set_text_color(211, 47, 47) # Crimson
+        self.cell(0, 10, title.upper(), 0, 1, 'L')
+        # Red Underline
+        self.set_draw_color(211, 47, 47)
+        self.line(10, self.get_y(), 200, self.get_y())
+        self.ln(5)
+
+    def body_text(self, text):
+        self.set_font('Arial', '', 11)
+        self.set_text_color(0, 0, 0) # Black Text for readability on white paper
+        self.multi_cell(0, 6, text)
+        self.ln(5)
+
+def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dashboard_imgs=None):
     pdf = PDFReport()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    if report_type == "full":
-        pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 10, "1. EXECUTIVE SUMMARY", 0, 1)
-        pdf.ln(5)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 10, f"ANALYSIS SCOPE: {query}", 0, 1)
-        pdf.set_font("Arial", size=10)
-        clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
-        pdf.multi_cell(0, 6, clean_text)
-        pdf.ln(5)
-        if plot_path and os.path.exists(plot_path):
-            pdf.image(plot_path, x=10, w=170)
-        pdf.add_page()
-
-    pdf.set_font("Arial", 'B', 14)
-    title = "2. DATA INSIGHTS" if report_type == "full" else "DASHBOARD EXPORT"
-    pdf.cell(0, 10, title, 0, 1)
-    pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "STATISTICAL OVERVIEW:", 0, 1)
-    pdf.set_font("Courier", size=8)
-    stats_str = df_stats.to_string()
-    pdf.multi_cell(0, 5, stats_str)
+    # --- SECTION 1: MISSION OVERVIEW (METRICS) ---
+    pdf.section_title("1. Mission Overview")
+    
+    # Metrics Grid Logic
+    rows = df.shape[0]
+    cols = df.shape[1]
+    missing = df.isnull().sum().sum()
+    dupes = df.duplicated().sum()
+    
+    pdf.set_font("Courier", 'B', 11)
+    pdf.set_fill_color(240, 240, 240) # Light Grey Box
+    pdf.cell(90, 10, f" TOTAL RECORDS: {rows}", 1, 0, 'L', 1)
+    pdf.cell(90, 10, f" VARIABLES:     {cols}", 1, 1, 'L', 1)
+    pdf.cell(90, 10, f" MISSING DATA:  {missing}", 1, 0, 'L', 1)
+    pdf.cell(90, 10, f" DUPLICATES:    {dupes}", 1, 1, 'L', 1)
     pdf.ln(10)
 
+    # --- SECTION 2: EXECUTIVE SUMMARY (Full Report Only) ---
+    if report_type == "full":
+        pdf.section_title("2. Intelligence Report")
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 10, f"QUERY SCOPE: {query}", 0, 1)
+        pdf.ln(2)
+        
+        pdf.set_font("Arial", '', 11)
+        clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
+        pdf.multi_cell(0, 6, clean_text)
+        pdf.ln(10)
+        
+        if plot_path and os.path.exists(plot_path):
+            pdf.image(plot_path, x=10, w=190) # Full Width
+            pdf.ln(10)
+        pdf.add_page()
+
+    # --- SECTION 3: DATA INTELLIGENCE (STATS) ---
+    title_num = "3." if report_type == "full" else "2."
+    pdf.section_title(f"{title_num} Statistical Recon")
+    
+    # Statistical Table (Formatted Monospace)
+    pdf.set_font("Courier", size=8)
+    stats = df.describe()
+    stats_str = stats.to_string()
+    
+    # Draw a light grey background for stats
+    pdf.set_fill_color(250, 250, 250)
+    pdf.multi_cell(0, 5, stats_str, border=1, fill=True)
+    pdf.ln(10)
+
+    # --- SECTION 4: VISUAL RECON (CHARTS) ---
     if dashboard_imgs:
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "VISUALIZATIONS:", 0, 1)
-        pdf.ln(5)
-        for img_path in dashboard_imgs:
+        title_num = "4." if report_type == "full" else "3."
+        pdf.section_title(f"{title_num} Visual Surveillance")
+        
+        for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
-                # Using dark BG images on white paper works fine
-                pdf.image(img_path, x=10, w=180)
-                pdf.ln(5)
+                pdf.set_font("Arial", 'I', 9)
+                pdf.cell(0, 10, f"Figure {i+1}: Automated Visualization", 0, 1)
+                pdf.image(img_path, x=10, w=190) # Scale to page width
+                pdf.ln(10)
+                
     return pdf.output(dest='S').encode('latin-1')
 
 # --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS (CUSTOM HEADER TABLE) ---
@@ -167,16 +222,11 @@ st.markdown("""
     div[data-testid="stDataFrame"] {
         background-color: #050505; 
         border: 1px solid #333;
-        
-        /* THE HEADER EFFECT */
-        border-top: 5px solid #D32F2F; /* Thick Red Top "Header" Line */
-        
+        border-top: 5px solid #D32F2F; /* Header Line */
         border-radius: 10px;
         padding: 5px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Deep Shadow */
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-    
-    /* Ensure the internal table container fits the dark theme */
     div[data-testid="stDataFrame"] > div {
         background-color: #050505;
     }
@@ -254,7 +304,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS V3.4")
+    st.caption("INSIGHTGEN | ANALYTICS V3.5")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
@@ -384,6 +434,8 @@ if uploaded_file:
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Reds', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="#1E1E1E", plot_bgcolor="#1E1E1E", font_color="#FFF")
                 try:
+                    # Export dark bg image for PDF
+                    fig_corr.update_layout(paper_bgcolor="#111")
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
                 except: pass
@@ -393,6 +445,7 @@ if uploaded_file:
                 fig1.update_traces(marker_color='#D32F2F', marker_line_color='#FFF')
                 fig1.update_layout(paper_bgcolor="#1E1E1E", plot_bgcolor="#1E1E1E", font_color="#FFF")
                 try:
+                    fig1.update_layout(paper_bgcolor="#111")
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
                 except: pass
@@ -402,6 +455,7 @@ if uploaded_file:
                 fig2.update_traces(marker_color='#FFF')
                 fig2.update_layout(paper_bgcolor="#1E1E1E", plot_bgcolor="#1E1E1E", font_color="#FFF")
                 try:
+                    fig2.update_layout(paper_bgcolor="#111")
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
                 except: pass
@@ -410,17 +464,18 @@ if uploaded_file:
             with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
             with d_col2:
                 try:
+                    # --- UPDATED: PDF GENERATION CALL WITH DF FOR METRICS ---
+                    # We pass 'df' (the original dataframe) so the summary metrics (Rows, Cols, Missing) 
+                    # are calculated correctly in the PDF.
                     stats_summary = df.describe()
-                    dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
+                    dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
                     st.download_button(label="[ EXPORT DASHBOARD PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
             st.markdown("---")
-            # --- 🔴 CHANGED: CLEAN TABLE (NO BARS) ---
             column_config = {}
             for col in filtered_df.select_dtypes(include="number").columns:
-                # Use NumberColumn instead of ProgressColumn to remove the bar
                 column_config[col] = st.column_config.NumberColumn(col, format="%.2f")
             
             st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
@@ -428,6 +483,11 @@ if uploaded_file:
             st.markdown("---")
             if not numeric_df.empty:
                 st.markdown("### VISUALIZATION DASHBOARD")
+                # Reset layout for UI viewing
+                fig_corr.update_layout(paper_bgcolor="#1E1E1E")
+                fig1.update_layout(paper_bgcolor="#1E1E1E")
+                fig2.update_layout(paper_bgcolor="#1E1E1E")
+                
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
                 with gc1: st.plotly_chart(fig1, width="stretch")
@@ -438,9 +498,8 @@ if uploaded_file:
         with full_report_container:
             if st.session_state.analysis_result:
                 plot_to_use = "plot.png" if st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png") else None
-                stats_summary = filtered_df.describe()
                 try:
-                    full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
+                    full_pdf = generate_pdf("full", df, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
                     st.download_button(label="[ EXPORT FULL REPORT ]", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
