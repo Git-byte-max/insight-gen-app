@@ -18,7 +18,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Frost",
+    page_title="InsightGen: Liquid",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -45,7 +45,6 @@ if "last_query" not in st.session_state:
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
-        # BRANDING: Modern
         self.cell(0, 10, 'InsightGen: Intelligence Report', 0, 1, 'C')
         self.ln(10)
     def footer(self):
@@ -63,7 +62,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
         pdf.cell(0, 10, "1. Executive Summary", 0, 1)
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 10, f"Analysis Query: {query}", 0, 1)
+        pdf.cell(0, 10, f"Query: {query}", 0, 1)
         pdf.set_font("Arial", size=10)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
@@ -77,7 +76,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
     pdf.cell(0, 10, title, 0, 1)
     pdf.ln(5)
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Statistical Overview:", 0, 1)
+    pdf.cell(0, 10, "Statistics:", 0, 1)
     pdf.set_font("Courier", size=8)
     stats_str = df_stats.to_string()
     pdf.multi_cell(0, 5, stats_str)
@@ -93,118 +92,117 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. FROST THEME CSS ---
+# --- 5. LIQUID GLASS THEME CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500;700&display=swap');
     
-    /* ANIMATED GRADIENT BACKGROUND */
+    /* ANIMATED LIQUID BACKGROUND */
     .stApp {
-        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-        background-size: 400% 400%;
-        animation: gradient 15s ease infinite;
-        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+        background-size: 200% 200%;
+        animation: liquid 10s ease infinite;
+        font-family: 'Quicksand', sans-serif;
     }
     
-    @keyframes gradient {
+    @keyframes liquid {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
     
-    /* GLASSMORPHISM CARDS */
-    .metric-card {
-        background: rgba(255, 255, 255, 0.25);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        padding: 20px;
-        text-align: center;
-        transition: transform 0.3s ease;
-    }
-    .metric-card:hover { transform: translateY(-5px); }
-
-    /* TEXT STYLES (High Contrast White) */
-    h1, h2, h3, .main-title, p, label, .stMarkdown {
+    /* TEXT STYLES */
+    h1, h2, h3, .main-title, p, label {
         color: #FFFFFF !important;
-        text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
     .main-title {
-        font-weight: 800;
+        font-weight: 700;
         font-size: 4.5rem;
-        letter-spacing: -2px;
+        letter-spacing: 2px;
     }
-    
+
+    /* GLASS CARDS */
+    .metric-card {
+        background: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        padding: 20px;
+        text-align: center;
+    }
     .metric-value { 
         font-size: 42px; 
         font-weight: 700; 
-        color: #FFF; 
+        color: #fff; 
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .metric-label { 
-        font-size: 12px; 
+        font-size: 13px; 
         color: #F0F0F0; 
         text-transform: uppercase; 
         font-weight: 600; 
         letter-spacing: 1px;
     }
 
-    /* GLASS BUTTONS */
-    .stButton>button {
-        background: rgba(255, 255, 255, 0.25);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 50px;
-        padding: 10px 30px;
-        font-weight: 600;
-        font-family: 'Poppins', sans-serif;
-        transition: all 0.3s ease;
+    /* --- THEMED TABLE (THE LIQUID TABLE) --- */
+    div[data-testid="stDataFrame"] {
+        background: rgba(255, 255, 255, 0.35) !important; /* Semi-transparent White */
+        backdrop-filter: blur(12px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        padding: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    
+    /* INPUTS */
+    input[type="text"] {
+        background: rgba(255, 255, 255, 0.25) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        border-radius: 30px;
         backdrop-filter: blur(5px);
+        padding: 10px 15px;
+    }
+    
+    /* BUTTONS */
+    .stButton>button {
+        background: rgba(255, 255, 255, 0.35);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 30px;
+        font-weight: 700;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
         background: rgba(255, 255, 255, 0.6);
-        color: #e73c7e;
-        transform: scale(1.05);
-        border-color: #FFF;
-    }
-    
-    /* INPUTS & DATAFRAME */
-    input[type="text"] {
-        background: rgba(255, 255, 255, 0.2) !important;
-        color: white !important;
-        border: 1px solid rgba(255, 255, 255, 0.4) !important;
-        border-radius: 12px;
-        backdrop-filter: blur(5px);
-    }
-    div[data-testid="stDataFrame"] {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
     }
 
     /* TABS */
     .stTabs [data-baseweb="tab-list"] { 
-        gap: 15px; 
-        background: rgba(255, 255, 255, 0.1); 
-        padding: 10px; 
+        background: rgba(255, 255, 255, 0.2); 
+        padding: 8px; 
         border-radius: 50px; 
-        border: 1px solid rgba(255,255,255,0.2);
+        gap: 10px;
     }
     .stTabs [data-baseweb="tab"] { 
         background-color: transparent; 
         border: none; 
         color: #EEE; 
-        font-family: 'Poppins', sans-serif; 
+        font-family: 'Quicksand', sans-serif; 
         font-weight: 600;
     }
     .stTabs [aria-selected="true"] { 
-        background-color: rgba(255, 255, 255, 0.9); 
-        color: #e73c7e; 
+        background-color: rgba(255, 255, 255, 0.8); 
+        color: #23a6d5; 
         border-radius: 40px; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -217,21 +215,21 @@ with st.sidebar:
     
     # 🟢 DEBUGGER
     if DEMO_MODE:
-        st.code("OFFLINE MODE")
+        st.code("MODE: OFFLINE")
         st.error(f"Error: {debug_error}")
         if "API Key Missing" in str(debug_error):
-            st.warning("Please check Secrets.")
+            st.warning("Check Secrets.")
     else:
-        st.code("SYSTEM ONLINE")
+        st.code("MODE: ONLINE")
         
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("InsightGen | Frost UI v2.0")
+    st.caption("InsightGen | Liquid UI v1.0")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
-st.markdown("#### *AI-Powered Data Intelligence*")
+st.markdown("#### *Fluid Intelligence Analysis*")
 
 if uploaded_file:
     try:
@@ -244,7 +242,7 @@ if uploaded_file:
 
         # METRICS GRID
         st.write("")
-        st.subheader("Overview")
+        st.subheader("Data Overview")
         mc1, mc2, mc3, mc4 = st.columns(4)
         with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">Rows</div></div>""", unsafe_allow_html=True)
         with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">Columns</div></div>""", unsafe_allow_html=True)
@@ -256,16 +254,16 @@ if uploaded_file:
             st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">Duplicates</div></div>""", unsafe_allow_html=True)
         st.write("")
 
-        tab1, tab2 = st.tabs(["Analysis", "Visualization"])
+        tab1, tab2 = st.tabs(["Analysis Stream", "Visual Flow"])
 
         # --- TAB 1 ---
         with tab1:
             st.write("")
             col_q, col_b = st.columns([3, 1])
             with col_q:
-                query = st.text_input("Ask a question about your data:", placeholder="e.g. Compare sales between regions...", label_visibility="collapsed")
+                query = st.text_input("Ask a question:", placeholder="e.g. Analyze sales trends...", label_visibility="collapsed")
             with col_b:
-                run_btn = st.button("Generate Insight", use_container_width=True)
+                run_btn = st.button("Flow", use_container_width=True)
 
             if run_btn and query:
                 st.session_state.last_query = query
@@ -273,9 +271,9 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        # MODERN ABSTRACT LOADER
+                        # LIQUID LOADER
                         components.iframe("https://lottie.host/embed/937db875-6807-4e92-b43a-2339e80a5667/v1y6b8S8C8.json", height=200, scrolling=False)
-                        st.markdown("<center style='color: #FFF; font-family: Poppins;'>Running AI Analysis...</center>", unsafe_allow_html=True)
+                        st.markdown("<center style='color: #FFF; font-family: Quicksand;'>Fluid Processing...</center>", unsafe_allow_html=True)
 
                 try:
                     if DEMO_MODE:
@@ -324,19 +322,19 @@ if uploaded_file:
 
             if st.session_state.analysis_result:
                 st.markdown("---")
-                st.caption(f"Question: {st.session_state.last_query}")
+                st.caption(f"Query: {st.session_state.last_query}")
                 r1, r2 = st.columns([1.5, 1])
                 with r1:
-                    st.markdown("### Key Findings")
+                    st.markdown("### Findings")
                     st.markdown(st.session_state.analysis_result)
                 with r2:
-                    st.markdown("### Chart")
+                    st.markdown("### Visualization")
                     if st.session_state.analysis_plot == "simulated":
                         st.info("Simulated Plot")
                     elif st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png"):
                         st.image("plot.png")
                     else:
-                        st.caption("No chart available.")
+                        st.caption("No visual data.")
 
         # --- TAB 2 ---
         with tab2:
@@ -353,10 +351,10 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # CLEAN WHITE/PASTEL PLOTS
+                # CLEAN GLASS THEME FOR PLOTS
                 corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Purples', template="plotly_white")
-                fig_corr.update_layout(paper_bgcolor="rgba(255,255,255,0.5)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
+                fig_corr.update_layout(paper_bgcolor="rgba(255,255,255,0.4)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
                 try:
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
@@ -364,8 +362,8 @@ if uploaded_file:
                 
                 x_axis_val = numeric_df.columns[0]
                 fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
-                fig1.update_traces(marker_color='#e73c7e', marker_line_color='#fff')
-                fig1.update_layout(paper_bgcolor="rgba(255,255,255,0.5)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
+                fig1.update_traces(marker_color='#66a6ff', marker_line_color='#fff')
+                fig1.update_layout(paper_bgcolor="rgba(255,255,255,0.4)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
                 try:
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
@@ -373,8 +371,8 @@ if uploaded_file:
 
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
                 fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
-                fig2.update_traces(marker_color='#23a6d5')
-                fig2.update_layout(paper_bgcolor="rgba(255,255,255,0.5)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
+                fig2.update_traces(marker_color='#89f7fe')
+                fig2.update_layout(paper_bgcolor="rgba(255,255,255,0.4)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
                 try:
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
@@ -386,7 +384,7 @@ if uploaded_file:
                 try:
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ Download Dashboard PDF ]", data=dash_pdf, file_name="InsightGen_Frost_Dashboard.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ Download Liquid Report ]", data=dash_pdf, file_name="InsightGen_Liquid_Dashboard.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -398,7 +396,7 @@ if uploaded_file:
             
             st.markdown("---")
             if not numeric_df.empty:
-                st.markdown("### Visualizations")
+                st.markdown("### Visual Flow")
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
                 with gc1: st.plotly_chart(fig1, width="stretch")
@@ -412,7 +410,7 @@ if uploaded_file:
                 stats_summary = filtered_df.describe()
                 try:
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    st.download_button(label="[ Download Full Report ]", data=full_pdf, file_name="InsightGen_Frost_Report.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ Download Full Report ]", data=full_pdf, file_name="InsightGen_Liquid_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
 
@@ -420,4 +418,4 @@ if uploaded_file:
         st.error(f"FATAL_ERROR: {e}")
 else:
     with st.container():
-        st.info("Welcome to InsightGen. Upload a dataset to begin.")
+        st.info("Welcome. Please introduce data to the flow.")
