@@ -18,7 +18,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Blueprint",
+    page_title="InsightGen: Pro Analyst",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -44,13 +44,14 @@ if "last_query" not in st.session_state:
 # --- 4. PDF ENGINE ---
 class PDFReport(FPDF):
     def header(self):
-        self.set_font('Courier', 'B', 15)
-        self.cell(0, 10, 'INSIGHTGEN // TECHNICAL SCHEMATIC', 0, 1, 'C')
+        self.set_font('Arial', 'B', 15)
+        # BRANDING: Financial
+        self.cell(0, 10, 'INSIGHTGEN | ANALYST REPORT', 0, 1, 'C')
         self.ln(10)
     def footer(self):
         self.set_y(-15)
-        self.set_font('Courier', 'I', 8)
-        self.cell(0, 10, f'DWG NO. {self.page_no()}', 0, 0, 'C')
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Sheet {self.page_no()}', 0, 0, 'C')
 
 def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None, dashboard_imgs=None):
     pdf = PDFReport()
@@ -58,12 +59,12 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
     pdf.set_auto_page_break(auto=True, margin=15)
     
     if report_type == "full":
-        pdf.set_font("Courier", 'B', 14)
-        pdf.cell(0, 10, "1. ANALYSIS_LOG", 0, 1)
+        pdf.set_font("Arial", 'B', 14)
+        pdf.cell(0, 10, "1. Executive Summary", 0, 1)
         pdf.ln(5)
-        pdf.set_font("Courier", 'B', 11)
-        pdf.cell(0, 10, f"INPUT_VECTOR: {query}", 0, 1)
-        pdf.set_font("Courier", size=10)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 10, f"Query Scope: {query}", 0, 1)
+        pdf.set_font("Arial", size=10)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(5)
@@ -71,20 +72,20 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
             pdf.image(plot_path, x=10, w=170)
         pdf.add_page()
 
-    pdf.set_font("Courier", 'B', 14)
-    title = "2. DATA_MATRIX" if report_type == "full" else "DASHBOARD_LAYOUT"
+    pdf.set_font("Arial", 'B', 14)
+    title = "2. Data Tables" if report_type == "full" else "Dashboard Export"
     pdf.cell(0, 10, title, 0, 1)
     pdf.ln(5)
-    pdf.set_font("Courier", 'B', 12)
-    pdf.cell(0, 10, "STAT_BLOCK:", 0, 1)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Statistical Overview:", 0, 1)
     pdf.set_font("Courier", size=8)
     stats_str = df_stats.to_string()
     pdf.multi_cell(0, 5, stats_str)
     pdf.ln(10)
 
     if dashboard_imgs:
-        pdf.set_font("Courier", 'B', 12)
-        pdf.cell(0, 10, "VISUAL_ASSEMBLY:", 0, 1)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "Charts:", 0, 1)
         pdf.ln(5)
         for img_path in dashboard_imgs:
             if os.path.exists(img_path):
@@ -92,121 +93,116 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. BLUEPRINT THEME CSS ---
+# --- 5. DARK EXCEL THEME CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
     
     /* GLOBAL STYLES */
     html, body, [class*="css"] {
-        font-family: 'Space Mono', monospace;
+        font-family: 'Segoe UI', sans-serif;
         color: #E0E0E0; 
-        background-color: #0033CC; /* Blueprint Blue */
-        font-size: 16px;
+        background-color: #212121; /* Dark Gray */
+        font-size: 15px;
     }
     
-    /* BLUEPRINT GRID BACKGROUND */
+    /* APP BACKGROUND */
     .stApp {
-        background-color: #0033CC;
-        background-image: 
-            linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
-        background-size: 20px 20px;
+        background-color: #212121;
     }
 
     /* SCROLLBARS */
     ::-webkit-scrollbar { width: 10px; }
-    ::-webkit-scrollbar-track { background: #002288; border-left: 1px solid #FFF; }
-    ::-webkit-scrollbar-thumb { background: #FFF; border: 1px solid #0033CC; }
+    ::-webkit-scrollbar-track { background: #1E1E1E; }
+    ::-webkit-scrollbar-thumb { background: #444; border-radius: 0; }
     
     /* HEADERS */
     .main-title {
-        font-family: 'Space Mono', monospace;
-        color: #FFFFFF;
-        font-size: 4rem;
-        border: 4px solid #FFFFFF;
-        padding: 10px;
-        display: inline-block;
-        background: #002288;
+        font-family: 'Segoe UI', sans-serif;
+        color: #107C41; /* EXCEL GREEN */
+        font-size: 3.5rem;
+        font-weight: 700;
+        letter-spacing: -1px;
     }
     h1, h2, h3 { 
-        font-family: 'Space Mono', monospace !important; 
-        color: #FFFFFF !important; 
-        text-transform: uppercase;
-        text-decoration: underline;
+        font-family: 'Segoe UI', sans-serif !important; 
+        color: #107C41 !important; 
+        font-weight: 600 !important;
     }
 
-    /* METRIC CARDS (Technical Box) */
+    /* METRIC CARDS (Cell Style) */
     .metric-card {
-        background: #002288;
-        border: 2px solid #FFFFFF;
+        background: #333333;
+        border: 1px solid #555;
+        border-left: 4px solid #107C41;
         padding: 15px;
         text-align: center;
-        box-shadow: 5px 5px 0px rgba(0,0,0,0.3);
+        border-radius: 2px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
     .metric-value { 
-        font-family: 'Space Mono', monospace; 
-        font-size: 42px; 
+        font-family: 'Segoe UI', sans-serif; 
+        font-size: 32px; 
         color: #FFFFFF; 
-        font-weight: 700;
+        font-weight: 600;
     }
     .metric-label { 
-        font-size: 12px; 
-        color: #FFFFFF; 
+        font-size: 13px; 
+        color: #AAAAAA; 
         text-transform: uppercase; 
-        border-top: 1px dashed #FFFFFF;
-        padding-top: 5px;
+        font-weight: 400;
     }
 
-    /* BUTTONS (Mechanical) */
+    /* BUTTONS (Office Style) */
     .stButton>button {
-        background: #FFFFFF;
-        color: #0033CC;
-        font-family: 'Space Mono', monospace;
-        font-weight: 700;
-        border: 2px solid #002288;
-        border-radius: 0px; 
-        text-transform: uppercase;
-        box-shadow: 4px 4px 0px #001144;
+        background-color: #107C41;
+        color: #FFFFFF;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 16px;
+        border: none;
+        border-radius: 2px; 
+        font-weight: 600;
+        padding: 0.5rem 1rem;
     }
     .stButton>button:hover { 
-        background: #E0E0E0; 
-        top: 2px;
-        left: 2px;
-        box-shadow: 2px 2px 0px #001144;
+        background-color: #0E6032; 
+        color: #FFFFFF; 
     }
 
     /* TABS */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; border-bottom: 2px solid #FFFFFF; }
+    .stTabs [data-baseweb="tab-list"] { gap: 5px; border-bottom: 2px solid #333; }
     .stTabs [data-baseweb="tab"] { 
         height: 40px; 
-        background-color: #002288; 
-        border: 2px solid #FFFFFF; 
-        color: #FFFFFF; 
-        font-family: 'Space Mono', monospace; 
-        border-radius: 0;
+        background-color: #333; 
+        border: 1px solid #444; 
+        border-bottom: none;
+        color: #CCC; 
+        font-family: 'Segoe UI', sans-serif; 
+        font-weight: 400;
+        border-radius: 4px 4px 0 0;
     }
     .stTabs [aria-selected="true"] { 
-        background-color: #FFFFFF; 
-        color: #0033CC; 
+        background-color: #212121; 
+        color: #107C41; 
+        border-top: 3px solid #107C41;
     }
     
     /* DATAFRAME & INPUTS */
-    div[data-testid="stDataFrame"] { border: 2px solid #FFFFFF; background: #002288; }
+    div[data-testid="stDataFrame"] { border: 1px solid #444; }
     input[type="text"] { 
-        background-color: #002288 !important; 
-        color: #FFFFFF !important; 
-        border: 2px solid #FFFFFF !important; 
-        font-family: 'Space Mono', monospace;
+        background-color: #333 !important; 
+        color: #FFF !important; 
+        border: 1px solid #555 !important; 
+        font-family: 'Segoe UI', sans-serif;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
-    st.markdown("### > SPECIFICATIONS")
-    uploaded_file = st.file_uploader("UPLOAD DATA SCHEMATIC", type=["csv", "xlsx"])
+    st.markdown("### > Workbook Settings")
+    uploaded_file = st.file_uploader("Import Data Source", type=["csv", "xlsx"])
     st.markdown("---")
     
     # 🟢 DEBUGGER
@@ -214,18 +210,18 @@ with st.sidebar:
         st.code("STATUS: OFFLINE (SIM)")
         st.error(f"Reason: {debug_error}")
         if "API Key Missing" in str(debug_error):
-            st.warning("Check 'Secrets' config.")
+            st.warning("Check Secrets.")
     else:
-        st.code("STATUS: ONLINE (LIVE)")
+        st.code("STATUS: CONNECTED")
         
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | BLUEPRINT V1.0")
+    st.caption("INSIGHTGEN | PRO ANALYST V1.0")
 
 # --- 7. MAIN CONTENT ---
-st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
-st.markdown("#### *// ENGINEERING DATA WORKBENCH*")
+st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
+st.markdown("#### *// Enterprise Data Analytics*")
 
 if uploaded_file:
     try:
@@ -238,28 +234,28 @@ if uploaded_file:
 
         # METRICS GRID
         st.write("")
-        st.subheader("TECHNICAL SPECS")
+        st.subheader("Data Summary")
         mc1, mc2, mc3, mc4 = st.columns(4)
-        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">ROWS</div></div>""", unsafe_allow_html=True)
-        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">VARS</div></div>""", unsafe_allow_html=True)
+        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">Rows</div></div>""", unsafe_allow_html=True)
+        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">Columns</div></div>""", unsafe_allow_html=True)
         with mc3: 
-            missing = df.isnull().sum().sum(); 
-            st.markdown(f"""<div class="metric-card"><div class="metric-value">{missing}</div><div class="metric-label">NULLS</div></div>""", unsafe_allow_html=True)
+            missing = df.isnull().sum().sum(); color = "#FF5555" if missing > 0 else "#107C41"
+            st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">Empty Cells</div></div>""", unsafe_allow_html=True)
         with mc4: 
             dupes = df.duplicated().sum()
-            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPES</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">Duplicates</div></div>""", unsafe_allow_html=True)
         st.write("")
 
-        tab1, tab2 = st.tabs(["[ 1. ANALYSIS_UNIT ]", "[ 2. VISUAL_ASSEMBLY ]"])
+        tab1, tab2 = st.tabs(["Analysis Sheet", "Visual Dashboard"])
 
         # --- TAB 1 ---
         with tab1:
             st.write("")
             col_q, col_b = st.columns([3, 1])
             with col_q:
-                query = st.text_input("INPUT VECTOR:", placeholder="> Calculate velocity...", label_visibility="collapsed")
+                query = st.text_input("Formula Bar (Query):", placeholder="Calculate growth rate...", label_visibility="collapsed")
             with col_b:
-                run_btn = st.button("RUN CALC", use_container_width=True)
+                run_btn = st.button("Calculate", use_container_width=True)
 
             if run_btn and query:
                 st.session_state.last_query = query
@@ -267,8 +263,9 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        components.iframe("https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie", height=200, scrolling=False)
-                        st.markdown("<center style='color: #FFF; font-family: Space Mono;'>[ PROCESSING ]</center>", unsafe_allow_html=True)
+                        # PROFESSIONAL LOADER (Simple Bar)
+                        components.iframe("https://lottie.host/embed/937db875-6807-4e92-b43a-2339e80a5667/v1y6b8S8C8.json", height=150, scrolling=False)
+                        st.markdown("<center style='color: #AAA; font-family: Segoe UI;'>Processing Calculation...</center>", unsafe_allow_html=True)
 
                 try:
                     if DEMO_MODE:
@@ -317,19 +314,19 @@ if uploaded_file:
 
             if st.session_state.analysis_result:
                 st.markdown("---")
-                st.caption(f"VECTOR: {st.session_state.last_query}")
+                st.caption(f"Last Input: {st.session_state.last_query}")
                 r1, r2 = st.columns([1.5, 1])
                 with r1:
-                    st.markdown("### > OUTPUT_LOG")
+                    st.markdown("### Output Log")
                     st.markdown(st.session_state.analysis_result)
                 with r2:
-                    st.markdown("### > VISUALIZATION")
+                    st.markdown("### Chart Preview")
                     if st.session_state.analysis_plot == "simulated":
                         st.info("Simulated Plot")
                     elif st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png"):
                         st.image("plot.png")
                     else:
-                        st.caption("NO_VISUAL_DATA")
+                        st.caption("No chart generated.")
 
         # --- TAB 2 ---
         with tab2:
@@ -337,8 +334,8 @@ if uploaded_file:
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(cat_cols) > 0:
                 col_f1, col_f2 = st.columns(2)
-                with col_f1: selected_cat = st.selectbox("FILTER PARAM", cat_cols)
-                with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"VALUES", unique_vals, default=unique_vals[:5])
+                with col_f1: selected_cat = st.selectbox("Pivot Field", cat_cols)
+                with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"Filter Items", unique_vals, default=unique_vals[:5])
                 filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
             else:
                 filtered_df = df
@@ -346,40 +343,40 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # BLUEPRINT THEME FOR PLOTS
+                # EXCEL THEME FOR PLOTS
                 corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="simple_white")
-                fig_corr.update_layout(paper_bgcolor="#0033CC", plot_bgcolor="#0033CC", font_color="#FFF")
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greens', template="plotly_dark")
+                fig_corr.update_layout(paper_bgcolor="#212121", plot_bgcolor="#333", font_color="#E0E0E0")
                 try:
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
                 except: pass
                 
                 x_axis_val = numeric_df.columns[0]
-                fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="simple_white")
-                fig1.update_traces(marker_color='#FFF', marker_line_color='#002288')
-                fig1.update_layout(paper_bgcolor="#0033CC", plot_bgcolor="#0033CC", font_color="#FFF")
+                fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
+                fig1.update_traces(marker_color='#107C41', marker_line_color='#FFF')
+                fig1.update_layout(paper_bgcolor="#212121", plot_bgcolor="#333", font_color="#E0E0E0")
                 try:
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
                 except: pass
 
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
-                fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="simple_white")
-                fig2.update_traces(marker_color='#FFF')
-                fig2.update_layout(paper_bgcolor="#0033CC", plot_bgcolor="#0033CC", font_color="#FFF")
+                fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
+                fig2.update_traces(marker_color='#107C41')
+                fig2.update_layout(paper_bgcolor="#212121", plot_bgcolor="#333", font_color="#E0E0E0")
                 try:
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
                 except: pass
 
             d_col1, d_col2 = st.columns([4, 1])
-            with d_col1: st.markdown(f"**RECORDS:** {len(filtered_df)}") 
+            with d_col1: st.markdown(f"**Visible Rows:** {len(filtered_df)}") 
             with d_col2:
                 try:
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ EXPORT_PDF ]", data=dash_pdf, file_name="InsightGen_Blueprint.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ Export PDF ]", data=dash_pdf, file_name="InsightGen_Analyst_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -391,13 +388,13 @@ if uploaded_file:
             
             st.markdown("---")
             if not numeric_df.empty:
-                st.markdown("### > VISUAL_ASSEMBLY")
+                st.markdown("### Charts")
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
                 with gc1: st.plotly_chart(fig1, width="stretch")
                 with gc2: st.plotly_chart(fig2, width="stretch")
             else:
-                st.info("NO_NUMERIC_DATA")
+                st.info("No numeric data for charts.")
 
         with full_report_container:
             if st.session_state.analysis_result:
@@ -405,7 +402,7 @@ if uploaded_file:
                 stats_summary = filtered_df.describe()
                 try:
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    st.download_button(label="[ EXPORT_FULL_REPORT ]", data=full_pdf, file_name="InsightGen_Schematic.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ Export Full Report ]", data=full_pdf, file_name="InsightGen_Full_Exec_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
 
@@ -413,4 +410,4 @@ if uploaded_file:
         st.error(f"FATAL_ERROR: {e}")
 else:
     with st.container():
-        st.warning("AWAITING DATA SCHEMATIC (CSV/XLSX)...")
+        st.info("Ready. Please import a data file to begin.")
