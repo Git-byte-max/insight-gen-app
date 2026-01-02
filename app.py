@@ -93,7 +93,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS (ROUNDED) ---
+# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS (UPDATED TABLE & BORDERS) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;900&display=swap');
@@ -105,10 +105,9 @@ st.markdown("""
         background-color: #0a0a0a; /* Deep Matte Black */
     }
     
-    /* 🔴 CHANGED: SOLID MATTE BLACK BACKGROUND */
     .stApp {
         background-color: #0a0a0a;
-        background-image: none; /* Removed gradient for matte look */
+        background-image: none; 
     }
 
     /* === SCROLLBARS === */
@@ -123,7 +122,6 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* 🔴 CHANGED: LEFT ALIGNED TITLE */
     .main-title {
         color: #D32F2F !important;
         font-weight: 900;
@@ -131,19 +129,18 @@ st.markdown("""
         letter-spacing: -2px;
         text-shadow: 2px 2px 0px #333;
         line-height: 1.1;
-        text-align: left; /* FORCE LEFT ALIGN */
+        text-align: left;
         width: 100%;
         display: block;
     }
 
-    /* === CARDS (ROUNDED + HOVER) === */
-    /* 🔴 CHANGED: BORDER RADIUS 20px */
+    /* === 🔴 METRIC CARDS (FULL RED BORDER) === */
     .metric-card {
-        background-color: #1E1E1E;
-        border-left: 5px solid #D32F2F;
-        border-radius: 20px; /* ROUNDED EDGES */
+        background-color: #161616;
+        border: 2px solid #D32F2F; /* FULL RED BORDER */
+        border-radius: 20px;
         padding: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 10px rgba(211, 47, 47, 0.1);
         text-align: center;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         cursor: pointer;
@@ -151,9 +148,9 @@ st.markdown("""
     }
     .metric-card:hover {
         transform: translateY(-8px);
-        box-shadow: 0 10px 25px rgba(211, 47, 47, 0.4);
-        border-left: 5px solid #FF5252;
-        background-color: #252525;
+        box-shadow: 0 0 25px rgba(211, 47, 47, 0.6); /* STRONGER GLOW */
+        background-color: #200505; /* VERY DARK RED TINT */
+        border-color: #FF5252;
     }
     .metric-value { 
         color: #FFF; 
@@ -161,17 +158,29 @@ st.markdown("""
         font-weight: 900; 
     }
     .metric-label { 
-        color: #888 !important; 
+        color: #AAA !important; 
         font-size: 12px; 
         font-weight: bold;
     }
 
+    /* === 🟦 TABLE STYLING (NEW DATA GRID LOOK) === */
+    div[data-testid="stDataFrame"] {
+        background-color: #050505; /* PURE BLACK BACKGROUND */
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 10px;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.8); /* INNER SHADOW FOR DEPTH */
+        transition: border-color 0.3s;
+    }
+    div[data-testid="stDataFrame"]:hover {
+        border-color: #D32F2F; /* GLOWS RED ON HOVER */
+    }
+
     /* === COMPONENTS (ROUNDED) === */
-    /* 🔴 CHANGED: ROUNDED BUTTONS */
     .stButton>button {
         background-color: #D32F2F;
         color: white;
-        border-radius: 20px; /* ROUNDED */
+        border-radius: 20px; 
         border: none;
         font-weight: 900;
         text-transform: uppercase;
@@ -182,39 +191,29 @@ st.markdown("""
     .stButton>button:hover { 
         background-color: #B71C1C; 
         transform: translateY(-2px);
-    }
-
-    /* 🔴 CHANGED: ROUNDED TABLE */
-    div[data-testid="stDataFrame"] {
-        background-color: #1E1E1E;
-        border: 1px solid #333;
-        border-top: 3px solid #D32F2F;
-        border-radius: 20px; /* ROUNDED */
-        padding: 10px;
+        box-shadow: 0 0 15px rgba(211, 47, 47, 0.5);
     }
     
-    /* 🔴 CHANGED: ROUNDED INPUTS */
     input[type="text"] {
         background: #111 !important;
         color: #FFF !important;
         border: 1px solid #444 !important;
         border-left: 3px solid #D32F2F !important;
-        border-radius: 20px; /* ROUNDED */
+        border-radius: 20px;
         padding-left: 15px;
     }
     
-    /* 🔴 CHANGED: ROUNDED TABS */
     .stTabs [data-baseweb="tab-list"] { 
         background-color: #000; 
         padding: 8px; 
-        border-radius: 20px; /* ROUNDED */
+        border-radius: 20px;
         border: 1px solid #333;
     }
     .stTabs [data-baseweb="tab"] { color: #666; font-weight: 700; text-transform: uppercase; }
     .stTabs [aria-selected="true"] { 
         background-color: #D32F2F; 
         color: #FFF; 
-        border-radius: 15px; /* ROUNDED ACTIVE TAB */
+        border-radius: 15px;
     }
 
     /* ================================= */
@@ -224,7 +223,7 @@ st.markdown("""
     @media only screen and (max-width: 768px) {
         .main-title {
             font-size: 2.8rem !important;
-            text-align: left; /* Keep left align on mobile too */
+            text-align: left;
         }
         .metric-value { font-size: 28px !important; }
         .metric-card { padding: 15px !important; margin-bottom: 10px !important; }
@@ -250,7 +249,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS V3.1")
+    st.caption("INSIGHTGEN | ANALYTICS V3.2")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
@@ -296,7 +295,6 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        # LOTTIE ANIMATION
                         components.iframe("https://lottie.host/embed/4f0b35e7-c2d8-4026-a494-11d54fa5e4f2/edm0jSn651.lottie", height=200, scrolling=False)
                         st.markdown("<center style='color: #D32F2F; font-family: Roboto;'>PROCESSING DATA...</center>", unsafe_allow_html=True)
 
