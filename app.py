@@ -276,7 +276,7 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        components.iframe("https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie", height=200, scrolling=False)
+                        components.iframe("https://lottie.host/55a2fae6-5d47-4ada-b1fe-1b2e52f5c56d/RpgXLM6mwe.lottie", height=200, scrolling=False)
                         st.markdown("<center style='color: #00F0FF; font-family: Orbitron;'>[ PROCESSING DATA... ]</center>", unsafe_allow_html=True)
 
                 try:
@@ -425,3 +425,4 @@ if uploaded_file:
 else:
     with st.container():
         st.warning("SYSTEM STANDBY: AWAITING DATA UPLOAD...")
+
