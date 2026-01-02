@@ -18,7 +18,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Mark 85",
+    page_title="InsightGen: Terminal Link",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -44,13 +44,14 @@ if "last_query" not in st.session_state:
 # --- 4. PDF ENGINE ---
 class PDFReport(FPDF):
     def header(self):
-        self.set_font('Arial', 'B', 15)
-        self.cell(0, 10, 'InsightGen: Intelligence Report (MK-85)', 0, 1, 'C')
+        self.set_font('Courier', 'B', 15)
+        # BRANDING: Retro Style
+        self.cell(0, 10, 'INSIGHTGEN // TERMINAL REPORT', 0, 1, 'C')
         self.ln(10)
     def footer(self):
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+        self.set_font('Courier', 'I', 8)
+        self.cell(0, 10, f'TERM_PAGE_{self.page_no()}', 0, 0, 'C')
 
 def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None, dashboard_imgs=None):
     pdf = PDFReport()
@@ -58,12 +59,12 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
     pdf.set_auto_page_break(auto=True, margin=15)
     
     if report_type == "full":
-        pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 10, "1. Executive AI Analysis", 0, 1)
+        pdf.set_font("Courier", 'B', 14)
+        pdf.cell(0, 10, "1. EXEC_ANALYSIS_LOG", 0, 1)
         pdf.ln(5)
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 10, f"Query: {query}", 0, 1)
-        pdf.set_font("Arial", size=10)
+        pdf.set_font("Courier", 'B', 11)
+        pdf.cell(0, 10, f"QUERY_INPUT: {query}", 0, 1)
+        pdf.set_font("Courier", size=10)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(5)
@@ -71,20 +72,20 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
             pdf.image(plot_path, x=10, w=170)
         pdf.add_page()
 
-    pdf.set_font("Arial", 'B', 14)
-    title = "2. Automated Data Dashboard" if report_type == "full" else "Automated Dashboard Report"
+    pdf.set_font("Courier", 'B', 14)
+    title = "2. DATA_DASHBOARD_MATRIX" if report_type == "full" else "DASHBOARD_EXPORT"
     pdf.cell(0, 10, title, 0, 1)
     pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "Statistical Summary:", 0, 1)
+    pdf.set_font("Courier", 'B', 12)
+    pdf.cell(0, 10, "STAT_SUMMARY:", 0, 1)
     pdf.set_font("Courier", size=8)
     stats_str = df_stats.to_string()
     pdf.multi_cell(0, 5, stats_str)
     pdf.ln(10)
 
     if dashboard_imgs:
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "Visual Analytics:", 0, 1)
+        pdf.set_font("Courier", 'B', 12)
+        pdf.cell(0, 10, "VISUAL_ARRAYS:", 0, 1)
         pdf.ln(5)
         for img_path in dashboard_imgs:
             if os.path.exists(img_path):
@@ -92,123 +93,120 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. IRON MAN THEME CSS ---
+# --- 5. FALLOUT / RETRO TERMINAL CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
     
-    /* GLOBAL STYLES */
+    /* GLOBAL RETRO STYLING */
     html, body, [class*="css"] {
-        font-family: 'Rajdhani', sans-serif;
-        color: #F0F0F0; 
-        background-color: #0d0202; /* Dark Red/Black */
-        font-size: 18px;
+        font-family: 'VT323', monospace;
+        color: #FFB000; /* PHOSPHOR AMBER */
+        background-color: #120d00;
+        font-size: 20px;
+        letter-spacing: 1px;
     }
     
-    /* BACKGROUND GRID (Arc Reactor Red) */
+    /* CRT SCANLINE BACKGROUND */
     .stApp {
-        background-color: #0d0202;
+        background-color: #120d00;
         background-image: 
-            linear-gradient(rgba(255, 0, 51, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 0, 51, 0.05) 1px, transparent 1px);
-        background-size: 40px 40px; 
+            linear-gradient(rgba(18, 13, 0, 0.9) 50%, rgba(0, 0, 0, 0.6) 50%), 
+            linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background-size: 100% 2px, 3px 100%;
     }
 
     /* SCROLLBARS */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0d0202; }
-    ::-webkit-scrollbar-thumb { background: #FF0033; border-radius: 4px; }
+    ::-webkit-scrollbar { width: 12px; }
+    ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #FFB000; }
+    ::-webkit-scrollbar-thumb { background: #FFB000; border: 2px solid #000; }
     
     /* HEADERS */
     .main-title {
-        font-family: 'Orbitron', sans-serif;
-        color: #FF0033; /* HOT ROD RED */
-        font-size: 4.5rem;
-        line-height: 1;
-        text-shadow: 0 0 15px rgba(255, 0, 51, 0.6);
+        font-family: 'VT323', monospace;
+        color: #FFB000;
+        font-size: 6rem;
+        line-height: 0.8;
+        text-shadow: 0 0 10px #FFB000, 2px 2px 0px #000;
         text-transform: uppercase;
-        letter-spacing: 3px;
     }
     h1, h2, h3 { 
-        font-family: 'Orbitron', sans-serif !important; 
-        color: #FFD700 !important; /* GOLD */
+        font-family: 'VT323', monospace !important; 
+        color: #FFB000 !important; 
         text-transform: uppercase; 
-        text-shadow: 0 0 5px rgba(255, 215, 0, 0.4);
+        border-bottom: 2px dashed #FFB000;
+        padding-bottom: 5px;
     }
 
-    /* METRIC CARDS (Armor Plating) */
+    /* METRIC CARDS (Pip-Boy Style) */
     .metric-card {
-        background: linear-gradient(135deg, rgba(40, 0, 0, 0.8), rgba(20, 0, 0, 0.8));
-        border: 1px solid rgba(255, 0, 51, 0.4);
-        border-left: 4px solid #FFD700; /* Gold Accent */
-        padding: 15px;
+        background-color: #000;
+        border: 2px solid #FFB000;
+        padding: 10px;
         text-align: center;
-        backdrop-filter: blur(5px);
-        box-shadow: 0 0 15px rgba(255, 0, 51, 0.15);
-        border-radius: 5px;
-        transition: transform 0.3s;
+        box-shadow: 0 0 15px rgba(255, 176, 0, 0.2);
+        margin-bottom: 10px;
     }
-    .metric-card:hover { transform: translateY(-5px); border-color: #FFD700; }
     
     .metric-value { 
-        font-family: 'Orbitron', sans-serif; 
-        font-size: 42px; 
-        color: #FFFFFF; 
-        text-shadow: 0 0 10px #FF0033; 
+        font-family: 'VT323', monospace; 
+        font-size: 52px; 
+        color: #FFB000; 
+        text-shadow: 2px 2px 0px #332200; 
     }
     .metric-label { 
-        font-size: 14px; 
+        font-size: 18px; 
         color: #FFD700; 
         text-transform: uppercase; 
-        letter-spacing: 2px; 
-        font-weight: 700;
+        border-top: 1px solid #FFB000;
+        display: block;
+        margin-top: 5px;
     }
 
-    /* BUTTONS (Arc Reactor Style) */
+    /* BUTTONS (Old School Keyboard) */
     .stButton>button {
-        background: linear-gradient(90deg, #8B0000, #FF0033);
-        color: #FFFFFF;
-        font-family: 'Orbitron', sans-serif;
-        font-size: 16px;
-        border: 1px solid #FFD700;
-        border-radius: 5px; 
+        background-color: #000;
+        color: #FFB000;
+        border: 2px solid #FFB000;
+        border-radius: 0px; 
+        font-family: 'VT323', monospace;
+        font-size: 24px;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: 0 0 10px rgba(255, 0, 51, 0.3);
+        box-shadow: 4px 4px 0px #332200;
+        transition: all 0.1s;
     }
     .stButton>button:hover { 
-        background: #FFD700; 
-        color: #0d0202; 
-        border: 1px solid #FF0033;
-        box-shadow: 0 0 20px #FFD700; 
-        font-weight: bold;
+        background-color: #FFB000; 
+        color: #000; 
+        box-shadow: 2px 2px 0px #FFB000;
+        transform: translate(2px, 2px);
     }
 
     /* TABS */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; border-bottom: none; }
+    .stTabs [data-baseweb="tab-list"] { gap: 5px; border-bottom: 2px solid #FFB000; }
     .stTabs [data-baseweb="tab"] { 
-        height: 50px; 
-        background-color: rgba(40, 0, 0, 0.6); 
-        border: 1px solid rgba(255, 0, 51, 0.3); 
-        color: #888; 
-        font-family: 'Orbitron', sans-serif; 
-        border-radius: 5px 5px 0 0; 
+        height: 45px; 
+        background-color: #000; 
+        border: 1px solid #FFB000; 
+        color: #885500; 
+        font-family: 'VT323', monospace; 
+        font-size: 20px;
+        border-radius: 0;
     }
     .stTabs [aria-selected="true"] { 
-        background-color: rgba(255, 0, 51, 0.1); 
-        color: #FFD700; 
-        border: 1px solid #FFD700; 
-        border-bottom: none;
-        box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.2);
+        background-color: #FFB000; 
+        color: #000; 
+        font-weight: bold;
     }
     
     /* DATAFRAME & INPUTS */
-    div[data-testid="stDataFrame"] { border: 1px solid #FF0033; border-radius: 5px; }
+    div[data-testid="stDataFrame"] { border: 2px solid #FFB000; }
     input[type="text"] { 
-        background-color: #1a0202 !important; 
-        color: #FFD700 !important; 
-        border: 1px solid #FF0033 !important; 
-        font-family: 'Rajdhani', sans-serif;
+        background-color: #000 !important; 
+        color: #FFB000 !important; 
+        border: 2px solid #FFB000 !important; 
+        font-family: 'VT323', monospace;
+        font-size: 20px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -216,26 +214,26 @@ st.markdown("""
 # --- 6. SIDEBAR ---
 with st.sidebar:
     st.markdown("### > SYSTEM_CONFIG")
-    uploaded_file = st.file_uploader("UPLOAD DATA SOURCE", type=["csv", "xlsx"])
+    uploaded_file = st.file_uploader("UPLOAD HOLOTAPE", type=["csv", "xlsx"])
     st.markdown("---")
     
     # 🟢 DEBUGGER
     if DEMO_MODE:
-        st.code("STATUS: OFFLINE (SIMULATION)")
+        st.code("STATUS: OFFLINE (SIM)")
         st.error(f"Reason: {debug_error}")
         if "API Key Missing" in str(debug_error):
-            st.warning("Check 'Secrets' in Streamlit Settings.")
+            st.warning("CHECK_SECRETS_FILE")
     else:
-        st.code("STATUS: ONLINE (CONNECTED)")
+        st.code("STATUS: ONLINE (UPLINK)")
         
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN UI | MARK-85 (RED)")
+    st.caption("INSIGHTGEN | VAULT-TEC V1.0")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
-st.markdown("#### *// INITIALIZING INTELLIGENCE PROTOCOLS...*")
+st.markdown("#### *// BOOTING ANALYSIS SUBSYSTEM...*")
 
 if uploaded_file:
     try:
@@ -250,26 +248,26 @@ if uploaded_file:
         st.write("")
         st.subheader("> DATA_DIAGNOSTICS")
         mc1, mc2, mc3, mc4 = st.columns(4)
-        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">ROWS</div></div>""", unsafe_allow_html=True)
-        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
+        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">ENTRIES</div></div>""", unsafe_allow_html=True)
+        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">FIELDS</div></div>""", unsafe_allow_html=True)
         with mc3: 
-            missing = df.isnull().sum().sum(); color = "#FF0033" if missing > 0 else "#00FF41"
-            st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING</div></div>""", unsafe_allow_html=True)
+            missing = df.isnull().sum().sum(); color = "#FF0000" if missing > 0 else "#FFB000"
+            st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">ERRORS</div></div>""", unsafe_allow_html=True)
         with mc4: 
             dupes = df.duplicated().sum()
-            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">CLONES</div></div>""", unsafe_allow_html=True)
         st.write("")
 
-        tab1, tab2 = st.tabs(["[ 1. INTELLIGENCE_HUB ]", "[ 2. VISUAL_DASHBOARD ]"])
+        tab1, tab2 = st.tabs(["[ 1. TERMINAL_INPUT ]", "[ 2. VIZ_OUTPUT ]"])
 
         # --- TAB 1 ---
         with tab1:
             st.write("")
             col_q, col_b = st.columns([3, 1])
             with col_q:
-                query = st.text_input("ENTER COMMAND:", placeholder="> Analyze correlation between X and Y...", label_visibility="collapsed")
+                query = st.text_input("ENTER COMMAND:", placeholder="> SCAN FOR PATTERNS...", label_visibility="collapsed")
             with col_b:
-                run_btn = st.button("EXECUTE", use_container_width=True)
+                run_btn = st.button("RUN_PRGM", use_container_width=True)
 
             if run_btn and query:
                 st.session_state.last_query = query
@@ -277,9 +275,9 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        # 🟢 UPDATED: RED HUD ANIMATION
-                        components.iframe("https://lottie.host/embed/55a2fae6-5d47-4ada-b1fe-1b2e52f5c56d/RpgXLM6mwe.lottie", height=200, scrolling=False)
-                        st.markdown("<center style='color: #FF0033; font-family: Orbitron;'>[ PROCESSING DATA... ]</center>", unsafe_allow_html=True)
+                        # RETRO RADAR ANIMATION
+                        components.iframe("https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie", height=200, scrolling=False)
+                        st.markdown("<center style='color: #FFB000; font-family: VT323;'>[ PROCESSING... ]</center>", unsafe_allow_html=True)
 
                 try:
                     if DEMO_MODE:
@@ -331,16 +329,16 @@ if uploaded_file:
                 st.caption(f"LAST COMMAND: {st.session_state.last_query}")
                 r1, r2 = st.columns([1.5, 1])
                 with r1:
-                    st.markdown("### > ANALYSIS_LOG")
+                    st.markdown("### > EXEC_LOG")
                     st.markdown(st.session_state.analysis_result)
                 with r2:
-                    st.markdown("### > VISUAL_FEED")
+                    st.markdown("### > VIZ_FEED")
                     if st.session_state.analysis_plot == "simulated":
                         st.info("Simulated Plot")
                     elif st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png"):
                         st.image("plot.png")
                     else:
-                        st.caption("NO_IMAGE_GENERATED")
+                        st.caption("NO_IMAGE_FOUND")
 
         # --- TAB 2 ---
         with tab2:
@@ -357,30 +355,30 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # CORRELATION (HOT THEME)
+                # CORRELATION (SOLAR/AMBER THEME)
                 corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Hot', template="plotly_dark")
-                fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFD700")
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Solar', template="plotly_dark")
+                fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFB000")
                 try:
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
                 except: pass
                 
-                # HISTOGRAM (RED/GOLD THEME)
+                # HISTOGRAM (AMBER THEME)
                 x_axis_val = numeric_df.columns[0]
                 fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
-                fig1.update_traces(marker_color='#FF0033', marker_line_color='#FFD700')
-                fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFD700")
+                fig1.update_traces(marker_color='#FFB000', marker_line_color='#000')
+                fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFB000")
                 try:
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
                 except: pass
 
-                # SCATTER (RED/GOLD THEME)
+                # SCATTER (AMBER THEME)
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
                 fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
-                fig2.update_traces(marker_color='#FFD700')
-                fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FF0033")
+                fig2.update_traces(marker_color='#CC8800')
+                fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFB000")
                 try:
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
@@ -392,7 +390,7 @@ if uploaded_file:
                 try:
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ DOWNLOAD_DASHBOARD ]", data=dash_pdf, file_name="InsightGen_Dashboard.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ DOWNLOAD_LOGS ]", data=dash_pdf, file_name="InsightGen_Logs.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -404,7 +402,7 @@ if uploaded_file:
             
             st.markdown("---")
             if not numeric_df.empty:
-                st.markdown("### > VISUAL_ANALYTICS_HUB")
+                st.markdown("### > VISUAL_MATRIX")
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
                 with gc1: st.plotly_chart(fig1, width="stretch")
@@ -418,7 +416,7 @@ if uploaded_file:
                 stats_summary = filtered_df.describe()
                 try:
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    st.download_button(label="[ DOWNLOAD_FULL_REPORT ]", data=full_pdf, file_name="InsightGen_Full_Report.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ DOWNLOAD_FULL_REPORT ]", data=full_pdf, file_name="InsightGen_Terminal_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
 
@@ -426,4 +424,4 @@ if uploaded_file:
         st.error(f"FATAL_ERROR: {e}")
 else:
     with st.container():
-        st.warning("SYSTEM STANDBY: AWAITING DATA UPLOAD...")
+        st.warning("STANDBY: INSERT HOLOTAPE (UPLOAD CSV)...")
