@@ -131,18 +131,29 @@ st.markdown("""
         text-shadow: 2px 2px 0px #333;
     }
 
-    /* CARDS */
+    /* --- CARDS WITH HOVER EFFECT --- */
     .metric-card {
         background-color: #1E1E1E;
         border-left: 5px solid #D32F2F;
         border-right: 1px solid #333;
         border-top: 1px solid #333;
         border-bottom: 1px solid #333;
-        border-radius: 2px;
+        border-radius: 4px;
         padding: 20px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.5);
         text-align: center;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* SMOOTH ANIMATION */
+        cursor: pointer;
     }
+    
+    /* THE HOVER MAGIC */
+    .metric-card:hover {
+        transform: translateY(-8px); /* LIFT UP */
+        box-shadow: 0 10px 25px rgba(211, 47, 47, 0.4); /* RED NEON GLOW */
+        border-left: 5px solid #FF5252; /* BRIGHTER BORDER */
+        background-color: #252525;
+    }
+
     .metric-value { 
         color: #FFF; 
         font-size: 38px; 
@@ -270,7 +281,7 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        # 🟢 UPDATED: NEW LOTTIE ANIMATION
+                        # NEW LOTTIE ANIMATION
                         components.iframe("https://lottie.host/embed/4f0b35e7-c2d8-4026-a494-11d54fa5e4f2/edm0jSn651.lottie", height=200, scrolling=False)
                         st.markdown("<center style='color: #D32F2F; font-family: Roboto;'>PROCESSING DATA...</center>", unsafe_allow_html=True)
 
