@@ -18,7 +18,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="J.A.R.V.I.S Analytics",
+    page_title="InsightGen Analytics",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -45,7 +45,8 @@ if "last_query" not in st.session_state:
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
-        self.cell(0, 10, 'JARVIS: Intelligence Report', 0, 1, 'C')
+        # BRANDING UPDATE: InsightGen
+        self.cell(0, 10, 'InsightGen: Intelligence Report', 0, 1, 'C')
         self.ln(10)
     def footer(self):
         self.set_y(-15)
@@ -92,7 +93,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. JARVIS THEME CSS ---
+# --- 5. INSIGHTGEN SCI-FI THEME CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap');
@@ -230,10 +231,12 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("J.A.R.V.I.S UI | V1.1 (FIXED)")
+    # BRANDING UPDATE
+    st.caption("INSIGHTGEN UI | V1.3 (SCIFI)")
 
 # --- 7. MAIN CONTENT ---
-st.markdown("<div class='main-title'>J.A.R.V.I.S</div>", unsafe_allow_html=True)
+# BRANDING UPDATE: Main Title
+st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 st.markdown("#### *// INITIALIZING INTELLIGENCE PROTOCOLS...*")
 
 if uploaded_file:
@@ -276,7 +279,7 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        components.iframe("https://lottie.host/55a2fae6-5d47-4ada-b1fe-1b2e52f5c56d/RpgXLM6mwe.lottie", height=200, scrolling=False)
+                        components.iframe("https://lottie.host/embed/55a2fae6-5d47-4ada-b1fe-1b2e52f5c56d/RpgXLM6mwe.lottie", height=200, scrolling=False)
                         st.markdown("<center style='color: #00F0FF; font-family: Orbitron;'>[ PROCESSING DATA... ]</center>", unsafe_allow_html=True)
 
                 try:
@@ -355,7 +358,7 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # CORRELATION (TEAL THEME - FIXED)
+                # CORRELATION (TEAL THEME)
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Teal', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00F0FF")
@@ -390,7 +393,8 @@ if uploaded_file:
                 try:
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ DOWNLOAD_DASHBOARD ]", data=dash_pdf, file_name="Jarvis_Dashboard.pdf", mime="application/pdf", width="stretch")
+                    # BRANDING UPDATE: Filename
+                    st.download_button(label="[ DOWNLOAD_DASHBOARD ]", data=dash_pdf, file_name="InsightGen_Dashboard.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -416,7 +420,8 @@ if uploaded_file:
                 stats_summary = filtered_df.describe()
                 try:
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    st.download_button(label="[ DOWNLOAD_FULL_REPORT ]", data=full_pdf, file_name="Jarvis_Full_Report.pdf", mime="application/pdf", width="stretch")
+                    # BRANDING UPDATE: Filename
+                    st.download_button(label="[ DOWNLOAD_FULL_REPORT ]", data=full_pdf, file_name="InsightGen_Full_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
 
@@ -425,4 +430,3 @@ if uploaded_file:
 else:
     with st.container():
         st.warning("SYSTEM STANDBY: AWAITING DATA UPLOAD...")
-
