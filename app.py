@@ -42,23 +42,24 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. ADVANCED PDF ENGINE (SMART PAGE BREAKS) ---
+# --- 4. ADVANCED PDF ENGINE (REAL TABLES) ---
 class PDFReport(FPDF):
     def header(self):
-        # Black Background for Header
+        # SOLID BLACK HEADER BAR
         self.set_fill_color(10, 10, 10) 
-        self.rect(0, 0, 210, 25, 'F')
+        self.rect(0, 0, 210, 30, 'F')
         
-        # Crimson Text
-        self.set_font('Arial', 'B', 16)
+        # CRIMSON BRANDING
+        self.set_font('Arial', 'B', 18)
         self.set_text_color(211, 47, 47) # Crimson
+        self.set_y(10)
         self.cell(0, 10, 'INSIGHTGEN | ANALYTICS DOSSIER', 0, 1, 'C')
         
-        # Subtitle
-        self.set_font('Arial', 'I', 10)
+        # SUBTITLE
+        self.set_font('Arial', 'I', 9)
         self.set_text_color(200, 200, 200) # Light Grey
-        self.cell(0, 0, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
-        self.ln(20)
+        self.cell(0, 0, f'GENERATED: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
+        self.ln(25)
 
     def footer(self):
         self.set_y(-15)
@@ -72,21 +73,42 @@ class PDFReport(FPDF):
         self.cell(0, 10, title.upper(), 0, 1, 'L')
         # Red Underline
         self.set_draw_color(211, 47, 47)
+        self.set_line_width(1)
         self.line(10, self.get_y(), 200, self.get_y())
-        self.ln(5)
+        self.ln(8)
 
-    def body_text(self, text):
-        self.set_font('Arial', '', 11)
-        self.set_text_color(0, 0, 0) # Black Text
-        self.multi_cell(0, 6, text)
-        self.ln(5)
+    def create_table(self, df):
+        """ Renders a Pandas DataFrame as a proper PDF Table """
+        self.set_font("Arial", "B", 8)
+        self.set_fill_color(240, 240, 240) # Header Grey
+        self.set_text_color(0, 0, 0)
+        self.set_draw_color(180, 180, 180)
+        
+        # Headers
+        col_width = 190 / (len(df.columns) + 1) # Simple dynamic width
+        self.cell(col_width, 8, "Metric", 1, 0, 'C', 1)
+        for col in df.columns:
+            self.cell(col_width, 8, str(col)[:10], 1, 0, 'C', 1) # Truncate long headers
+        self.ln()
+        
+        # Data Rows
+        self.set_font("Arial", "", 8)
+        for index, row in df.iterrows():
+            self.cell(col_width, 8, str(index), 1, 0, 'C')
+            for val in row:
+                try:
+                    val_str = f"{val:.2f}" if isinstance(val, float) else str(val)
+                except:
+                    val_str = str(val)
+                self.cell(col_width, 8, val_str, 1, 0, 'C')
+            self.ln()
 
 def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dashboard_imgs=None):
     pdf = PDFReport()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # --- SECTION 1: MISSION OVERVIEW (METRICS) ---
+    # --- SECTION 1: MISSION OVERVIEW (GRID) ---
     pdf.section_title("1. Mission Overview")
     
     rows = df.shape[0]
@@ -94,22 +116,26 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     missing = df.isnull().sum().sum()
     dupes = df.duplicated().sum()
     
-    pdf.set_font("Courier", 'B', 11)
-    pdf.set_fill_color(240, 240, 240) # Light Grey Box
-    pdf.cell(90, 10, f" TOTAL RECORDS: {rows}", 1, 0, 'L', 1)
-    pdf.cell(90, 10, f" VARIABLES:     {cols}", 1, 1, 'L', 1)
-    pdf.cell(90, 10, f" MISSING DATA:  {missing}", 1, 0, 'L', 1)
-    pdf.cell(90, 10, f" DUPLICATES:    {dupes}", 1, 1, 'L', 1)
+    # 2x2 Data Grid
+    pdf.set_font("Arial", 'B', 10)
+    pdf.set_fill_color(245, 245, 245)
+    pdf.set_draw_color(0, 0, 0)
+    
+    # Row 1
+    pdf.cell(95, 12, f" TOTAL RECORDS: {rows}", 1, 0, 'L', 1)
+    pdf.cell(95, 12, f" VARIABLES:     {cols}", 1, 1, 'L', 1)
+    # Row 2
+    pdf.cell(95, 12, f" MISSING DATA:  {missing}", 1, 0, 'L', 1)
+    pdf.cell(95, 12, f" DUPLICATES:    {dupes}", 1, 1, 'L', 1)
     pdf.ln(10)
 
     # --- SECTION 2: EXECUTIVE SUMMARY (Full Report Only) ---
     if report_type == "full":
         pdf.section_title("2. Intelligence Report")
-        pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 10, f"QUERY SCOPE: {query}", 0, 1)
-        pdf.ln(2)
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(0, 8, f"QUERY SCOPE: {query}", 0, 1)
         
-        pdf.set_font("Arial", '', 11)
+        pdf.set_font("Arial", '', 10)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(10)
@@ -119,41 +145,34 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
             pdf.ln(10)
         pdf.add_page()
 
-    # --- SECTION 3: DATA INTELLIGENCE (STATS) ---
+    # --- SECTION 3: DATA INTELLIGENCE (REAL TABLE) ---
     title_num = "3." if report_type == "full" else "2."
+    if pdf.get_y() > 200: pdf.add_page()
     
-    # Check space for table, if low space, move to next page
-    if pdf.get_y() > 220:
-        pdf.add_page()
-        
     pdf.section_title(f"{title_num} Statistical Recon")
     
-    pdf.set_font("Courier", size=8)
+    # Calculate Stats
     stats = df.describe()
-    stats_str = stats.to_string()
-    
-    pdf.set_fill_color(250, 250, 250)
-    pdf.multi_cell(0, 5, stats_str, border=1, fill=True)
+    # Render using the new Table Engine
+    pdf.create_table(stats)
     pdf.ln(10)
 
-    # --- SECTION 4: VISUAL SURVEILLANCE (CHARTS) ---
+    # --- SECTION 4: VISUAL SURVEILLANCE ---
     if dashboard_imgs:
         title_num = "4." if report_type == "full" else "3."
-        
-        # [FIX] Check for orphaned header: If we are near the bottom (>200mm), start new page
-        if pdf.get_y() > 200:
-            pdf.add_page()
+        if pdf.get_y() > 180: pdf.add_page()
             
         pdf.section_title(f"{title_num} Visual Surveillance")
         
         for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
-                # Ensure image doesn't get cut off
-                if pdf.get_y() > 200: 
-                    pdf.add_page()
+                if pdf.get_y() > 180: pdf.add_page()
                     
-                pdf.set_font("Arial", 'I', 9)
-                pdf.cell(0, 10, f"Figure {i+1}: Automated Visualization", 0, 1)
+                pdf.set_font("Arial", 'B', 9)
+                pdf.set_text_color(100, 100, 100)
+                pdf.cell(0, 8, f"FIGURE {i+1}: GENERATED VISUALIZATION", 0, 1)
+                
+                # Image
                 pdf.image(img_path, x=10, w=190) 
                 pdf.ln(10)
                 
@@ -168,13 +187,9 @@ st.markdown("""
     html, body, [class*="css"] {
         font-family: 'Roboto', sans-serif;
         color: #E0E0E0;
-        background-color: #0a0a0a; /* Deep Matte Black */
-    }
-    
-    .stApp {
         background-color: #0a0a0a;
-        background-image: none; 
     }
+    .stApp { background-color: #0a0a0a; background-image: none; }
 
     /* === SCROLLBARS === */
     ::-webkit-scrollbar { width: 8px; }
@@ -187,7 +202,6 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    
     .main-title {
         color: #D32F2F !important;
         font-weight: 900;
@@ -200,10 +214,10 @@ st.markdown("""
         display: block;
     }
 
-    /* === 🔴 METRIC CARDS (FULL RED BORDER) === */
+    /* === METRIC CARDS === */
     .metric-card {
         background-color: #161616;
-        border: 2px solid #D32F2F; /* FULL RED BORDER */
+        border: 2px solid #D32F2F;
         border-radius: 20px;
         padding: 20px;
         box-shadow: 0 4px 10px rgba(211, 47, 47, 0.1);
@@ -218,18 +232,10 @@ st.markdown("""
         background-color: #200505;
         border-color: #FF5252;
     }
-    .metric-value { 
-        color: #FFF; 
-        font-size: 38px;
-        font-weight: 900; 
-    }
-    .metric-label { 
-        color: #AAA !important; 
-        font-size: 12px; 
-        font-weight: bold;
-    }
+    .metric-value { color: #FFF; font-size: 38px; font-weight: 900; }
+    .metric-label { color: #AAA !important; font-size: 12px; font-weight: bold; }
 
-    /* === 🟦 TABLE STYLING (CUSTOM HEADER LOOK) === */
+    /* === TABLE STYLING === */
     div[data-testid="stDataFrame"] {
         background-color: #050505; 
         border: 1px solid #333;
@@ -238,12 +244,9 @@ st.markdown("""
         padding: 5px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
     }
-    
-    div[data-testid="stDataFrame"] > div {
-        background-color: #050505;
-    }
+    div[data-testid="stDataFrame"] > div { background-color: #050505; }
 
-    /* === COMPONENTS (ROUNDED) === */
+    /* === COMPONENTS === */
     .stButton>button {
         background-color: #D32F2F;
         color: white;
@@ -283,19 +286,12 @@ st.markdown("""
         border-radius: 15px;
     }
 
-    /* ================================= */
-    /* === 📱 MOBILE RESPONSIVENESS === */
-    /* ================================= */
-    
+    /* === MOBILE === */
     @media only screen and (max-width: 768px) {
-        .main-title {
-            font-size: 2.8rem !important;
-            text-align: left;
-        }
+        .main-title { font-size: 2.8rem !important; text-align: left; }
         .metric-value { font-size: 28px !important; }
         .metric-card { padding: 15px !important; margin-bottom: 10px !important; }
         .stButton>button { width: 100% !important; margin-top: 10px; }
-        .metric-card:hover { transform: none !important; }
         iframe { height: 150px !important; }
     }
     </style>
@@ -316,7 +312,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS V3.6")
+    st.caption("INSIGHTGEN | ANALYTICS V3.7")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
@@ -446,7 +442,6 @@ if uploaded_file:
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Reds', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="#1E1E1E", plot_bgcolor="#1E1E1E", font_color="#FFF")
                 try:
-                    # Export dark bg image for PDF
                     fig_corr.update_layout(paper_bgcolor="#111")
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
@@ -476,8 +471,7 @@ if uploaded_file:
             with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
             with d_col2:
                 try:
-                    # Pass 'df' to PDF engine for full stats
-                    stats_summary = df.describe()
+                    # Pass original DF to ensure accurate summary
                     dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
                     st.download_button(label="[ EXPORT DASHBOARD PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
@@ -487,13 +481,11 @@ if uploaded_file:
             column_config = {}
             for col in filtered_df.select_dtypes(include="number").columns:
                 column_config[col] = st.column_config.NumberColumn(col, format="%.2f")
-            
             st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
             
             st.markdown("---")
             if not numeric_df.empty:
                 st.markdown("### VISUALIZATION DASHBOARD")
-                # Reset layout for UI
                 fig_corr.update_layout(paper_bgcolor="#1E1E1E")
                 fig1.update_layout(paper_bgcolor="#1E1E1E")
                 fig2.update_layout(paper_bgcolor="#1E1E1E")
