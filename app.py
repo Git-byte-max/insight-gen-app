@@ -93,70 +93,64 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. CRIMSON THEME CSS ---
+# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;900&display=swap');
     
-    /* GLOBAL DARK MODE */
+    /* === GLOBAL STYLES === */
     html, body, [class*="css"] {
         font-family: 'Roboto', sans-serif;
         color: #E0E0E0;
         background-color: #121212;
     }
-    
-    /* AGGRESSIVE DARK BACKGROUND */
     .stApp {
         background-color: #000000;
         background-image: linear-gradient(315deg, #000000 0%, #1e1e1e 74%);
     }
 
-    /* SCROLLBARS (Red/Black) */
-    ::-webkit-scrollbar { width: 10px; }
+    /* === SCROLLBARS === */
+    ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #000; }
-    ::-webkit-scrollbar-thumb { background: #D32F2F; border-radius: 0; }
+    ::-webkit-scrollbar-thumb { background: #D32F2F; border-radius: 4px; }
 
-    /* TEXT STYLES */
-    h1, h2, h3, .main-title, .metric-label {
+    /* === TYPOGRAPHY === */
+    h1, h2, h3, .metric-label {
         color: #FF5252 !important;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
     
     .main-title {
-        color: #D32F2F !important; /* CRIMSON */
+        color: #D32F2F !important;
         font-weight: 900;
-        font-size: 4.5rem;
+        font-size: 4.5rem; /* Desktop Size */
         letter-spacing: -2px;
         text-shadow: 2px 2px 0px #333;
+        line-height: 1.1;
     }
 
-    /* --- CARDS WITH HOVER EFFECT --- */
+    /* === CARDS (RESPONSIVE) === */
     .metric-card {
         background-color: #1E1E1E;
         border-left: 5px solid #D32F2F;
-        border-right: 1px solid #333;
-        border-top: 1px solid #333;
-        border-bottom: 1px solid #333;
         border-radius: 4px;
         padding: 20px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.5);
         text-align: center;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* SMOOTH ANIMATION */
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         cursor: pointer;
+        margin-bottom: 15px; /* Spacing for mobile stacking */
     }
-    
-    /* THE HOVER MAGIC */
     .metric-card:hover {
-        transform: translateY(-8px); /* LIFT UP */
-        box-shadow: 0 10px 25px rgba(211, 47, 47, 0.4); /* RED NEON GLOW */
-        border-left: 5px solid #FF5252; /* BRIGHTER BORDER */
+        transform: translateY(-8px);
+        box-shadow: 0 10px 25px rgba(211, 47, 47, 0.4);
+        border-left: 5px solid #FF5252;
         background-color: #252525;
     }
-
     .metric-value { 
         color: #FFF; 
-        font-size: 38px; 
+        font-size: 38px; /* Desktop Size */
         font-weight: 900; 
     }
     .metric-label { 
@@ -165,33 +159,29 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* BUTTONS */
+    /* === COMPONENTS === */
     .stButton>button {
         background-color: #D32F2F;
         color: white;
-        border-radius: 2px;
+        border-radius: 4px;
         border: none;
         font-weight: 900;
         text-transform: uppercase;
-        letter-spacing: 1px;
         padding: 10px 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         transition: all 0.2s ease;
+        width: auto; /* Default width */
     }
     .stButton>button:hover { 
         background-color: #B71C1C; 
-        box-shadow: 0 0 15px rgba(211, 47, 47, 0.4);
         transform: translateY(-2px);
     }
 
-    /* TABLE STYLING */
     div[data-testid="stDataFrame"] {
         background-color: #1E1E1E;
         border: 1px solid #333;
         border-top: 3px solid #D32F2F;
     }
     
-    /* INPUTS */
     input[type="text"] {
         background: #111 !important;
         color: #FFF !important;
@@ -200,22 +190,47 @@ st.markdown("""
         border-radius: 0px;
     }
     
-    /* TABS */
-    .stTabs [data-baseweb="tab-list"] { 
-        background-color: #000; 
-        padding: 5px; 
-        border-bottom: 2px solid #333;
-    }
-    .stTabs [data-baseweb="tab"] { 
-        background-color: transparent; 
-        border: none; 
-        color: #666; 
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-    .stTabs [aria-selected="true"] { 
-        background-color: #D32F2F; 
-        color: #FFF; 
+    .stTabs [data-baseweb="tab-list"] { background-color: #000; padding: 5px; }
+    .stTabs [data-baseweb="tab"] { color: #666; font-weight: 700; text-transform: uppercase; }
+    .stTabs [aria-selected="true"] { background-color: #D32F2F; color: #FFF; }
+
+    /* ================================= */
+    /* === 📱 MOBILE RESPONSIVENESS === */
+    /* ================================= */
+    
+    @media only screen and (max-width: 768px) {
+        /* Shrink massive titles */
+        .main-title {
+            font-size: 2.8rem !important;
+            text-align: center;
+        }
+        
+        /* Adjust metric fonts */
+        .metric-value {
+            font-size: 28px !important;
+        }
+        
+        /* Reduce padding in cards */
+        .metric-card {
+            padding: 15px !important;
+            margin-bottom: 10px !important;
+        }
+        
+        /* Full width buttons for easy tapping */
+        .stButton>button {
+            width: 100% !important;
+            margin-top: 10px;
+        }
+        
+        /* Hide complex hover effects on touch devices to prevent sticky states */
+        .metric-card:hover {
+            transform: none !important;
+        }
+        
+        /* Adjust Lottie size */
+        iframe {
+            height: 150px !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -235,7 +250,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS V3.0")
+    st.caption("INSIGHTGEN | ANALYTICS V3.0 (MOBILE)")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
@@ -281,7 +296,6 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        # NEW LOTTIE ANIMATION
                         components.iframe("https://lottie.host/embed/4f0b35e7-c2d8-4026-a494-11d54fa5e4f2/edm0jSn651.lottie", height=200, scrolling=False)
                         st.markdown("<center style='color: #D32F2F; font-family: Roboto;'>PROCESSING DATA...</center>", unsafe_allow_html=True)
 
