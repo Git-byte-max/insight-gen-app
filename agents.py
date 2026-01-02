@@ -25,7 +25,7 @@ DEMO_MODE = True
 
 try:
     from crewai import Agent, LLM
-    from tools import execute_code_tool  # This imports the class-based tool
+    from tools import execute_code_tool
     LIBS_INSTALLED = True
 except ImportError as e:
     LIBS_INSTALLED = False
@@ -52,42 +52,38 @@ else:
         else:
             my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
 
-        # AGENT 1: PLANNER (Generic Architect)
+        # AGENT 1: PLANNER (The Architect / Scrum Master)
         planner = Agent(
             role='Data Architect',
-            goal='Plan analysis for ANY provided dataset.',
+            goal='Plan the Python execution steps. IF "VS" OR "COMPARE", PLAN PLOT.',
             backstory="""
-            You are a Data Architect. You do not know the data beforehand.
+            You are the Lead Architect. You plan the analysis but DO NOT write code.
             
             Your Plan MUST follow this strict structure:
-            1. INSPECT: Always start by printing `df.head()` and `df.columns` to understand the file.
-            2. PLAN: Identify the columns relevant to the user's query.
-            3. ANALYZE: Calculate the requested metrics (mean, sum, count, etc.).
-            4. VISUALIZE: If the user asks for "vs", "trend", "plot", or "compare", generate a chart.
-            5. SAVE: Always save charts as 'plot.png'.
+            1. INSPECT: Plan to print `df.head()` and `df.columns` to verify data.
+            2. ANALYZE: Outline the steps to calculate the specific metrics requested.
+            3. VISUALIZE: If the user asks for "vs", "trend", "plot", or "compare", plan a chart.
+            4. SAVE: Instruct to save charts as 'plot.png'.
             """,
             llm=my_llm,
             allow_delegation=False,
             verbose=True
         )
 
-        # AGENT 2: CODER (Generic Engineer)
+        # AGENT 2: CODER (The Developer)
         coder = Agent(
             role='Python Developer',
             goal='Execute code and PRINT NUMERICAL RESULTS.',
             backstory="""
-            You are a Python Expert. Treat the dataset as a "black box".
+            You are the Developer. You execute the Planner's strategy.
             
             MANDATORY RULES:
-            1. COLUMN SEARCH: Do not assume column names. Use `df.columns` to find them.
+            1. DATA: The dataset is in 'df'. DO NOT invent data.
+            2. PRINT: You MUST print the results. 
+               - If calculating an average, `print(average)`.
+               - The Reporter CANNOT see the plot, they can ONLY read your print logs.
             
-            2. DATA TRUTH (CRITICAL): 
-               - You MUST print the results of your analysis to the console.
-               - If calculating an average, `print` the average.
-               - If plotting a comparison, `print` the underlying data table.
-               - The Reporter relies 100% on your PRINT statements.
-            
-            3. PLOTTING PROTOCOL:
+            3. PLOTTING:
                - Start with: `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
                - End with: `plt.savefig(os.path.join(os.getcwd(), 'plot.png'))`
             """,
@@ -97,19 +93,17 @@ else:
             verbose=True
         )
 
-        # AGENT 3: REPORTER (Generic Analyst)
+        # AGENT 3: REPORTER (The Analyst)
         reporter = Agent(
             role='Insight Analyst',
             goal='Report ONLY the numbers found in the logs.',
             backstory="""
-            You are a Fact-Checker. 
+            You are the Analyst. You read the Coder's logs and report findings.
             
-            STRICT REPORTING GUIDELINES:
-            1. IGNORE your training knowledge. Trust the LOGS only.
-            2. Read the numbers printed by the Coder.
-            3. If the logs show "Category A: 50, Category B: 100", report that specifically.
-            4. Do NOT use vague phrases like "The chart shows trends."
-            5. State the exact values calculated.
+            STRICT GUIDELINES:
+            1. Report the EXACT numbers printed. (e.g., "Sales: $500", "Growth: 10%")
+            2. If a plot was saved, confirm it: "Visual distribution generated."
+            3. Do not assume context not present in the logs.
             """,
             llm=my_llm,
             allow_delegation=False,
