@@ -42,7 +42,7 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. ADVANCED PDF ENGINE (ORGANIZED LAYOUT) ---
+# --- 4. ADVANCED PDF ENGINE (SMART PAGE BREAKS) ---
 class PDFReport(FPDF):
     def header(self):
         # Black Background for Header
@@ -77,7 +77,7 @@ class PDFReport(FPDF):
 
     def body_text(self, text):
         self.set_font('Arial', '', 11)
-        self.set_text_color(0, 0, 0) # Black Text for readability on white paper
+        self.set_text_color(0, 0, 0) # Black Text
         self.multi_cell(0, 6, text)
         self.ln(5)
 
@@ -89,7 +89,6 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     # --- SECTION 1: MISSION OVERVIEW (METRICS) ---
     pdf.section_title("1. Mission Overview")
     
-    # Metrics Grid Logic
     rows = df.shape[0]
     cols = df.shape[1]
     missing = df.isnull().sum().sum()
@@ -116,39 +115,51 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
         pdf.ln(10)
         
         if plot_path and os.path.exists(plot_path):
-            pdf.image(plot_path, x=10, w=190) # Full Width
+            pdf.image(plot_path, x=10, w=190)
             pdf.ln(10)
         pdf.add_page()
 
     # --- SECTION 3: DATA INTELLIGENCE (STATS) ---
     title_num = "3." if report_type == "full" else "2."
+    
+    # Check space for table, if low space, move to next page
+    if pdf.get_y() > 220:
+        pdf.add_page()
+        
     pdf.section_title(f"{title_num} Statistical Recon")
     
-    # Statistical Table (Formatted Monospace)
     pdf.set_font("Courier", size=8)
     stats = df.describe()
     stats_str = stats.to_string()
     
-    # Draw a light grey background for stats
     pdf.set_fill_color(250, 250, 250)
     pdf.multi_cell(0, 5, stats_str, border=1, fill=True)
     pdf.ln(10)
 
-    # --- SECTION 4: VISUAL RECON (CHARTS) ---
+    # --- SECTION 4: VISUAL SURVEILLANCE (CHARTS) ---
     if dashboard_imgs:
         title_num = "4." if report_type == "full" else "3."
+        
+        # [FIX] Check for orphaned header: If we are near the bottom (>200mm), start new page
+        if pdf.get_y() > 200:
+            pdf.add_page()
+            
         pdf.section_title(f"{title_num} Visual Surveillance")
         
         for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
+                # Ensure image doesn't get cut off
+                if pdf.get_y() > 200: 
+                    pdf.add_page()
+                    
                 pdf.set_font("Arial", 'I', 9)
                 pdf.cell(0, 10, f"Figure {i+1}: Automated Visualization", 0, 1)
-                pdf.image(img_path, x=10, w=190) # Scale to page width
+                pdf.image(img_path, x=10, w=190) 
                 pdf.ln(10)
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS (CUSTOM HEADER TABLE) ---
+# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;900&display=swap');
@@ -222,11 +233,12 @@ st.markdown("""
     div[data-testid="stDataFrame"] {
         background-color: #050505; 
         border: 1px solid #333;
-        border-top: 5px solid #D32F2F; /* Header Line */
+        border-top: 5px solid #D32F2F; 
         border-radius: 10px;
         padding: 5px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
     }
+    
     div[data-testid="stDataFrame"] > div {
         background-color: #050505;
     }
@@ -304,7 +316,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS V3.5")
+    st.caption("INSIGHTGEN | ANALYTICS V3.6")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
@@ -464,9 +476,7 @@ if uploaded_file:
             with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
             with d_col2:
                 try:
-                    # --- UPDATED: PDF GENERATION CALL WITH DF FOR METRICS ---
-                    # We pass 'df' (the original dataframe) so the summary metrics (Rows, Cols, Missing) 
-                    # are calculated correctly in the PDF.
+                    # Pass 'df' to PDF engine for full stats
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
                     st.download_button(label="[ EXPORT DASHBOARD PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
@@ -483,7 +493,7 @@ if uploaded_file:
             st.markdown("---")
             if not numeric_df.empty:
                 st.markdown("### VISUALIZATION DASHBOARD")
-                # Reset layout for UI viewing
+                # Reset layout for UI
                 fig_corr.update_layout(paper_bgcolor="#1E1E1E")
                 fig1.update_layout(paper_bgcolor="#1E1E1E")
                 fig2.update_layout(paper_bgcolor="#1E1E1E")
