@@ -25,7 +25,7 @@ DEMO_MODE = True
 
 try:
     from crewai import Agent, LLM
-    from tools import execute_code_tool
+    from tools import execute_code_tool  # This imports the class-based tool
     LIBS_INSTALLED = True
 except ImportError as e:
     LIBS_INSTALLED = False
@@ -52,35 +52,44 @@ else:
         else:
             my_llm = LLM(model="gemini/gemini-pro", api_key=google_key)
 
-        # PLANNER
+        # AGENT 1: PLANNER (Generic Architect)
         planner = Agent(
-            role='Architect',
-            goal='Plan analysis. IF "VS" OR "COMPARE", PLAN PLOT.',
+            role='Data Architect',
+            goal='Plan analysis for ANY provided dataset.',
             backstory="""
-            1. INSPECT: `print(df.head())` & `print(df.columns)`.
-            2. VERIFY: Print unique values of categorical columns.
-            3. PLOT: If comparison requested, Generate Plot using matplotlib.
-            4. SAVE: CRITICAL - Save plot to `os.path.join(os.getcwd(), 'plot.png')`.
+            You are a Data Architect. You do not know the data beforehand.
+            
+            Your Plan MUST follow this strict structure:
+            1. INSPECT: Always start by printing `df.head()` and `df.columns` to understand the file.
+            2. PLAN: Identify the columns relevant to the user's query.
+            3. ANALYZE: Calculate the requested metrics (mean, sum, count, etc.).
+            4. VISUALIZE: If the user asks for "vs", "trend", "plot", or "compare", generate a chart.
+            5. SAVE: Always save charts as 'plot.png'.
             """,
             llm=my_llm,
             allow_delegation=False,
             verbose=True
         )
 
-        # CODER (Updated to Print Numbers)
+        # AGENT 2: CODER (Generic Engineer)
         coder = Agent(
-            role='Python Dev',
-            goal='Execute code. PLOT AND PRINT NUMBERS.',
+            role='Python Developer',
+            goal='Execute code and PRINT NUMERICAL RESULTS.',
             backstory="""
-            MANDATORY RULES:
-            1. PLOTTING: 
-               - `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
-               - `plt.savefig(os.path.join(os.getcwd(), 'plot.png'))`
+            You are a Python Expert. Treat the dataset as a "black box".
             
-            2. DATA (CRITICAL):
-               - You MUST print the data underlying the plot.
-               - Example: If plotting Mean Score by Genre, run `print(df.groupby('Genre')['Score'].mean())`.
-               - The Reporter CANNOT see the plot. It relies on your PRINT statements.
+            MANDATORY RULES:
+            1. COLUMN SEARCH: Do not assume column names. Use `df.columns` to find them.
+            
+            2. DATA TRUTH (CRITICAL): 
+               - You MUST print the results of your analysis to the console.
+               - If calculating an average, `print` the average.
+               - If plotting a comparison, `print` the underlying data table.
+               - The Reporter relies 100% on your PRINT statements.
+            
+            3. PLOTTING PROTOCOL:
+               - Start with: `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
+               - End with: `plt.savefig(os.path.join(os.getcwd(), 'plot.png'))`
             """,
             llm=my_llm,
             allow_delegation=False,
@@ -88,15 +97,19 @@ else:
             verbose=True
         )
 
-        # REPORTER (Updated to be Strict)
+        # AGENT 3: REPORTER (Generic Analyst)
         reporter = Agent(
-            role='Analyst',
-            goal='Report specific numbers from logs.',
+            role='Insight Analyst',
+            goal='Report ONLY the numbers found in the logs.',
             backstory="""
-            1. READ THE LOGS.
-            2. Do NOT say "The plot will provide insights."
-            3. INSTEAD, say: "Males have an average score of 45, while Females have 60."
-            4. If the logs are missing numbers, complain that the Coder didn't print them.
+            You are a Fact-Checker. 
+            
+            STRICT REPORTING GUIDELINES:
+            1. IGNORE your training knowledge. Trust the LOGS only.
+            2. Read the numbers printed by the Coder.
+            3. If the logs show "Category A: 50, Category B: 100", report that specifically.
+            4. Do NOT use vague phrases like "The chart shows trends."
+            5. State the exact values calculated.
             """,
             llm=my_llm,
             allow_delegation=False,
