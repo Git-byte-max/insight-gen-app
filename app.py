@@ -230,7 +230,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("J.A.R.V.I.S UI | V1.0")
+    st.caption("J.A.R.V.I.S UI | V1.1 (FIXED)")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>J.A.R.V.I.S</div>", unsafe_allow_html=True)
@@ -355,9 +355,9 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # CORRELATION (CYAN THEME)
+                # CORRELATION (TEAL THEME - FIXED)
                 corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Cyan', template="plotly_dark")
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Teal', template="plotly_dark")
                 fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00F0FF")
                 try:
                     fig_corr.write_image("dash_corr.png")
