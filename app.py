@@ -254,7 +254,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS V3.3")
+    st.caption("INSIGHTGEN | ANALYTICS V3.4")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
@@ -417,9 +417,12 @@ if uploaded_file:
                     st.error(f"PDF Gen Error: {e}")
 
             st.markdown("---")
+            # --- 🔴 CHANGED: CLEAN TABLE (NO BARS) ---
             column_config = {}
             for col in filtered_df.select_dtypes(include="number").columns:
-                column_config[col] = st.column_config.ProgressColumn(col, format="%.2f", min_value=float(filtered_df[col].min()), max_value=float(filtered_df[col].max()))
+                # Use NumberColumn instead of ProgressColumn to remove the bar
+                column_config[col] = st.column_config.NumberColumn(col, format="%.2f")
+            
             st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
             
             st.markdown("---")
