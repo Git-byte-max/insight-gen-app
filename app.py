@@ -93,7 +93,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS (UPDATED TABLE & BORDERS) ---
+# --- 5. MOBILE-OPTIMIZED CRIMSON THEME CSS (CUSTOM HEADER TABLE) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;900&display=swap');
@@ -148,8 +148,8 @@ st.markdown("""
     }
     .metric-card:hover {
         transform: translateY(-8px);
-        box-shadow: 0 0 25px rgba(211, 47, 47, 0.6); /* STRONGER GLOW */
-        background-color: #200505; /* VERY DARK RED TINT */
+        box-shadow: 0 0 25px rgba(211, 47, 47, 0.6); 
+        background-color: #200505;
         border-color: #FF5252;
     }
     .metric-value { 
@@ -163,17 +163,22 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* === 🟦 TABLE STYLING (NEW DATA GRID LOOK) === */
+    /* === 🟦 TABLE STYLING (CUSTOM HEADER LOOK) === */
     div[data-testid="stDataFrame"] {
-        background-color: #050505; /* PURE BLACK BACKGROUND */
+        background-color: #050505; 
         border: 1px solid #333;
-        border-radius: 15px;
-        padding: 10px;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.8); /* INNER SHADOW FOR DEPTH */
-        transition: border-color 0.3s;
+        
+        /* THE HEADER EFFECT */
+        border-top: 5px solid #D32F2F; /* Thick Red Top "Header" Line */
+        
+        border-radius: 10px;
+        padding: 5px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Deep Shadow */
     }
-    div[data-testid="stDataFrame"]:hover {
-        border-color: #D32F2F; /* GLOWS RED ON HOVER */
+    
+    /* Ensure the internal table container fits the dark theme */
+    div[data-testid="stDataFrame"] > div {
+        background-color: #050505;
     }
 
     /* === COMPONENTS (ROUNDED) === */
@@ -249,7 +254,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS V3.2")
+    st.caption("INSIGHTGEN | ANALYTICS V3.3")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
