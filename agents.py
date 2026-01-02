@@ -25,7 +25,6 @@ DEMO_MODE = True
 
 try:
     from crewai import Agent, LLM
-    # Import the initialized tool instance
     from tools import execute_code_tool
     LIBS_INSTALLED = True
 except ImportError as e:
@@ -68,31 +67,36 @@ else:
             verbose=True
         )
 
-        # CODER
+        # CODER (Updated to Print Numbers)
         coder = Agent(
             role='Python Dev',
-            goal='Execute code. FORCE FILE SAVING.',
+            goal='Execute code. PLOT AND PRINT NUMBERS.',
             backstory="""
-            MANDATORY PLOTTING RULES:
-            1. SETUP: `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
-            2. SAVING: `save_path = os.path.join(os.getcwd(), 'plot.png'); plt.savefig(save_path)`
-            3. DATA: Verify columns using `df.columns`.
+            MANDATORY RULES:
+            1. PLOTTING: 
+               - `import matplotlib.pyplot as plt; plt.switch_backend('Agg')`
+               - `plt.savefig(os.path.join(os.getcwd(), 'plot.png'))`
+            
+            2. DATA (CRITICAL):
+               - You MUST print the data underlying the plot.
+               - Example: If plotting Mean Score by Genre, run `print(df.groupby('Genre')['Score'].mean())`.
+               - The Reporter CANNOT see the plot. It relies on your PRINT statements.
             """,
             llm=my_llm,
             allow_delegation=False,
-            # Pass the tool instance in a list
             tools=[execute_code_tool], 
             verbose=True
         )
 
-        # REPORTER
+        # REPORTER (Updated to be Strict)
         reporter = Agent(
             role='Analyst',
-            goal='Report insights from logs. NO META-TALK.',
+            goal='Report specific numbers from logs.',
             backstory="""
-            1. Report the Numbers found in the logs.
-            2. Trust the logs 100%. If logs say "Male/Female", talk about Gender.
-            3. If the log says "PLOT SAVED", confirm visualization.
+            1. READ THE LOGS.
+            2. Do NOT say "The plot will provide insights."
+            3. INSTEAD, say: "Males have an average score of 45, while Females have 60."
+            4. If the logs are missing numbers, complain that the Coder didn't print them.
             """,
             llm=my_llm,
             allow_delegation=False,
