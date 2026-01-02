@@ -16,7 +16,7 @@ if threading.current_thread() is not threading.main_thread():
 # --- 2. SETUP & DEBUGGING ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
-# GLOBAL VARIABLES (CRITICAL FIX: Define these to prevent ImportErrors)
+# GLOBAL VARIABLES
 planner = None
 coder = None
 reporter = None
@@ -25,6 +25,7 @@ DEMO_MODE = True
 
 try:
     from crewai import Agent, LLM
+    # Import the initialized tool instance
     from tools import execute_code_tool
     LIBS_INSTALLED = True
 except ImportError as e:
@@ -41,7 +42,6 @@ google_key = os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY"
 # --- 4. AGENT DEFINITIONS ---
 if not LIBS_INSTALLED:
     DEMO_MODE = True
-    # debug_error is already set above
 elif not api_key and not google_key:
     DEMO_MODE = True
     debug_error = "API Key Missing"
@@ -80,6 +80,7 @@ else:
             """,
             llm=my_llm,
             allow_delegation=False,
+            # Pass the tool instance in a list
             tools=[execute_code_tool], 
             verbose=True
         )
