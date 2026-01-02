@@ -18,7 +18,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen Analytics",
+    page_title="InsightGen: Mark 85",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -45,8 +45,7 @@ if "last_query" not in st.session_state:
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
-        # BRANDING UPDATE: InsightGen
-        self.cell(0, 10, 'InsightGen: Intelligence Report', 0, 1, 'C')
+        self.cell(0, 10, 'InsightGen: Intelligence Report (MK-85)', 0, 1, 'C')
         self.ln(10)
     def footer(self):
         self.set_y(-15)
@@ -93,7 +92,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. INSIGHTGEN SCI-FI THEME CSS ---
+# --- 5. IRON MAN THEME CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap');
@@ -101,86 +100,87 @@ st.markdown("""
     /* GLOBAL STYLES */
     html, body, [class*="css"] {
         font-family: 'Rajdhani', sans-serif;
-        color: #E0E0E0; 
-        background-color: #020a13;
+        color: #F0F0F0; 
+        background-color: #0d0202; /* Dark Red/Black */
         font-size: 18px;
     }
     
-    /* BACKGROUND GRID (Holographic effect) */
+    /* BACKGROUND GRID (Arc Reactor Red) */
     .stApp {
-        background-color: #020a13;
+        background-color: #0d0202;
         background-image: 
-            linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            linear-gradient(rgba(255, 0, 51, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 0, 51, 0.05) 1px, transparent 1px);
         background-size: 40px 40px; 
     }
 
     /* SCROLLBARS */
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #020a13; }
-    ::-webkit-scrollbar-thumb { background: #00F0FF; border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: #0d0202; }
+    ::-webkit-scrollbar-thumb { background: #FF0033; border-radius: 4px; }
     
     /* HEADERS */
     .main-title {
         font-family: 'Orbitron', sans-serif;
-        color: #00F0FF;
+        color: #FF0033; /* HOT ROD RED */
         font-size: 4.5rem;
         line-height: 1;
-        text-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+        text-shadow: 0 0 15px rgba(255, 0, 51, 0.6);
         text-transform: uppercase;
         letter-spacing: 3px;
     }
     h1, h2, h3 { 
         font-family: 'Orbitron', sans-serif !important; 
-        color: #00F0FF !important; 
+        color: #FFD700 !important; /* GOLD */
         text-transform: uppercase; 
-        text-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+        text-shadow: 0 0 5px rgba(255, 215, 0, 0.4);
     }
 
-    /* METRIC CARDS (Glassmorphism) */
+    /* METRIC CARDS (Armor Plating) */
     .metric-card {
-        background: rgba(0, 20, 40, 0.6);
-        border: 1px solid rgba(0, 240, 255, 0.3);
-        border-left: 3px solid #00F0FF;
+        background: linear-gradient(135deg, rgba(40, 0, 0, 0.8), rgba(20, 0, 0, 0.8));
+        border: 1px solid rgba(255, 0, 51, 0.4);
+        border-left: 4px solid #FFD700; /* Gold Accent */
         padding: 15px;
         text-align: center;
         backdrop-filter: blur(5px);
-        box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+        box-shadow: 0 0 15px rgba(255, 0, 51, 0.15);
         border-radius: 5px;
         transition: transform 0.3s;
     }
-    .metric-card:hover { transform: translateY(-5px); border-color: #00F0FF; }
+    .metric-card:hover { transform: translateY(-5px); border-color: #FFD700; }
     
     .metric-value { 
         font-family: 'Orbitron', sans-serif; 
         font-size: 42px; 
         color: #FFFFFF; 
-        text-shadow: 0 0 10px #00F0FF; 
+        text-shadow: 0 0 10px #FF0033; 
     }
     .metric-label { 
         font-size: 14px; 
-        color: #00F0FF; 
+        color: #FFD700; 
         text-transform: uppercase; 
         letter-spacing: 2px; 
         font-weight: 700;
     }
 
-    /* BUTTONS */
+    /* BUTTONS (Arc Reactor Style) */
     .stButton>button {
-        background: linear-gradient(90deg, #001f3f, #003366);
-        color: #00F0FF;
+        background: linear-gradient(90deg, #8B0000, #FF0033);
+        color: #FFFFFF;
         font-family: 'Orbitron', sans-serif;
         font-size: 16px;
-        border: 1px solid #00F0FF;
+        border: 1px solid #FFD700;
         border-radius: 5px; 
         text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        box-shadow: 0 0 10px rgba(255, 0, 51, 0.3);
     }
     .stButton>button:hover { 
-        background: #00F0FF; 
-        color: #020a13; 
-        box-shadow: 0 0 20px #00F0FF; 
+        background: #FFD700; 
+        color: #0d0202; 
+        border: 1px solid #FF0033;
+        box-shadow: 0 0 20px #FFD700; 
         font-weight: bold;
     }
 
@@ -188,26 +188,26 @@ st.markdown("""
     .stTabs [data-baseweb="tab-list"] { gap: 10px; border-bottom: none; }
     .stTabs [data-baseweb="tab"] { 
         height: 50px; 
-        background-color: rgba(0, 20, 40, 0.6); 
-        border: 1px solid rgba(0, 240, 255, 0.3); 
+        background-color: rgba(40, 0, 0, 0.6); 
+        border: 1px solid rgba(255, 0, 51, 0.3); 
         color: #888; 
         font-family: 'Orbitron', sans-serif; 
         border-radius: 5px 5px 0 0; 
     }
     .stTabs [aria-selected="true"] { 
-        background-color: rgba(0, 240, 255, 0.1); 
-        color: #00F0FF; 
-        border: 1px solid #00F0FF; 
+        background-color: rgba(255, 0, 51, 0.1); 
+        color: #FFD700; 
+        border: 1px solid #FFD700; 
         border-bottom: none;
-        box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2);
+        box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.2);
     }
     
     /* DATAFRAME & INPUTS */
-    div[data-testid="stDataFrame"] { border: 1px solid #00F0FF; border-radius: 5px; }
+    div[data-testid="stDataFrame"] { border: 1px solid #FF0033; border-radius: 5px; }
     input[type="text"] { 
-        background-color: #05101a !important; 
-        color: #00F0FF !important; 
-        border: 1px solid #00F0FF !important; 
+        background-color: #1a0202 !important; 
+        color: #FFD700 !important; 
+        border: 1px solid #FF0033 !important; 
         font-family: 'Rajdhani', sans-serif;
     }
     </style>
@@ -231,11 +231,9 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    # BRANDING UPDATE
-    st.caption("INSIGHTGEN UI | V1.3 (SCIFI)")
+    st.caption("INSIGHTGEN UI | MARK-85 (RED)")
 
 # --- 7. MAIN CONTENT ---
-# BRANDING UPDATE: Main Title
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 st.markdown("#### *// INITIALIZING INTELLIGENCE PROTOCOLS...*")
 
@@ -255,7 +253,7 @@ if uploaded_file:
         with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">ROWS</div></div>""", unsafe_allow_html=True)
         with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
         with mc3: 
-            missing = df.isnull().sum().sum(); color = "#FF0055" if missing > 0 else "#00F0FF"
+            missing = df.isnull().sum().sum(); color = "#FF0033" if missing > 0 else "#00FF41"
             st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING</div></div>""", unsafe_allow_html=True)
         with mc4: 
             dupes = df.duplicated().sum()
@@ -279,8 +277,9 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
+                        # 🟢 UPDATED: RED HUD ANIMATION
                         components.iframe("https://lottie.host/embed/55a2fae6-5d47-4ada-b1fe-1b2e52f5c56d/RpgXLM6mwe.lottie", height=200, scrolling=False)
-                        st.markdown("<center style='color: #00F0FF; font-family: Orbitron;'>[ PROCESSING DATA... ]</center>", unsafe_allow_html=True)
+                        st.markdown("<center style='color: #FF0033; font-family: Orbitron;'>[ PROCESSING DATA... ]</center>", unsafe_allow_html=True)
 
                 try:
                     if DEMO_MODE:
@@ -358,30 +357,30 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # CORRELATION (TEAL THEME)
+                # CORRELATION (HOT THEME)
                 corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Teal', template="plotly_dark")
-                fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00F0FF")
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Hot', template="plotly_dark")
+                fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFD700")
                 try:
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
                 except: pass
                 
-                # HISTOGRAM (CYAN THEME)
+                # HISTOGRAM (RED/GOLD THEME)
                 x_axis_val = numeric_df.columns[0]
                 fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
-                fig1.update_traces(marker_color='#00F0FF', marker_line_color='#003366')
-                fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00F0FF")
+                fig1.update_traces(marker_color='#FF0033', marker_line_color='#FFD700')
+                fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFD700")
                 try:
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
                 except: pass
 
-                # SCATTER (BLUE THEME)
+                # SCATTER (RED/GOLD THEME)
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
                 fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
-                fig2.update_traces(marker_color='#0077BE')
-                fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#00F0FF")
+                fig2.update_traces(marker_color='#FFD700')
+                fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FF0033")
                 try:
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
@@ -393,7 +392,6 @@ if uploaded_file:
                 try:
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
-                    # BRANDING UPDATE: Filename
                     st.download_button(label="[ DOWNLOAD_DASHBOARD ]", data=dash_pdf, file_name="InsightGen_Dashboard.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
@@ -420,7 +418,6 @@ if uploaded_file:
                 stats_summary = filtered_df.describe()
                 try:
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    # BRANDING UPDATE: Filename
                     st.download_button(label="[ DOWNLOAD_FULL_REPORT ]", data=full_pdf, file_name="InsightGen_Full_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
