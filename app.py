@@ -18,7 +18,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Ops",
+    page_title="InsightGen: Analytics",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -45,12 +45,12 @@ if "last_query" not in st.session_state:
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
-        self.cell(0, 10, 'INSIGHTGEN | OPS REPORT', 0, 1, 'C')
+        self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
         self.ln(10)
     def footer(self):
         self.set_y(-15)
         self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'CONFIDENTIAL - Page {self.page_no()}', 0, 0, 'C')
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None, dashboard_imgs=None):
     pdf = PDFReport()
@@ -59,10 +59,10 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
     
     if report_type == "full":
         pdf.set_font("Arial", 'B', 14)
-        pdf.cell(0, 10, "1. SITUATION REPORT", 0, 1)
+        pdf.cell(0, 10, "1. EXECUTIVE SUMMARY", 0, 1)
         pdf.ln(5)
         pdf.set_font("Arial", 'B', 11)
-        pdf.cell(0, 10, f"DIRECTIVE: {query}", 0, 1)
+        pdf.cell(0, 10, f"ANALYSIS SCOPE: {query}", 0, 1)
         pdf.set_font("Arial", size=10)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
@@ -72,11 +72,11 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
         pdf.add_page()
 
     pdf.set_font("Arial", 'B', 14)
-    title = "2. DATA INTEL" if report_type == "full" else "DASHBOARD EXPORT"
+    title = "2. DATA INSIGHTS" if report_type == "full" else "DASHBOARD EXPORT"
     pdf.cell(0, 10, title, 0, 1)
     pdf.ln(5)
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "STATISTICS:", 0, 1)
+    pdf.cell(0, 10, "STATISTICAL OVERVIEW:", 0, 1)
     pdf.set_font("Courier", size=8)
     stats_str = df_stats.to_string()
     pdf.multi_cell(0, 5, stats_str)
@@ -84,7 +84,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
 
     if dashboard_imgs:
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "VISUALS:", 0, 1)
+        pdf.cell(0, 10, "VISUALIZATIONS:", 0, 1)
         pdf.ln(5)
         for img_path in dashboard_imgs:
             if os.path.exists(img_path):
@@ -93,7 +93,7 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. CRIMSON OPS THEME CSS ---
+# --- 5. CRIMSON THEME CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;900&display=swap');
@@ -131,7 +131,7 @@ st.markdown("""
         text-shadow: 2px 2px 0px #333;
     }
 
-    /* CARDS (Command Center Style) */
+    /* CARDS */
     .metric-card {
         background-color: #1E1E1E;
         border-left: 5px solid #D32F2F;
@@ -154,7 +154,7 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* BUTTONS (Red Alert) */
+    /* BUTTONS */
     .stButton>button {
         background-color: #D32F2F;
         color: white;
@@ -173,7 +173,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* TABLE STYLING (Dark Industrial) */
+    /* TABLE STYLING */
     div[data-testid="stDataFrame"] {
         background-color: #1E1E1E;
         border: 1px solid #333;
@@ -211,24 +211,24 @@ st.markdown("""
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
-    st.markdown("### > SYSTEM CONFIG")
-    uploaded_file = st.file_uploader("UPLOAD INTEL", type=["csv", "xlsx"])
+    st.markdown("### > SYSTEM CONFIGURATION")
+    uploaded_file = st.file_uploader("UPLOAD DATASET", type=["csv", "xlsx"])
     st.markdown("---")
     
     if DEMO_MODE:
-        st.code("STATUS: DISCONNECTED")
+        st.code("STATUS: OFFLINE MODE")
         st.error(f"Error: {debug_error}")
     else:
-        st.code("STATUS: OPERATIONAL")
+        st.code("STATUS: SYSTEM ACTIVE")
         
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | OPS V3.0")
+    st.caption("INSIGHTGEN | ANALYTICS V3.0")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
-st.markdown("#### *// TACTICAL DATA ANALYSIS*")
+st.markdown("#### *// ADVANCED DATA ANALYTICS*")
 
 if uploaded_file:
     try:
@@ -241,28 +241,28 @@ if uploaded_file:
 
         # METRICS GRID
         st.write("")
-        st.subheader("INTEL OVERVIEW")
+        st.subheader("DATASET OVERVIEW")
         mc1, mc2, mc3, mc4 = st.columns(4)
-        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">ENTRIES</div></div>""", unsafe_allow_html=True)
-        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">FIELDS</div></div>""", unsafe_allow_html=True)
+        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
+        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
         with mc3: 
             missing = df.isnull().sum().sum(); color = "#D32F2F" if missing > 0 else "#4CAF50"
-            st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">CORRUPT</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING VALUES</div></div>""", unsafe_allow_html=True)
         with mc4: 
             dupes = df.duplicated().sum()
-            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">REDUNDANT</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
         st.write("")
 
-        tab1, tab2 = st.tabs(["DIRECTIVE INPUT", "VISUAL FEED"])
+        tab1, tab2 = st.tabs(["ANALYSIS INPUT", "VISUALIZATION DASHBOARD"])
 
         # --- TAB 1 ---
         with tab1:
             st.write("")
             col_q, col_b = st.columns([3, 1])
             with col_q:
-                query = st.text_input("COMMAND:", placeholder="> Awaiting instructions...", label_visibility="collapsed")
+                query = st.text_input("ANALYSIS QUERY:", placeholder="> Enter query here...", label_visibility="collapsed")
             with col_b:
-                run_btn = st.button("EXECUTE", use_container_width=True)
+                run_btn = st.button("RUN ANALYSIS", use_container_width=True)
 
             if run_btn and query:
                 st.session_state.last_query = query
@@ -272,7 +272,7 @@ if uploaded_file:
                     with lc2:
                         # RED RADAR LOADER
                         components.iframe("https://lottie.host/embed/705a9879-1c4b-45a1-b1ee-d7690f56f458/HMMnGjpbaU.lottie", height=200, scrolling=False)
-                        st.markdown("<center style='color: #D32F2F; font-family: Roboto;'>PROCESSING DIRECTIVE...</center>", unsafe_allow_html=True)
+                        st.markdown("<center style='color: #D32F2F; font-family: Roboto;'>PROCESSING DATA...</center>", unsafe_allow_html=True)
 
                 try:
                     if DEMO_MODE:
@@ -321,19 +321,19 @@ if uploaded_file:
 
             if st.session_state.analysis_result:
                 st.markdown("---")
-                st.caption(f"LOG: {st.session_state.last_query}")
+                st.caption(f"QUERY LOG: {st.session_state.last_query}")
                 r1, r2 = st.columns([1.5, 1])
                 with r1:
-                    st.markdown("### SITREP")
+                    st.markdown("### ANALYSIS RESULTS")
                     st.markdown(st.session_state.analysis_result)
                 with r2:
-                    st.markdown("### VISUAL")
+                    st.markdown("### CHART PREVIEW")
                     if st.session_state.analysis_plot == "simulated":
                         st.info("Simulated Plot")
                     elif st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png"):
                         st.image("plot.png")
                     else:
-                        st.caption("NO VISUAL DATA")
+                        st.caption("NO VISUALIZATION GENERATED")
 
         # --- TAB 2 ---
         with tab2:
@@ -341,8 +341,8 @@ if uploaded_file:
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(cat_cols) > 0:
                 col_f1, col_f2 = st.columns(2)
-                with col_f1: selected_cat = st.selectbox("TARGET PARAMETER", cat_cols)
-                with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"FILTER", unique_vals, default=unique_vals[:5])
+                with col_f1: selected_cat = st.selectbox("FILTER COLUMN", cat_cols)
+                with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"FILTER VALUES", unique_vals, default=unique_vals[:5])
                 filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
             else:
                 filtered_df = df
@@ -378,12 +378,12 @@ if uploaded_file:
                 except: pass
 
             d_col1, d_col2 = st.columns([4, 1])
-            with d_col1: st.markdown(f"**TARGETS:** {len(filtered_df)}") 
+            with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
             with d_col2:
                 try:
                     stats_summary = df.describe()
                     dash_pdf = generate_pdf("dashboard", stats_summary, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ EXPORT INTEL ]", data=dash_pdf, file_name="InsightGen_Ops_Report.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ EXPORT DASHBOARD PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -395,13 +395,13 @@ if uploaded_file:
             
             st.markdown("---")
             if not numeric_df.empty:
-                st.markdown("### VISUAL FEED")
+                st.markdown("### VISUALIZATION DASHBOARD")
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
                 with gc1: st.plotly_chart(fig1, width="stretch")
                 with gc2: st.plotly_chart(fig2, width="stretch")
             else:
-                st.info("NO NUMERIC INTEL")
+                st.info("NO NUMERIC DATA AVAILABLE")
 
         with full_report_container:
             if st.session_state.analysis_result:
@@ -409,12 +409,12 @@ if uploaded_file:
                 stats_summary = filtered_df.describe()
                 try:
                     full_pdf = generate_pdf("full", stats_summary, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    st.download_button(label="[ EXPORT FULL REPORT ]", data=full_pdf, file_name="InsightGen_Full_Ops_Report.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ EXPORT FULL REPORT ]", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
 
     except Exception as e:
-        st.error(f"CRITICAL FAILURE: {e}")
+        st.error(f"SYSTEM ERROR: {e}")
 else:
     with st.container():
-        st.info("STANDBY: AWAITING UPLOAD...")
+        st.info("READY: UPLOAD DATASET TO BEGIN...")
