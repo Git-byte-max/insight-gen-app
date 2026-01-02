@@ -3,7 +3,7 @@ import sys
 from io import StringIO
 from langchain.tools import tool
 
-# Global placeholder for the dataframe
+# Global placeholder
 df = None
 
 @tool
@@ -15,21 +15,14 @@ def execute_code_tool(code: str) -> str:
     """
     global df
     
-    # Create a buffer to capture print() statements
+    # Create buffer
     old_stdout = sys.stdout
     redirected_output = sys.stdout = StringIO()
     
     try:
-        # Create a safe execution environment
         local_vars = {"df": df, "pd": pd}
-        
-        # Execute the code
         exec(code, globals(), local_vars)
-        
-        # Restore stdout
         sys.stdout = old_stdout
-        
-        # Return the captured logs
         output = redirected_output.getvalue()
         if not output:
             return "Code executed successfully (No output printed)."
