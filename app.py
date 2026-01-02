@@ -18,7 +18,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Liquid",
+    page_title="InsightGen: Liquid Glass",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -92,16 +92,16 @@ def generate_pdf(report_type, df_stats, query=None, ai_text=None, plot_path=None
                 pdf.ln(5)
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. LIQUID GLASS THEME CSS ---
+# --- 5. TRUE LIQUID GLASS CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&display=swap');
     
     /* ANIMATED LIQUID BACKGROUND */
     .stApp {
-        background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
-        background-size: 200% 200%;
-        animation: liquid 10s ease infinite;
+        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+        background-size: 400% 400%;
+        animation: liquid 15s ease infinite;
         font-family: 'Quicksand', sans-serif;
     }
     
@@ -111,26 +111,25 @@ st.markdown("""
         100% { background-position: 0% 50%; }
     }
     
-    /* TEXT STYLES */
-    h1, h2, h3, .main-title, p, label {
+    /* TEXT CONTRAST */
+    h1, h2, h3, .main-title, p, label, .stMarkdown, .metric-label {
         color: #FFFFFF !important;
-        text-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     
     .main-title {
         font-weight: 700;
         font-size: 4.5rem;
-        letter-spacing: 2px;
     }
 
-    /* GLASS CARDS */
+    /* GLASS CARDS (High Transparency) */
     .metric-card {
-        background: rgba(255, 255, 255, 0.4);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
         padding: 20px;
         text-align: center;
     }
@@ -138,78 +137,67 @@ st.markdown("""
         font-size: 42px; 
         font-weight: 700; 
         color: #fff; 
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .metric-label { 
-        font-size: 13px; 
-        color: #F0F0F0; 
-        text-transform: uppercase; 
-        font-weight: 600; 
-        letter-spacing: 1px;
     }
 
-    /* --- THEMED TABLE (THE LIQUID TABLE) --- */
+    /* --- THEMED TABLE (TRUE GLASS) --- */
     div[data-testid="stDataFrame"] {
-        background: rgba(255, 255, 255, 0.35) !important; /* Semi-transparent White */
-        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.1) !important; /* VERY TRANSPARENT */
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        padding: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
     
-    /* INPUTS */
-    input[type="text"] {
-        background: rgba(255, 255, 255, 0.25) !important;
-        color: white !important;
-        border: 1px solid rgba(255, 255, 255, 0.6) !important;
-        border-radius: 30px;
-        backdrop-filter: blur(5px);
-        padding: 10px 15px;
-    }
-    
-    /* BUTTONS */
-    .stButton>button {
-        background: rgba(255, 255, 255, 0.35);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        border-radius: 30px;
-        font-weight: 700;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background: rgba(255, 255, 255, 0.6);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-    }
-
-    /* TABS */
+    /* TABS (Floating Pills) */
     .stTabs [data-baseweb="tab-list"] { 
-        background: rgba(255, 255, 255, 0.2); 
-        padding: 8px; 
+        background: rgba(255, 255, 255, 0.1); 
+        padding: 5px; 
         border-radius: 50px; 
         gap: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
     .stTabs [data-baseweb="tab"] { 
         background-color: transparent; 
         border: none; 
         color: #EEE; 
-        font-family: 'Quicksand', sans-serif; 
-        font-weight: 600;
+        font-weight: 700;
     }
     .stTabs [aria-selected="true"] { 
-        background-color: rgba(255, 255, 255, 0.8); 
-        color: #23a6d5; 
+        background-color: rgba(255, 255, 255, 0.3); 
+        color: #FFF; 
         border-radius: 40px; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        backdrop-filter: blur(5px);
+    }
+    
+    /* INPUTS (Glass Bars) */
+    input[type="text"] {
+        background: rgba(255, 255, 255, 0.15) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 20px;
+        backdrop-filter: blur(5px);
+    }
+    
+    /* BUTTONS */
+    .stButton>button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background: rgba(255, 255, 255, 0.4);
+        transform: scale(1.05);
     }
     </style>
 """, unsafe_allow_html=True)
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
-    st.markdown("### > Settings")
+    st.markdown("### > Configuration")
     uploaded_file = st.file_uploader("Upload Data", type=["csv", "xlsx"])
     st.markdown("---")
     
@@ -225,11 +213,11 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("InsightGen | Liquid UI v1.0")
+    st.caption("InsightGen | Glass UI v2.0")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
-st.markdown("#### *Fluid Intelligence Analysis*")
+st.markdown("#### *Liquid Data Intelligence*")
 
 if uploaded_file:
     try:
@@ -351,10 +339,10 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # CLEAN GLASS THEME FOR PLOTS
+                # TRANSPARENT PLOTS
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
-                fig_corr.update_layout(paper_bgcolor="rgba(255,255,255,0.4)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
+                fig_corr.update_layout(paper_bgcolor="rgba(255,255,255,0.1)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFF")
                 try:
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
@@ -362,8 +350,8 @@ if uploaded_file:
                 
                 x_axis_val = numeric_df.columns[0]
                 fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
-                fig1.update_traces(marker_color='#66a6ff', marker_line_color='#fff')
-                fig1.update_layout(paper_bgcolor="rgba(255,255,255,0.4)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
+                fig1.update_traces(marker_color='#FFF', marker_line_color='#FFF')
+                fig1.update_layout(paper_bgcolor="rgba(255,255,255,0.1)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFF")
                 try:
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
@@ -371,8 +359,8 @@ if uploaded_file:
 
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
                 fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
-                fig2.update_traces(marker_color='#89f7fe')
-                fig2.update_layout(paper_bgcolor="rgba(255,255,255,0.4)", plot_bgcolor="rgba(0,0,0,0)", font_color="#333")
+                fig2.update_traces(marker_color='#FFF')
+                fig2.update_layout(paper_bgcolor="rgba(255,255,255,0.1)", plot_bgcolor="rgba(0,0,0,0)", font_color="#FFF")
                 try:
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
