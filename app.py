@@ -327,7 +327,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.6")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.7")
 
 # --- MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -369,11 +369,11 @@ if uploaded_file:
             if run_btn and query:
                 st.session_state.last_query = query
                 
-                # --- OPTIMIZED LOADING SEQUENCE FOR ~60s WAIT ---
+                # --- OPTIMIZED LOADING SEQUENCE ---
                 status_container = st.empty()
                 
                 with status_container.container():
-                    # 1. Animation (Client-side, keeps looping)
+                    # 1. Animation (Looping)
                     st.components.v1.html("""
                     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
                     <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
@@ -381,21 +381,20 @@ if uploaded_file:
                     </div>
                     """, height=300)
                     
-                    # 2. Preparation Updates (Quick feedback)
+                    # 2. Text Placeholders (Slower Pace)
                     text_placeholder = st.empty()
                     
-                    text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>🔹 Reading Dataset...</h3>", unsafe_allow_html=True)
-                    time.sleep(1)
+                    text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>- Reading Dataset...</h3>", unsafe_allow_html=True)
+                    time.sleep(2) # SLOWED DOWN TO 2s
                     
-                    text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>🔹 Aligning Analysis Agents...</h3>", unsafe_allow_html=True)
-                    time.sleep(1)
+                    text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>- Initializing AI Agents...</h3>", unsafe_allow_html=True)
+                    time.sleep(2) # SLOWED DOWN TO 2s
 
-                    # 3. PERSISTENT MESSAGE (For the long wait)
-                    # We set this ONCE, and it stays visible while the code blocks below.
+                    # 3. Persistent Message (Emoji-Free)
                     text_placeholder.markdown(
                         f"""<h3 style='text-align: center; color: #800000; font-family: Mulish;'>
                         Deep Analysis in Progress...<br>
-                        <span style='font-size: 0.7em; color: #666;'>This may take ~60 seconds. Please wait.</span>
+                        <span style='font-size: 0.7em; color: #666;'>This may take up to 60 seconds. Please wait.</span>
                         </h3>""", 
                         unsafe_allow_html=True
                     )
@@ -549,4 +548,3 @@ if uploaded_file:
 else:
     with st.container():
         st.info("READY: UPLOAD DATASET TO BEGIN...")
-
