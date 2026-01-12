@@ -394,7 +394,7 @@ if uploaded_file:
                     # We set this ONCE, and it stays visible while the code blocks below.
                     text_placeholder.markdown(
                         f"""<h3 style='text-align: center; color: #800000; font-family: Mulish;'>
-                        🚀 Deep Analysis in Progress...<br>
+                        Deep Analysis in Progress...<br>
                         <span style='font-size: 0.7em; color: #666;'>This may take ~60 seconds. Please wait.</span>
                         </h3>""", 
                         unsafe_allow_html=True
@@ -549,3 +549,4 @@ if uploaded_file:
 else:
     with st.container():
         st.info("READY: UPLOAD DATASET TO BEGIN...")
+
