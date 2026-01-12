@@ -14,10 +14,12 @@ load_dotenv()
 if not os.getenv("OPENAI_API_KEY"):
     llm = None
     DEMO_MODE = True
+    debug_error = "Missing OPENAI_API_KEY in .env file."
 else:
     # Temperature 0 = Maximum Speed & Deterministic Code
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     DEMO_MODE = False
+    debug_error = ""  # <--- THIS VARIABLE WAS MISSING
 
 # --- AGENTS ---
 
