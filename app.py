@@ -1,12 +1,17 @@
-# --- 1. SQLITE FIX FOR STREAMLIT CLOUD ---
+import os
 import sys
+
+# --- CRITICAL FIX: DISABLE TELEMETRY AT THE ENTRY POINT ---
+# This MUST be the first thing the app does to prevent the crash.
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+
+# --- SQLITE FIX FOR STREAMLIT CLOUD ---
 try:
     __import__('pysqlite3')
     sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 except ImportError:
     pass
 
-import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -15,9 +20,7 @@ import time
 from datetime import datetime
 from fpdf import FPDF
 
-# --- 2. CONFIGURATION ---
-os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
-
+# --- CONFIGURATION ---
 st.set_page_config(
     page_title="INSIGHTGEN: Analyst",
     layout="wide",
@@ -26,15 +29,17 @@ st.set_page_config(
 
 # Import Backend
 try:
-    from agents import planner, coder, reporter, DEMO_MODE, debug_error
+    # We import tools first to ensure df is linked
     import tools
+    from agents import planner, coder, reporter, DEMO_MODE, debug_error
 except Exception as e:
+    st.error(f"Backend Import Error: {e}")
     DEMO_MODE = True
     tools = None
     planner = coder = reporter = None
     debug_error = f"System Error: {e}"
 
-# --- 3. SESSION STATE ---
+# --- SESSION STATE ---
 if "analysis_result" not in st.session_state:
     st.session_state.analysis_result = None
 if "analysis_plot" not in st.session_state:
@@ -42,7 +47,7 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. ADVANCED PDF ENGINE ---
+# --- ADVANCED PDF ENGINE ---
 class PDFReport(FPDF):
     def header(self):
         # MAROON HEADER BAR
@@ -175,16 +180,14 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. THEME CSS (LORA + MULISH) ---
+# --- THEME CSS (LORA + MULISH) ---
 st.markdown("""
     <style>
-    /* Import Lora (Headers) and Mulish (Body) */
     @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,400&family=Mulish:wght@300;400;700&display=swap');
     
-    /* === GLOBAL STYLES === */
     html, body, [class*="css"] {
-        font-family: 'Mulish', sans-serif; /* Clean Rounded Sans for body */
-        background-color: #FDFBF7; /* Parchment Cream */
+        font-family: 'Mulish', sans-serif;
+        background-color: #FDFBF7; 
         color: #2C2C2C; 
     }
     
@@ -193,10 +196,9 @@ st.markdown("""
         background-image: none; 
     }
 
-    /* === TYPOGRAPHY === */
     h1, h2, h3 {
         color: #1C1C1C !important;
-        font-family: 'Lora', serif; /* Modern Calligraphic Serif */
+        font-family: 'Lora', serif;
         border-bottom: none;
         padding-bottom: 5px;
         font-weight: 700;
@@ -220,28 +222,16 @@ st.markdown("""
         text-align: left;
         width: 100%;
         display: block;
-        line-height: 1;
-        padding-bottom: 5px;
-        text-transform: uppercase; /* CAPS FORCE */
-    }
-    
-    .sub-title {
-        color: #555 !important;
-        font-family: 'Lora', serif;
-        font-style: italic;
-        font-size: 1.2rem;
-        margin-bottom: 25px;
+        padding-bottom: 20px;
         border-bottom: 3px solid #800000;
-        padding-bottom: 15px;
-        display: block;
-        width: 100%;
+        margin-bottom: 30px;
+        text-transform: uppercase; 
     }
 
-    /* === 🟤 ROUNDED CARDS === */
     .metric-card {
         background-color: #FFFFFF;
         border: 1px solid #EAEAEA; 
-        border-left: 6px solid #800000; /* Maroon Accent Left */
+        border-left: 6px solid #800000;
         padding: 20px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         text-align: center;
@@ -254,13 +244,12 @@ st.markdown("""
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); 
     }
     .metric-value { 
-        color: #800000; /* Maroon Numbers */
+        color: #800000;
         font-family: 'Lora', serif;
         font-size: 38px;
         font-weight: 700; 
     }
 
-    /* === TABLE STYLING === */
     div[data-testid="stDataFrame"] {
         background-color: #FFFFFF; 
         border: 1px solid #E0E0E0;
@@ -273,9 +262,8 @@ st.markdown("""
         background-color: #FFFFFF;
     }
 
-    /* === COMPONENTS === */
     .stButton>button {
-        background-color: #2C2C2C; /* Dark Button */
+        background-color: #2C2C2C;
         color: #FFF;
         border: none;
         border-radius: 25px; 
@@ -287,7 +275,7 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .stButton>button:hover { 
-        background-color: #800000; /* Maroon on Hover */
+        background-color: #800000;
         transform: translateY(-2px);
         box-shadow: 0 6px 12px rgba(128,0,0,0.3);
     }
@@ -316,7 +304,6 @@ st.markdown("""
         border-bottom: 3px solid #800000;
     }
 
-    /* === MOBILE === */
     @media only screen and (max-width: 768px) {
         .main-title { font-size: 2.5rem !important; }
         .metric-value { font-size: 28px !important; }
@@ -325,7 +312,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 6. SIDEBAR ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.markdown("### SYSTEM MENU")
     uploaded_file = st.file_uploader("UPLOAD DATASET", type=["csv", "xlsx"])
@@ -340,11 +327,10 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.4")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.3")
 
-# --- 7. MAIN CONTENT ---
+# --- MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>-- INTELLIGENT ANALYTICS SUITE --</div>", unsafe_allow_html=True)
 
 if uploaded_file:
     try:
@@ -355,7 +341,7 @@ if uploaded_file:
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
-        # METRICS GRID (ROUNDED)
+        # METRICS GRID
         st.write("")
         st.subheader("DATASET OVERVIEW")
         mc1, mc2, mc3, mc4 = st.columns(4)
@@ -386,7 +372,6 @@ if uploaded_file:
                 # --- NEW LOTTIE LOADING ANIMATION ---
                 status_box = st.empty()
                 with status_box.container():
-                    # HTML Embed for DotLottie Player
                     st.components.v1.html("""
                     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
                     <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
@@ -405,7 +390,6 @@ if uploaded_file:
                         if os.path.exists("plot.png"): os.remove("plot.png")
                         
                         from crewai import Crew, Task, Process
-                        from agents import planner, coder, reporter 
                         
                         task_plan = Task(
                             description=f"Create a plan to analyze: '{query}'", 
@@ -502,7 +486,6 @@ if uploaded_file:
             with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
             with d_col2:
                 try:
-                    # Pass original DF to ensure accurate summary
                     dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
                     st.download_button(label="[ EXPORT PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
@@ -539,4 +522,3 @@ if uploaded_file:
 else:
     with st.container():
         st.info("READY: UPLOAD DATASET TO BEGIN...")
-
