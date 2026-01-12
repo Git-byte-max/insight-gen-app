@@ -329,7 +329,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.8")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V2.0")
 
 # --- MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -418,20 +418,26 @@ if uploaded_file:
                         
                         from crewai import Crew, Task, Process
                         
+                        # --- OPTIMIZATION: CONTEXT INJECTION ---
+                        col_list = list(df.columns)
+                        data_context = f"The dataset has columns: {col_list}. "
+                        
                         task_plan = Task(
-                            description=f"Create a plan to analyze: '{query}'", 
-                            expected_output="Step-by-step plan", 
+                            description=f"{data_context} user wants to analyze: '{query}'. Output a 1-sentence execution plan.", 
+                            expected_output="Brief plan", 
                             agent=planner
                         )
+                        
                         task_code = Task(
-                            description="Execute the plan. PRINT ALL RESULTS. Save 'plot.png' if needed.", 
-                            expected_output="Execution Logs with Numbers", 
+                            description="Write ONE Python script. Calculate correlation, outliers, and basic stats. Print textual insights based on the numbers. Save 'plot.png'.", 
+                            expected_output="Executed code output with stats and insights", 
                             agent=coder, 
                             context=[task_plan]
                         )
+                        
                         task_report = Task(
-                            description="Summarize the findings from the code logs.", 
-                            expected_output="Data-driven Summary", 
+                            description="Convert the code execution logs into a formatted Markdown report with sections: Summary, Stats, Implications.", 
+                            expected_output="Formatted Report", 
                             agent=reporter, 
                             context=[task_code]
                         )
@@ -443,9 +449,9 @@ if uploaded_file:
                             verbose=True
                         )
                         
-                        # --- BLOCKING CALL (APP FREEZES HERE FOR ~60s) ---
+                        # --- BLOCKING CALL ---
                         result = crew.kickoff() 
-                        # -------------------------------------------------
+                        # ---------------------
                         
                         # --- END TIMER ---
                         end_time = time.time()
