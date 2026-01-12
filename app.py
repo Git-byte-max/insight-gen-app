@@ -19,7 +19,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Platinum Analytics",
+    page_title="InsightGen: Azure Analytics",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -42,37 +42,37 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. ADVANCED PDF ENGINE (PLATINUM THEME) ---
+# --- 4. ADVANCED PDF ENGINE (AZURE THEME) ---
 class PDFReport(FPDF):
     def header(self):
-        # INDIGO HEADER BAR
-        self.set_fill_color(92, 107, 192) # Indigo 400
+        # NAVY HEADER BAR
+        self.set_fill_color(14, 17, 23) # Deep Navy
         self.rect(0, 0, 210, 30, 'F')
         
-        # WHITE TITLE
+        # CYAN BRANDING
         self.set_font('Arial', 'B', 18)
-        self.set_text_color(255, 255, 255) 
+        self.set_text_color(41, 181, 232) # Electric Blue
         self.set_y(10)
-        self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
+        self.cell(0, 10, 'INSIGHTGEN | AZURE ANALYTICS', 0, 1, 'C')
         
         # SUBTITLE
         self.set_font('Arial', '', 9)
-        self.set_text_color(230, 230, 250) # Light Lavender
+        self.set_text_color(200, 200, 200) # Light Grey
         self.cell(0, 0, f'GENERATED: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
         self.ln(25)
 
     def footer(self):
         self.set_y(-15)
         self.set_font('Arial', 'I', 8)
-        self.set_text_color(100, 100, 100)
+        self.set_text_color(128, 128, 128)
         self.cell(0, 10, f'CONFIDENTIAL // Page {self.page_no()}', 0, 0, 'C')
 
     def section_title(self, title):
         self.set_font('Arial', 'B', 14)
-        self.set_text_color(44, 62, 80) # Dark Slate Blue
+        self.set_text_color(0, 229, 255) # Cyan
         self.cell(0, 10, title.upper(), 0, 1, 'L')
-        # Indigo Underline
-        self.set_draw_color(92, 107, 192)
+        # Cyan Underline
+        self.set_draw_color(0, 229, 255)
         self.set_line_width(1)
         self.line(10, self.get_y(), 200, self.get_y())
         self.ln(8)
@@ -80,9 +80,9 @@ class PDFReport(FPDF):
     def create_table(self, df):
         """ Renders a Pandas DataFrame as a proper PDF Table """
         self.set_font("Arial", "B", 8)
-        self.set_fill_color(240, 242, 245) # Very light grey
+        self.set_fill_color(240, 248, 255) # Alice Blue (Very light blue)
         self.set_text_color(0, 0, 0)
-        self.set_draw_color(200, 200, 200)
+        self.set_draw_color(100, 149, 237) # Cornflower Blue Borders
         
         # Headers
         col_width = 190 / (len(df.columns) + 1)
@@ -118,8 +118,8 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     
     # 2x2 Data Grid
     pdf.set_font("Arial", 'B', 10)
-    pdf.set_fill_color(255, 255, 255)
-    pdf.set_draw_color(92, 107, 192) # Indigo Borders
+    pdf.set_fill_color(245, 250, 255)
+    pdf.set_draw_color(41, 181, 232) # Electric Blue
     
     # Row 1
     pdf.cell(95, 12, f" TOTAL RECORDS: {rows}", 1, 0, 'L', 1)
@@ -175,44 +175,44 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. PLATINUM SLATE THEME CSS ---
+# --- 5. AZURE INTELLIGENCE THEME CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap');
     
     /* === GLOBAL STYLES === */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
-        color: #2C3E50; /* Dark Slate */
-        background-color: #F8F9FA; /* Off-White Background */
+        color: #E0E0E0;
+        background-color: #0E1117; /* Deep Navy */
     }
     
     .stApp {
-        background-color: #F8F9FA;
+        background-color: #0E1117;
         background-image: none; 
     }
 
     /* === SCROLLBARS === */
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #F1F1F1; }
-    ::-webkit-scrollbar-thumb { background: #5C6BC0; border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: #0E1117; }
+    ::-webkit-scrollbar-thumb { background: #29B5E8; border-radius: 4px; }
 
     /* === TYPOGRAPHY === */
     h1, h2, h3 {
-        color: #2C3E50 !important;
-        font-weight: 800;
-        letter-spacing: -0.5px;
+        color: #29B5E8 !important; /* Electric Blue */
+        font-weight: 700;
+        letter-spacing: 0.5px;
     }
     
     .metric-label {
-        color: #5C6BC0 !important; /* Indigo */
+        color: #00E5FF !important; /* Cyan */
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
     
     .main-title {
-        color: #1A237E !important; /* Deep Indigo */
+        color: #29B5E8 !important; 
         font-weight: 800;
         font-size: 3.5rem; 
         letter-spacing: -1px;
@@ -221,83 +221,84 @@ st.markdown("""
         width: 100%;
         display: block;
         padding-bottom: 10px;
+        text-shadow: 0 0 15px rgba(41, 181, 232, 0.3);
     }
 
-    /* === ⬜ PLATINUM CARDS (CLEAN SHADOW) === */
+    /* === 🟦 AZURE CARDS (GLOW EFFECT) === */
     .metric-card {
-        background-color: #FFFFFF;
-        border: 1px solid #E0E0E0; 
-        border-left: 5px solid #5C6BC0; /* Indigo Left Border */
+        background-color: #161B22;
+        border: 1px solid #30363D; 
+        border-top: 3px solid #29B5E8; /* Blue Top Border */
         border-radius: 8px;
         padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         text-align: center;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         margin-bottom: 15px; 
     }
     .metric-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); 
+        box-shadow: 0 0 20px rgba(41, 181, 232, 0.2); 
+        border-color: #00E5FF;
     }
     .metric-value { 
-        color: #2C3E50; 
+        color: #FFFFFF; 
         font-size: 32px;
         font-weight: 700; 
     }
     .metric-label { 
-        color: #7F8C8D !important; 
+        color: #8B949E !important; 
         font-size: 11px; 
         font-weight: 600;
     }
 
-    /* === 🟦 TABLE STYLING (CLEAN) === */
+    /* === 🟦 TABLE STYLING (TECH) === */
     div[data-testid="stDataFrame"] {
-        background-color: #FFFFFF; 
-        border: 1px solid #E0E0E0;
+        background-color: #161B22; 
+        border: 1px solid #30363D;
         border-radius: 8px;
         padding: 5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     div[data-testid="stDataFrame"] > div {
-        background-color: #FFFFFF;
+        background-color: #161B22;
     }
 
     /* === COMPONENTS (BUTTONS & INPUTS) === */
     .stButton>button {
-        background-color: #5C6BC0; /* Indigo */
-        color: white;
-        border-radius: 6px; 
+        background-color: #29B5E8; /* Electric Blue */
+        color: #0E1117; /* Dark Text */
+        border-radius: 4px; 
         border: none;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
         padding: 10px 20px;
         transition: all 0.2s ease;
-        box-shadow: 0 2px 4px rgba(92, 107, 192, 0.3);
+        box-shadow: 0 0 10px rgba(41, 181, 232, 0.2);
     }
     .stButton>button:hover { 
-        background-color: #3F51B5; 
+        background-color: #00E5FF; /* Cyan */
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(92, 107, 192, 0.4);
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
     }
     
     input[type="text"] {
-        background: #FFFFFF !important;
-        color: #333 !important;
-        border: 1px solid #D1D1D1 !important;
-        border-left: 3px solid #5C6BC0 !important;
-        border-radius: 6px;
+        background: #0D1117 !important;
+        color: #FFF !important;
+        border: 1px solid #30363D !important;
+        border-left: 3px solid #29B5E8 !important;
+        border-radius: 4px;
         padding-left: 15px;
     }
     
     .stTabs [data-baseweb="tab-list"] { 
-        background-color: #FFFFFF; 
+        background-color: #0D1117; 
         padding: 8px; 
         border-radius: 8px;
-        border: 1px solid #E0E0E0;
+        border: 1px solid #30363D;
     }
-    .stTabs [data-baseweb="tab"] { color: #555; font-weight: 600; }
+    .stTabs [data-baseweb="tab"] { color: #8B949E; font-weight: 600; }
     .stTabs [aria-selected="true"] { 
-        background-color: #5C6BC0; 
+        background-color: #1F6FEB; /* Github Blue */
         color: #FFF; 
         border-radius: 6px;
     }
@@ -332,11 +333,11 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | PLATINUM EDITION V2.0")
+    st.caption("INSIGHTGEN | AZURE EDITION V2.0")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
-st.markdown("#### *// INTELLIGENT ANALYTICS SUITE*")
+st.markdown("#### *// ENTERPRISE INTELLIGENCE SUITE*")
 
 if uploaded_file:
     try:
@@ -354,7 +355,7 @@ if uploaded_file:
         with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
         with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
         with mc3: 
-            missing = df.isnull().sum().sum(); color = "#D32F2F" if missing > 0 else "#43A047"
+            missing = df.isnull().sum().sum(); color = "#FF5252" if missing > 0 else "#00E5FF"
             st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING VALUES</div></div>""", unsafe_allow_html=True)
         with mc4: 
             dupes = df.duplicated().sum()
@@ -378,8 +379,7 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        # Use a simpler/cleaner loader for Platinum theme
-                        st.spinner("Processing Data Intelligence...")
+                        st.spinner("Processing Intelligence Stream...")
 
                 try:
                     if DEMO_MODE:
@@ -457,29 +457,33 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # PLATINUM THEME PLOTS (Clean White/Blue)
+                # AZURE THEME PLOTS (Dark Blue/Cyan)
                 corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
-                fig_corr.update_layout(paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF", font_color="#333")
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_dark")
+                fig_corr.update_layout(paper_bgcolor="#161B22", plot_bgcolor="#161B22", font_color="#FFF")
                 try:
+                    # Export dark bg image for PDF
+                    fig_corr.update_layout(paper_bgcolor="#111")
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
                 except: pass
                 
                 x_axis_val = numeric_df.columns[0]
-                fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
-                fig1.update_traces(marker_color='#5C6BC0', marker_line_color='#FFF')
-                fig1.update_layout(paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF", font_color="#333")
+                fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
+                fig1.update_traces(marker_color='#29B5E8', marker_line_color='#FFF')
+                fig1.update_layout(paper_bgcolor="#161B22", plot_bgcolor="#161B22", font_color="#FFF")
                 try:
+                    fig1.update_layout(paper_bgcolor="#111")
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
                 except: pass
 
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
-                fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
-                fig2.update_traces(marker_color='#3F51B5')
-                fig2.update_layout(paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF", font_color="#333")
+                fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
+                fig2.update_traces(marker_color='#00E5FF')
+                fig2.update_layout(paper_bgcolor="#161B22", plot_bgcolor="#161B22", font_color="#FFF")
                 try:
+                    fig2.update_layout(paper_bgcolor="#111")
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
                 except: pass
@@ -503,6 +507,10 @@ if uploaded_file:
             st.markdown("---")
             if not numeric_df.empty:
                 st.markdown("### VISUALIZATION DASHBOARD")
+                # Reset layout for UI
+                fig_corr.update_layout(paper_bgcolor="#161B22")
+                fig1.update_layout(paper_bgcolor="#161B22")
+                fig2.update_layout(paper_bgcolor="#161B22")
                 
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
