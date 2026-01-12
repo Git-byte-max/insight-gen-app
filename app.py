@@ -327,7 +327,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.3")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.4")
 
 # --- MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -369,21 +369,39 @@ if uploaded_file:
             if run_btn and query:
                 st.session_state.last_query = query
                 
-                # --- NEW LOTTIE LOADING ANIMATION ---
-                status_box = st.empty()
-                with status_box.container():
+                # --- NEW LOADING SEQUENCE ---
+                # We separate the animation from the text placeholder to avoid reloading the iframe
+                status_container = st.container()
+                
+                with status_container:
+                    # 1. Animation (Static)
                     st.components.v1.html("""
                     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
                     <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
-                        <dotlottie-player src="https://lottie.host/4ee679d4-85fe-49ec-8d02-a9046ba1e422/PqScogHjI8.lottie" background="transparent" speed="1" style="width: 300px; height: 300px;" loop autoplay></dotlottie-player>
+                        <dotlottie-player src="https://lottie.host/0e9443fb-5443-43a1-939b-7b53756db004/WvBcP4Z7Af.lottie" background="transparent" speed="1" style="width: 300px; height: 300px;" loop autoplay></dotlottie-player>
                     </div>
-                    """, height=320)
+                    """, height=300)
+                    
+                    # 2. Dynamic Text Below Animation
+                    text_placeholder = st.empty()
+                    
+                    # Loading Steps
+                    loading_steps = [
+                        "🔹 Reading Dataset...",
+                        "🔹 Planner Agent: Formulating Strategy...",
+                        "🔹 Coder Agent: Writing Python Logic...",
+                        "🔹 Executing Analysis & Charts..."
+                    ]
+                    
+                    for step in loading_steps:
+                        text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>{step}</h3>", unsafe_allow_html=True)
+                        time.sleep(0.7)
                 # -------------------------------
 
                 try:
                     if DEMO_MODE:
                         time.sleep(3) 
-                        status_box.empty()
+                        status_container.empty()
                         st.session_state.analysis_result = f"Query: {query}\nStatus: SIMULATED RESPONSE\nReason: {debug_error}\n1. Trend Detected: Positive.\n2. Correlation: Strong (0.85)."
                         st.session_state.analysis_plot = "simulated"
                     else:
@@ -417,11 +435,14 @@ if uploaded_file:
                         )
                         
                         result = crew.kickoff()
-                        status_box.empty()
+                        
+                        # Clear loading animation once done
+                        status_container.empty()
+                        
                         st.session_state.analysis_result = str(result)
                         st.session_state.analysis_plot = "plot.png" if os.path.exists("plot.png") else None
                 except Exception as e:
-                    status_box.empty()
+                    status_container.empty()
                     st.error(f"RUNTIME ERROR: {e}")
 
             if st.session_state.analysis_result:
