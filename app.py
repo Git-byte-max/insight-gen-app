@@ -42,7 +42,7 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. ADVANCED PDF ENGINE (PAPER THEME + STANDARD TEXT) ---
+# --- 4. ADVANCED PDF ENGINE (ARIAL/TIMES MIX) ---
 class PDFReport(FPDF):
     def header(self):
         # MAROON HEADER BAR
@@ -56,14 +56,14 @@ class PDFReport(FPDF):
         self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
         
         # SUBTITLE
-        self.set_font('Times', 'I', 11)
+        self.set_font('Arial', '', 10) # Switched to Arial for cleanliness
         self.set_text_color(240, 240, 230) 
         self.cell(0, 0, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
         self.ln(25)
 
     def footer(self):
         self.set_y(-15)
-        self.set_font('Times', 'I', 10)
+        self.set_font('Arial', 'I', 8)
         self.set_text_color(80, 80, 80)
         self.cell(0, 10, f'Confidential // Page {self.page_no()}', 0, 0, 'C')
 
@@ -79,10 +79,10 @@ class PDFReport(FPDF):
 
     def create_table(self, df):
         """ Renders a 'Printed' Style Table """
-        self.set_font("Times", "B", 10)
-        self.set_fill_color(240, 235, 225) 
+        self.set_font("Arial", "B", 9)
+        self.set_fill_color(245, 245, 240) 
         self.set_text_color(0, 0, 0)
-        self.set_draw_color(100, 100, 100) 
+        self.set_draw_color(200, 200, 200) 
         
         # Headers
         col_width = 190 / (len(df.columns) + 1)
@@ -92,7 +92,7 @@ class PDFReport(FPDF):
         self.ln()
         
         # Data Rows
-        self.set_font("Times", "", 10)
+        self.set_font("Arial", "", 9)
         for index, row in df.iterrows():
             self.cell(col_width, 8, str(index), 1, 0, 'C')
             for val in row:
@@ -117,9 +117,9 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     dupes = df.duplicated().sum()
     
     # 2x2 Data Grid
-    pdf.set_font("Times", '', 11)
-    pdf.set_fill_color(253, 251, 247)
-    pdf.set_draw_color(128, 0, 0)
+    pdf.set_font("Arial", '', 10)
+    pdf.set_fill_color(255, 255, 255)
+    pdf.set_draw_color(200, 200, 200)
     
     # Row 1
     pdf.cell(95, 12, f" Total Records: {rows}", 1, 0, 'L', 1)
@@ -135,7 +135,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
         pdf.set_font("Times", 'B', 11)
         pdf.cell(0, 8, f"QUERY SCOPE: {query}", 0, 1)
         
-        pdf.set_font("Times", '', 11)
+        pdf.set_font("Arial", '', 10)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(10)
@@ -166,7 +166,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
             if os.path.exists(img_path):
                 if pdf.get_y() > 180: pdf.add_page()
                     
-                pdf.set_font("Times", 'I', 10)
+                pdf.set_font("Arial", 'I', 9)
                 pdf.set_text_color(50, 50, 50)
                 pdf.cell(0, 8, f"Fig {i+1}: Generated Visualization", 0, 1)
                 
@@ -175,16 +175,17 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. PAPER & INK THEME CSS ---
+# --- 5. ROUNDED PAPER THEME CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700;900&display=swap');
+    /* Import Playfair Display (Headers) and Source Sans Pro (Body) */
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+Pro:wght@400;600&display=swap');
     
     /* === GLOBAL STYLES === */
     html, body, [class*="css"] {
-        font-family: 'Merriweather', serif;
+        font-family: 'Source Sans Pro', sans-serif; /* Clean modern sans for body */
         background-color: #FDFBF7; /* Parchment Cream */
-        color: #1C1C1C; /* Ink Black */
+        color: #2C2C2C; /* Soft Black */
     }
     
     .stApp {
@@ -195,61 +196,66 @@ st.markdown("""
     /* === TYPOGRAPHY === */
     h1, h2, h3 {
         color: #1C1C1C !important;
-        font-family: 'Merriweather', serif;
-        border-bottom: 2px solid #800000; /* Maroon Underline */
+        font-family: 'Playfair Display', serif; /* Elegant Serif for Headers */
+        border-bottom: none;
         padding-bottom: 5px;
-        display: inline-block;
-        font-weight: 900;
+        font-weight: 700;
+        letter-spacing: -0.5px;
     }
     
     .metric-label {
-        color: #555555 !important;
-        font-family: 'Merriweather', serif;
-        font-style: italic;
-        font-size: 14px;
+        color: #666 !important;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
+        font-size: 12px;
     }
     
     .main-title {
         color: #1C1C1C !important; 
-        font-family: 'Merriweather', serif;
+        font-family: 'Playfair Display', serif;
         font-weight: 900;
-        font-size: 4rem; 
+        font-size: 4.5rem; 
         text-align: left;
         width: 100%;
         display: block;
         padding-bottom: 20px;
-        border-bottom: 4px double #800000;
+        border-bottom: 3px solid #800000;
         margin-bottom: 30px;
     }
 
-    /* === 📜 PARCHMENT CARDS === */
+    /* === 🟤 ROUNDED CARDS === */
     .metric-card {
         background-color: #FFFFFF;
-        border: 1px solid #D1D1D1; 
-        border-top: 4px solid #800000; /* Maroon Top */
+        border: 1px solid #EAEAEA; 
+        border-left: 6px solid #800000; /* Maroon Accent Left */
         padding: 20px;
-        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Soft Modern Shadow */
         text-align: center;
         transition: all 0.3s ease;
-        margin-bottom: 15px; 
+        margin-bottom: 15px;
+        border-radius: 20px; /* <--- ROUNDED CORNERS REQUEST */
     }
     .metric-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1); 
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); 
     }
     .metric-value { 
         color: #800000; /* Maroon Numbers */
-        font-size: 36px;
-        font-weight: 900; 
+        font-family: 'Playfair Display', serif;
+        font-size: 38px;
+        font-weight: 700; 
     }
 
-    /* === 📜 TABLE STYLING === */
+    /* === TABLE STYLING === */
     div[data-testid="stDataFrame"] {
         background-color: #FFFFFF; 
-        border: 1px solid #CCC;
-        font-family: 'Merriweather', serif;
+        border: 1px solid #E0E0E0;
+        font-family: 'Source Sans Pro', sans-serif;
+        border-radius: 12px;
+        padding: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     div[data-testid="stDataFrame"] > div {
         background-color: #FFFFFF;
@@ -257,42 +263,40 @@ st.markdown("""
 
     /* === COMPONENTS === */
     .stButton>button {
-        background-color: #FDFBF7;
-        color: #800000;
-        border: 2px solid #800000;
-        border-radius: 2px;
-        font-family: 'Merriweather', serif;
-        font-weight: 900;
+        background-color: #2C2C2C; /* Dark Button */
+        color: #FFF;
+        border: none;
+        border-radius: 25px; /* Rounded Buttons */
+        font-family: 'Source Sans Pro', sans-serif;
+        font-weight: 600;
         text-transform: uppercase;
-        padding: 10px 25px;
+        padding: 12px 30px;
         transition: all 0.2s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .stButton>button:hover { 
-        background-color: #800000; 
-        color: #FFF; 
-        transform: translateY(-1px);
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        background-color: #800000; /* Maroon on Hover */
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(128,0,0,0.3);
     }
     
     input[type="text"] {
         background: #FFFFFF !important;
         color: #1C1C1C !important;
-        border: 1px solid #AAA !important;
-        border-left: 5px solid #800000 !important;
-        border-radius: 2px;
+        border: 1px solid #CCC !important;
+        border-radius: 12px; /* Rounded Input */
         padding-left: 15px;
-        font-family: 'Merriweather', serif;
+        font-family: 'Source Sans Pro', sans-serif;
     }
     
     .stTabs [data-baseweb="tab-list"] { 
         background-color: #FDFBF7; 
         padding: 5px; 
-        border-bottom: 2px solid #CCC;
     }
     .stTabs [data-baseweb="tab"] { 
         color: #555; 
-        font-family: 'Merriweather', serif; 
-        font-weight: bold;
+        font-family: 'Source Sans Pro', sans-serif; 
+        font-weight: 600;
     }
     .stTabs [aria-selected="true"] { 
         background-color: #FDFBF7; 
@@ -324,7 +328,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.0")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.1")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
@@ -338,7 +342,7 @@ if uploaded_file:
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
-        # METRICS GRID
+        # METRICS GRID (ROUNDED)
         st.write("")
         st.subheader("DATASET OVERVIEW")
         mc1, mc2, mc3, mc4 = st.columns(4)
@@ -459,7 +463,7 @@ if uploaded_file:
                 # PAPER THEME PLOTS
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Reds', template="plotly_white")
-                fig_corr.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Georgia", font_color="#1C1C1C")
+                fig_corr.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Source Sans Pro", font_color="#1C1C1C")
                 try:
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
@@ -468,7 +472,7 @@ if uploaded_file:
                 x_axis_val = numeric_df.columns[0]
                 fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
                 fig1.update_traces(marker_color='#800000', marker_line_color='#FFF')
-                fig1.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Georgia", font_color="#1C1C1C")
+                fig1.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Source Sans Pro", font_color="#1C1C1C")
                 try:
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
@@ -477,7 +481,7 @@ if uploaded_file:
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
                 fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
                 fig2.update_traces(marker_color='#1C1C1C')
-                fig2.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Georgia", font_color="#1C1C1C")
+                fig2.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Source Sans Pro", font_color="#1C1C1C")
                 try:
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
