@@ -42,7 +42,7 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. ADVANCED PDF ENGINE (LORA/MULISH MIX) ---
+# --- 4. ADVANCED PDF ENGINE ---
 class PDFReport(FPDF):
     def header(self):
         # MAROON HEADER BAR
@@ -220,9 +220,10 @@ st.markdown("""
         text-align: left;
         width: 100%;
         display: block;
-        padding-bottom: 20px;
+        padding-bottom: 5px;
         border-bottom: 3px solid #800000;
-        margin-bottom: 30px;
+        margin-bottom: 0px;
+        line-height: 1.0;
     }
 
     /* === 🟤 ROUNDED CARDS === */
@@ -328,10 +329,23 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.2")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.3")
 
 # --- 7. MAIN CONTENT ---
-st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
+t_col1, t_col2 = st.columns([4, 1])
+
+with t_col1:
+    st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
+    st.markdown("#### *// INTELLIGENT ANALYTICS SUITE*")
+
+with t_col2:
+    # Lottie Animation Embed
+    components.html("""
+    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+    <dotlottie-player src="https://lottie.host/4ee679d4-85fe-49ec-8d02-a9046ba1e422/PqScogHjI8.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
+    """, height=160)
+
+st.write("") 
 
 if uploaded_file:
     try:
