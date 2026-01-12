@@ -220,10 +220,21 @@ st.markdown("""
         text-align: left;
         width: 100%;
         display: block;
-        padding-bottom: 20px;
-        border-bottom: 3px solid #800000;
-        margin-bottom: 30px;
+        line-height: 1;
+        padding-bottom: 5px;
         text-transform: uppercase; /* CAPS FORCE */
+    }
+    
+    .sub-title {
+        color: #555 !important;
+        font-family: 'Lora', serif;
+        font-style: italic;
+        font-size: 1.2rem;
+        margin-bottom: 25px;
+        border-bottom: 3px solid #800000;
+        padding-bottom: 15px;
+        display: block;
+        width: 100%;
     }
 
     /* === 🟤 ROUNDED CARDS === */
@@ -329,10 +340,11 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.3")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.4")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>// INTELLIGENT ANALYTICS SUITE</div>", unsafe_allow_html=True)
 
 if uploaded_file:
     try:
