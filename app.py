@@ -46,6 +46,8 @@ if "analysis_plot" not in st.session_state:
     st.session_state.analysis_plot = None
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
+if "analysis_time" not in st.session_state:
+    st.session_state.analysis_time = None
 
 # --- ADVANCED PDF ENGINE ---
 class PDFReport(FPDF):
@@ -327,7 +329,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.7")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.8")
 
 # --- MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -369,6 +371,9 @@ if uploaded_file:
             if run_btn and query:
                 st.session_state.last_query = query
                 
+                # --- START TIMER ---
+                start_time = time.time()
+                
                 # --- OPTIMIZED LOADING SEQUENCE ---
                 status_container = st.empty()
                 
@@ -385,10 +390,10 @@ if uploaded_file:
                     text_placeholder = st.empty()
                     
                     text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>- Reading Dataset...</h3>", unsafe_allow_html=True)
-                    time.sleep(2) # SLOWED DOWN TO 2s
+                    time.sleep(2) 
                     
                     text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>- Initializing AI Agents...</h3>", unsafe_allow_html=True)
-                    time.sleep(2) # SLOWED DOWN TO 2s
+                    time.sleep(2) 
 
                     # 3. Persistent Message (Emoji-Free)
                     text_placeholder.markdown(
@@ -407,6 +412,7 @@ if uploaded_file:
                         status_container.empty()
                         st.session_state.analysis_result = f"Query: {query}\nStatus: SIMULATED RESPONSE\nReason: {debug_error}\n1. Trend Detected: Positive.\n2. Correlation: Strong (0.85)."
                         st.session_state.analysis_plot = "simulated"
+                        st.session_state.analysis_time = 3.14
                     else:
                         if os.path.exists("plot.png"): os.remove("plot.png")
                         
@@ -441,6 +447,10 @@ if uploaded_file:
                         result = crew.kickoff() 
                         # -------------------------------------------------
                         
+                        # --- END TIMER ---
+                        end_time = time.time()
+                        st.session_state.analysis_time = round(end_time - start_time, 2)
+                        
                         # FORCE CLEAR LOADING SCREEN
                         status_container.empty()
                         
@@ -457,6 +467,11 @@ if uploaded_file:
                 with r1:
                     st.markdown("### ANALYSIS RESULTS")
                     st.markdown(st.session_state.analysis_result)
+                    
+                    # SHOW TIMER
+                    if st.session_state.analysis_time:
+                        st.markdown(f"<p style='color: #666; font-size: 0.9em; font-style: italic; margin-top: 15px;'>Analysis completed in {st.session_state.analysis_time} seconds</p>", unsafe_allow_html=True)
+
                 with r2:
                     st.markdown("### CHART PREVIEW")
                     if st.session_state.analysis_plot == "simulated":
