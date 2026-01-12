@@ -1,6 +1,6 @@
 import os
 # --- CRITICAL FIX: DISABLE TELEMETRY BEFORE IMPORTING CREWAI ---
-# This must be the very first line to prevent the "signal only works in main thread" error.
+# This must be line 1 or 2. If you import crewai before this, the app will crash.
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 from crewai import Agent
@@ -18,7 +18,7 @@ if not os.getenv("OPENAI_API_KEY"):
     debug_error = "Missing OPENAI_API_KEY in .env file."
 else:
     # Temperature 0.1 keeps it factual but allows for natural language flow
-    llm = ChatOpenAI(model="gpt-4o-min", temperature=0.1)
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
     DEMO_MODE = False
     debug_error = ""
 
