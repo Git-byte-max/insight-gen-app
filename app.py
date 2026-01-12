@@ -19,7 +19,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Academic Journal",
+    page_title="InsightGen: Analyst",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -42,34 +42,34 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. ADVANCED PDF ENGINE (PAPER & INK THEME) ---
+# --- 4. ADVANCED PDF ENGINE (PAPER THEME + STANDARD TEXT) ---
 class PDFReport(FPDF):
     def header(self):
-        # MAROON HEADER BAR (Academic Style)
+        # MAROON HEADER BAR
         self.set_fill_color(128, 0, 0) # Maroon
         self.rect(0, 0, 210, 30, 'F')
         
-        # WHITE SERIF TITLE (Times)
+        # WHITE SERIF TITLE
         self.set_font('Times', 'B', 20)
         self.set_text_color(255, 255, 255) 
         self.set_y(10)
-        self.cell(0, 10, 'INSIGHTGEN | ANALYTICS JOURNAL', 0, 1, 'C')
+        self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
         
         # SUBTITLE
         self.set_font('Times', 'I', 11)
-        self.set_text_color(240, 240, 230) # Off-white
-        self.cell(0, 0, f'Vol. 1 | Generated: {datetime.now().strftime("%B %d, %Y")}', 0, 1, 'C')
+        self.set_text_color(240, 240, 230) 
+        self.cell(0, 0, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
         self.ln(25)
 
     def footer(self):
         self.set_y(-15)
         self.set_font('Times', 'I', 10)
         self.set_text_color(80, 80, 80)
-        self.cell(0, 10, f'InsightGen Academic Suite // Page {self.page_no()}', 0, 0, 'C')
+        self.cell(0, 10, f'Confidential // Page {self.page_no()}', 0, 0, 'C')
 
     def section_title(self, title):
         self.set_font('Times', 'B', 16)
-        self.set_text_color(28, 28, 28) # Ink Blue/Black
+        self.set_text_color(28, 28, 28) 
         self.cell(0, 10, title.upper(), 0, 1, 'L')
         # Maroon Underline
         self.set_draw_color(128, 0, 0)
@@ -80,9 +80,9 @@ class PDFReport(FPDF):
     def create_table(self, df):
         """ Renders a 'Printed' Style Table """
         self.set_font("Times", "B", 10)
-        self.set_fill_color(240, 235, 225) # Parchment Fill
+        self.set_fill_color(240, 235, 225) 
         self.set_text_color(0, 0, 0)
-        self.set_draw_color(100, 100, 100) # Grey lines
+        self.set_draw_color(100, 100, 100) 
         
         # Headers
         col_width = 190 / (len(df.columns) + 1)
@@ -108,18 +108,18 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # --- SECTION 1: MISSION OVERVIEW (GRID) ---
-    pdf.section_title("1. Abstract & Metrics")
+    # --- SECTION 1: MISSION OVERVIEW ---
+    pdf.section_title("1. Mission Overview")
     
     rows = df.shape[0]
     cols = df.shape[1]
     missing = df.isnull().sum().sum()
     dupes = df.duplicated().sum()
     
-    # 2x2 Data Grid (Journal Style)
+    # 2x2 Data Grid
     pdf.set_font("Times", '', 11)
-    pdf.set_fill_color(253, 251, 247) # Light Parchment
-    pdf.set_draw_color(128, 0, 0) # Maroon Borders
+    pdf.set_fill_color(253, 251, 247)
+    pdf.set_draw_color(128, 0, 0)
     
     # Row 1
     pdf.cell(95, 12, f" Total Records: {rows}", 1, 0, 'L', 1)
@@ -129,11 +129,11 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     pdf.cell(95, 12, f" Duplicates: {dupes}", 1, 1, 'L', 1)
     pdf.ln(10)
 
-    # --- SECTION 2: EXECUTIVE SUMMARY (Full Report Only) ---
+    # --- SECTION 2: EXECUTIVE SUMMARY ---
     if report_type == "full":
-        pdf.section_title("2. Analysis Report")
+        pdf.section_title("2. Intelligence Report")
         pdf.set_font("Times", 'B', 11)
-        pdf.cell(0, 8, f"Research Question: {query}", 0, 1)
+        pdf.cell(0, 8, f"QUERY SCOPE: {query}", 0, 1)
         
         pdf.set_font("Times", '', 11)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
@@ -149,7 +149,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     title_num = "3." if report_type == "full" else "2."
     if pdf.get_y() > 200: pdf.add_page()
     
-    pdf.section_title(f"{title_num} Statistical Review")
+    pdf.section_title(f"{title_num} Statistical Recon")
     
     stats = df.describe()
     pdf.create_table(stats)
@@ -160,7 +160,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
         title_num = "4." if report_type == "full" else "3."
         if pdf.get_y() > 180: pdf.add_page()
             
-        pdf.section_title(f"{title_num} Figures & Charts")
+        pdf.section_title(f"{title_num} Visual Surveillance")
         
         for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
@@ -192,11 +192,6 @@ st.markdown("""
         background-image: none; 
     }
 
-    /* === SCROLLBARS === */
-    ::-webkit-scrollbar { width: 10px; }
-    ::-webkit-scrollbar-track { background: #FDFBF7; }
-    ::-webkit-scrollbar-thumb { background: #800000; border-radius: 5px; }
-
     /* === TYPOGRAPHY === */
     h1, h2, h3 {
         color: #1C1C1C !important;
@@ -212,6 +207,8 @@ st.markdown("""
         font-family: 'Merriweather', serif;
         font-style: italic;
         font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     
     .main-title {
@@ -219,7 +216,7 @@ st.markdown("""
         font-family: 'Merriweather', serif;
         font-weight: 900;
         font-size: 4rem; 
-        text-align: center;
+        text-align: left;
         width: 100%;
         display: block;
         padding-bottom: 20px;
@@ -248,7 +245,7 @@ st.markdown("""
         font-weight: 900; 
     }
 
-    /* === 📜 TABLE STYLING (ACADEMIC) === */
+    /* === 📜 TABLE STYLING === */
     div[data-testid="stDataFrame"] {
         background-color: #FFFFFF; 
         border: 1px solid #CCC;
@@ -258,7 +255,7 @@ st.markdown("""
         background-color: #FFFFFF;
     }
 
-    /* === COMPONENTS (BUTTONS & INPUTS) === */
+    /* === COMPONENTS === */
     .stButton>button {
         background-color: #FDFBF7;
         color: #800000;
@@ -303,10 +300,7 @@ st.markdown("""
         border-bottom: 3px solid #800000;
     }
 
-    /* ================================= */
-    /* === 📱 MOBILE RESPONSIVENESS === */
-    /* ================================= */
-    
+    /* === MOBILE === */
     @media only screen and (max-width: 768px) {
         .main-title { font-size: 2.5rem !important; }
         .metric-value { font-size: 28px !important; }
@@ -317,23 +311,23 @@ st.markdown("""
 
 # --- 6. SIDEBAR ---
 with st.sidebar:
-    st.markdown("### JOURNAL MENU")
-    uploaded_file = st.file_uploader("Upload Dataset", type=["csv", "xlsx"])
+    st.markdown("### SYSTEM MENU")
+    uploaded_file = st.file_uploader("UPLOAD DATASET", type=["csv", "xlsx"])
     st.markdown("---")
     
     if DEMO_MODE:
-        st.code("STATUS: ARCHIVE MODE")
+        st.code("STATUS: OFFLINE MODE")
         st.error(f"Error: {debug_error}")
     else:
-        st.success("STATUS: CONNECTED")
+        st.success("STATUS: ONLINE")
         
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ACADEMIC SUITE V1.0")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.0")
 
 # --- 7. MAIN CONTENT ---
-st.markdown("<div class='main-title'>InsightGen Journal</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
 
 if uploaded_file:
     try:
@@ -346,41 +340,50 @@ if uploaded_file:
 
         # METRICS GRID
         st.write("")
-        st.subheader("1. Dataset Abstract")
+        st.subheader("DATASET OVERVIEW")
         mc1, mc2, mc3, mc4 = st.columns(4)
-        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">Total Records</div></div>""", unsafe_allow_html=True)
-        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">Variables</div></div>""", unsafe_allow_html=True)
+        with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
+        with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
         with mc3: 
             missing = df.isnull().sum().sum(); color = "#800000" if missing > 0 else "#2E7D32"
-            st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">Missing Data</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING VALUES</div></div>""", unsafe_allow_html=True)
         with mc4: 
             dupes = df.duplicated().sum()
-            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">Duplicates</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
         st.write("")
 
-        tab1, tab2 = st.tabs(["RESEARCH QUERY", "FIGURES & CHARTS"])
+        tab1, tab2 = st.tabs(["AI ANALYSIS", "VISUAL DASHBOARD"])
 
         # --- TAB 1 ---
         with tab1:
             st.write("")
             col_q, col_b = st.columns([3, 1])
             with col_q:
-                query = st.text_input("RESEARCH QUESTION:", placeholder="Enter your hypothesis or query...", label_visibility="collapsed")
+                query = st.text_input("ANALYSIS QUERY:", placeholder="Ask a question about your data...", label_visibility="collapsed")
             with col_b:
-                run_btn = st.button("Analyze Data", use_container_width=True)
+                run_btn = st.button("RUN ANALYSIS", use_container_width=True)
 
             if run_btn and query:
                 st.session_state.last_query = query
-                loader = st.empty()
-                with loader.container():
-                    lc1, lc2, lc3 = st.columns([1,2,1])
-                    with lc2:
-                        st.markdown("<center><i>Conducting Analysis...</i></center>", unsafe_allow_html=True)
+                
+                # --- DYNAMIC LOADING SEQUENCE ---
+                status_box = st.empty()
+                with status_box.container():
+                    st.markdown("🔹 *Accessing Dataset...*")
+                    time.sleep(0.4)
+                    st.markdown("🔹 *Initializing AI Agents...*")
+                    time.sleep(0.4)
+                    st.markdown("🔹 *Planner Agent: Formulating Strategy...*")
+                    time.sleep(0.4)
+                    st.markdown("🔹 *Coder Agent: Writing Python Logic...*")
+                    time.sleep(0.4)
+                    st.markdown("🔹 *Executing Code & Generating Charts...*")
+                # -------------------------------
 
                 try:
                     if DEMO_MODE:
                         time.sleep(2) 
-                        loader.empty()
+                        status_box.empty()
                         st.session_state.analysis_result = f"Query: {query}\nStatus: SIMULATED RESPONSE\nReason: {debug_error}\n1. Trend Detected: Positive.\n2. Correlation: Strong (0.85)."
                         st.session_state.analysis_plot = "simulated"
                     else:
@@ -415,11 +418,11 @@ if uploaded_file:
                         )
                         
                         result = crew.kickoff()
-                        loader.empty()
+                        status_box.empty()
                         st.session_state.analysis_result = str(result)
                         st.session_state.analysis_plot = "plot.png" if os.path.exists("plot.png") else None
                 except Exception as e:
-                    loader.empty()
+                    status_box.empty()
                     st.error(f"RUNTIME ERROR: {e}")
 
             if st.session_state.analysis_result:
@@ -427,16 +430,16 @@ if uploaded_file:
                 st.caption(f"QUERY LOG: {st.session_state.last_query}")
                 r1, r2 = st.columns([1.5, 1])
                 with r1:
-                    st.markdown("### 2. Analysis Results")
+                    st.markdown("### ANALYSIS RESULTS")
                     st.markdown(st.session_state.analysis_result)
                 with r2:
-                    st.markdown("### 3. Figure Preview")
+                    st.markdown("### CHART PREVIEW")
                     if st.session_state.analysis_plot == "simulated":
                         st.info("Simulated Plot")
                     elif st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png"):
-                        st.image("plot.png", caption="Fig 1. Generated Visualization")
+                        st.image("plot.png")
                     else:
-                        st.caption("No Visualization Generated")
+                        st.caption("NO VISUALIZATION GENERATED")
 
         # --- TAB 2 ---
         with tab2:
@@ -444,8 +447,8 @@ if uploaded_file:
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(cat_cols) > 0:
                 col_f1, col_f2 = st.columns(2)
-                with col_f1: selected_cat = st.selectbox("FILTER GROUP", cat_cols)
-                with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"FILTER SUBSET", unique_vals, default=unique_vals[:5])
+                with col_f1: selected_cat = st.selectbox("FILTER COLUMN", cat_cols)
+                with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"FILTER VALUES", unique_vals, default=unique_vals[:5])
                 filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
             else:
                 filtered_df = df
@@ -453,7 +456,7 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # PAPER THEME PLOTS (Clean/White/Maroon)
+                # PAPER THEME PLOTS
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Reds', template="plotly_white")
                 fig_corr.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Georgia", font_color="#1C1C1C")
@@ -481,12 +484,12 @@ if uploaded_file:
                 except: pass
 
             d_col1, d_col2 = st.columns([4, 1])
-            with d_col1: st.markdown(f"**N = {len(filtered_df)}**") 
+            with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
             with d_col2:
                 try:
                     # Pass original DF to ensure accurate summary
                     dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ EXPORT PDF ]", data=dash_pdf, file_name="InsightGen_Journal.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ EXPORT PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -498,21 +501,21 @@ if uploaded_file:
             
             st.markdown("---")
             if not numeric_df.empty:
-                st.markdown("### 4. Interactive Figures")
+                st.markdown("### VISUALIZATION DASHBOARD")
                 
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
                 with gc1: st.plotly_chart(fig1, width="stretch")
                 with gc2: st.plotly_chart(fig2, width="stretch")
             else:
-                st.info("No numeric data available for figures.")
+                st.info("NO NUMERIC DATA AVAILABLE")
 
         with full_report_container:
             if st.session_state.analysis_result:
                 plot_to_use = "plot.png" if st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png") else None
                 try:
                     full_pdf = generate_pdf("full", df, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
-                    st.download_button(label="[ DOWNLOAD FULL JOURNAL ]", data=full_pdf, file_name="InsightGen_Full_Journal.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ EXPORT FULL REPORT ]", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"Full PDF Error: {e}")
 
@@ -520,4 +523,4 @@ if uploaded_file:
         st.error(f"SYSTEM ERROR: {e}")
 else:
     with st.container():
-        st.info("Waiting for dataset upload...")
+        st.info("READY: UPLOAD DATASET TO BEGIN...")
