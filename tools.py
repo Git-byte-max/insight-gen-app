@@ -1,13 +1,13 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from crewai import tool
+from langchain.tools import tool
 import io
 import sys
 
 # Global variable to hold the DataFrame
 df = None
 
-@tool("execute_code")
+@tool
 def execute_code(code_snippet: str):
     """
     Executes a Python code snippet. 
@@ -23,7 +23,6 @@ def execute_code(code_snippet: str):
     
     try:
         # Create a local environment for execution
-        # We pass 'df', 'pd', and 'plt' so the code can use them immediately
         local_scope = {"df": df, "pd": pd, "plt": plt}
         
         # Execute the code
