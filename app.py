@@ -327,7 +327,7 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.4")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V1.6")
 
 # --- MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
@@ -369,12 +369,11 @@ if uploaded_file:
             if run_btn and query:
                 st.session_state.last_query = query
                 
-                # --- NEW LOADING SEQUENCE ---
-                # We separate the animation from the text placeholder to avoid reloading the iframe
-                status_container = st.container()
+                # --- OPTIMIZED LOADING SEQUENCE FOR ~60s WAIT ---
+                status_container = st.empty()
                 
-                with status_container:
-                    # 1. Animation (Static)
+                with status_container.container():
+                    # 1. Animation (Client-side, keeps looping)
                     st.components.v1.html("""
                     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
                     <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
@@ -382,20 +381,25 @@ if uploaded_file:
                     </div>
                     """, height=300)
                     
-                    # 2. Dynamic Text Below Animation
+                    # 2. Preparation Updates (Quick feedback)
                     text_placeholder = st.empty()
                     
-                    # Loading Steps
-                    loading_steps = [
-                        "🔹 Reading Dataset...",
-                        "🔹 Planner Agent: Formulating Strategy...",
-                        "🔹 Coder Agent: Writing Python Logic...",
-                        "🔹 Executing Analysis & Charts..."
-                    ]
+                    text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>🔹 Reading Dataset...</h3>", unsafe_allow_html=True)
+                    time.sleep(1)
                     
-                    for step in loading_steps:
-                        text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>{step}</h3>", unsafe_allow_html=True)
-                        time.sleep(0.7)
+                    text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>🔹 Aligning Analysis Agents...</h3>", unsafe_allow_html=True)
+                    time.sleep(1)
+
+                    # 3. PERSISTENT MESSAGE (For the long wait)
+                    # We set this ONCE, and it stays visible while the code blocks below.
+                    text_placeholder.markdown(
+                        f"""<h3 style='text-align: center; color: #800000; font-family: Mulish;'>
+                        🚀 Deep Analysis in Progress...<br>
+                        <span style='font-size: 0.7em; color: #666;'>This may take ~60 seconds. Please wait.</span>
+                        </h3>""", 
+                        unsafe_allow_html=True
+                    )
+                
                 # -------------------------------
 
                 try:
@@ -434,9 +438,11 @@ if uploaded_file:
                             verbose=True
                         )
                         
-                        result = crew.kickoff()
+                        # --- BLOCKING CALL (APP FREEZES HERE FOR ~60s) ---
+                        result = crew.kickoff() 
+                        # -------------------------------------------------
                         
-                        # Clear loading animation once done
+                        # FORCE CLEAR LOADING SCREEN
                         status_container.empty()
                         
                         st.session_state.analysis_result = str(result)
