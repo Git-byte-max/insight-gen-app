@@ -1,8 +1,12 @@
+import os
+# --- CRITICAL FIX: DISABLE TELEMETRY BEFORE IMPORTING CREWAI ---
+# This must be the very first line to prevent the "signal only works in main thread" error.
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+
 from crewai import Agent
 from langchain_openai import ChatOpenAI
 from tools import execute_code
 from dotenv import load_dotenv
-import os
 
 # Load environment variables
 load_dotenv()
