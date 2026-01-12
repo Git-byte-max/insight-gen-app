@@ -19,7 +19,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Azure Analytics",
+    page_title="InsightGen: Carbon Stealth",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -42,57 +42,58 @@ if "analysis_plot" not in st.session_state:
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 
-# --- 4. ADVANCED PDF ENGINE (AZURE THEME) ---
+# --- 4. ADVANCED PDF ENGINE (STEALTH THEME) ---
 class PDFReport(FPDF):
     def header(self):
-        # NAVY HEADER BAR
-        self.set_fill_color(14, 17, 23) # Deep Navy
+        # TRUE BLACK HEADER
+        self.set_fill_color(0, 0, 0) 
         self.rect(0, 0, 210, 30, 'F')
         
-        # CYAN BRANDING
+        # WHITE MONOCHROME BRANDING
         self.set_font('Arial', 'B', 18)
-        self.set_text_color(41, 181, 232) # Electric Blue
+        self.set_text_color(255, 255, 255) 
         self.set_y(10)
-        self.cell(0, 10, 'INSIGHTGEN | AZURE ANALYTICS', 0, 1, 'C')
+        self.cell(0, 10, 'INSIGHTGEN // CARBON REPORT', 0, 1, 'C')
         
         # SUBTITLE
-        self.set_font('Arial', '', 9)
+        self.set_font('Courier', '', 9)
         self.set_text_color(200, 200, 200) # Light Grey
         self.cell(0, 0, f'GENERATED: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
         self.ln(25)
 
     def footer(self):
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.set_text_color(128, 128, 128)
-        self.cell(0, 10, f'CONFIDENTIAL // Page {self.page_no()}', 0, 0, 'C')
+        self.set_font('Courier', '', 8)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 10, f'CONFIDENTIAL // PAGE {self.page_no()}', 0, 0, 'C')
 
     def section_title(self, title):
         self.set_font('Arial', 'B', 14)
-        self.set_text_color(0, 229, 255) # Cyan
+        self.set_text_color(0, 0, 0) # Black for standard white paper body
         self.cell(0, 10, title.upper(), 0, 1, 'L')
-        # Cyan Underline
-        self.set_draw_color(0, 229, 255)
-        self.set_line_width(1)
+        # Thick Black Underline
+        self.set_draw_color(0, 0, 0)
+        self.set_line_width(1.5)
         self.line(10, self.get_y(), 200, self.get_y())
         self.ln(8)
 
     def create_table(self, df):
         """ Renders a Pandas DataFrame as a proper PDF Table """
-        self.set_font("Arial", "B", 8)
-        self.set_fill_color(240, 248, 255) # Alice Blue (Very light blue)
-        self.set_text_color(0, 0, 0)
-        self.set_draw_color(100, 149, 237) # Cornflower Blue Borders
+        self.set_font("Courier", "B", 8)
+        self.set_fill_color(30, 30, 30) # Dark Grey Header
+        self.set_text_color(255, 255, 255) # White Text Header
+        self.set_draw_color(0, 0, 0)
         
         # Headers
         col_width = 190 / (len(df.columns) + 1)
-        self.cell(col_width, 8, "Metric", 1, 0, 'C', 1)
+        self.cell(col_width, 8, "METRIC", 1, 0, 'C', 1)
         for col in df.columns:
-            self.cell(col_width, 8, str(col)[:10], 1, 0, 'C', 1)
+            self.cell(col_width, 8, str(col)[:10].upper(), 1, 0, 'C', 1)
         self.ln()
         
         # Data Rows
-        self.set_font("Arial", "", 8)
+        self.set_font("Courier", "", 8)
+        self.set_text_color(0, 0, 0) # Black text for body
         for index, row in df.iterrows():
             self.cell(col_width, 8, str(index), 1, 0, 'C')
             for val in row:
@@ -116,10 +117,10 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     missing = df.isnull().sum().sum()
     dupes = df.duplicated().sum()
     
-    # 2x2 Data Grid
-    pdf.set_font("Arial", 'B', 10)
-    pdf.set_fill_color(245, 250, 255)
-    pdf.set_draw_color(41, 181, 232) # Electric Blue
+    # 2x2 Data Grid (Monochrome)
+    pdf.set_font("Courier", 'B', 10)
+    pdf.set_fill_color(240, 240, 240)
+    pdf.set_draw_color(0, 0, 0)
     
     # Row 1
     pdf.cell(95, 12, f" TOTAL RECORDS: {rows}", 1, 0, 'L', 1)
@@ -135,7 +136,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
         pdf.set_font("Arial", 'B', 10)
         pdf.cell(0, 8, f"QUERY SCOPE: {query}", 0, 1)
         
-        pdf.set_font("Arial", '', 10)
+        pdf.set_font("Courier", '', 9) # Monospace for tech feel
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(10)
@@ -145,7 +146,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
             pdf.ln(10)
         pdf.add_page()
 
-    # --- SECTION 3: DATA INTELLIGENCE (REAL TABLE) ---
+    # --- SECTION 3: DATA INTELLIGENCE ---
     title_num = "3." if report_type == "full" else "2."
     if pdf.get_y() > 200: pdf.add_page()
     
@@ -166,8 +167,8 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
             if os.path.exists(img_path):
                 if pdf.get_y() > 180: pdf.add_page()
                     
-                pdf.set_font("Arial", 'B', 9)
-                pdf.set_text_color(100, 100, 100)
+                pdf.set_font("Courier", 'B', 9)
+                pdf.set_text_color(50, 50, 50)
                 pdf.cell(0, 8, f"FIGURE {i+1}: GENERATED VISUALIZATION", 0, 1)
                 
                 pdf.image(img_path, x=10, w=190) 
@@ -175,144 +176,136 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. AZURE INTELLIGENCE THEME CSS ---
+# --- 5. CARBON STEALTH THEME CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
     
     /* === GLOBAL STYLES === */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
-        color: #E0E0E0;
-        background-color: #0E1117; /* Deep Navy */
+        color: #EAEAEA;
+        background-color: #000000; /* True Black */
     }
     
     .stApp {
-        background-color: #0E1117;
-        background-image: none; 
+        background-color: #000000;
+        background-image: radial-gradient(circle at top center, #111 0%, #000 40%);
     }
 
     /* === SCROLLBARS === */
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0E1117; }
-    ::-webkit-scrollbar-thumb { background: #29B5E8; border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: #000000; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
 
     /* === TYPOGRAPHY === */
     h1, h2, h3 {
-        color: #29B5E8 !important; /* Electric Blue */
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
-    
-    .metric-label {
-        color: #00E5FF !important; /* Cyan */
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        color: #FFFFFF !important;
+        font-weight: 800;
+        letter-spacing: -0.5px;
     }
     
     .main-title {
-        color: #29B5E8 !important; 
+        color: #FFFFFF !important; 
         font-weight: 800;
-        font-size: 3.5rem; 
-        letter-spacing: -1px;
-        line-height: 1.1;
+        font-size: 4rem; 
+        letter-spacing: -2px;
+        line-height: 1;
         text-align: left;
         width: 100%;
         display: block;
         padding-bottom: 10px;
-        text-shadow: 0 0 15px rgba(41, 181, 232, 0.3);
+        background: -webkit-linear-gradient(#FFF, #666);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
-    /* === 🟦 AZURE CARDS (GLOW EFFECT) === */
+    /* === ⬛ CARBON CARDS (MINIMALIST) === */
     .metric-card {
-        background-color: #161B22;
-        border: 1px solid #30363D; 
-        border-top: 3px solid #29B5E8; /* Blue Top Border */
-        border-radius: 8px;
+        background-color: #0A0A0A;
+        border: 1px solid #222; 
+        border-radius: 6px;
         padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         text-align: center;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        transition: all 0.2s ease;
         margin-bottom: 15px; 
     }
     .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0 20px rgba(41, 181, 232, 0.2); 
-        border-color: #00E5FF;
+        border-color: #555;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.05); 
     }
     .metric-value { 
         color: #FFFFFF; 
-        font-size: 32px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 28px;
         font-weight: 700; 
     }
     .metric-label { 
-        color: #8B949E !important; 
+        color: #666 !important; 
+        font-family: 'Inter', sans-serif;
         font-size: 11px; 
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
-    /* === 🟦 TABLE STYLING (TECH) === */
+    /* === ⬛ TABLE STYLING (STEALTH) === */
     div[data-testid="stDataFrame"] {
-        background-color: #161B22; 
-        border: 1px solid #30363D;
-        border-radius: 8px;
-        padding: 5px;
+        background-color: #0A0A0A; 
+        border: 1px solid #222;
+        border-radius: 6px;
     }
     div[data-testid="stDataFrame"] > div {
-        background-color: #161B22;
+        background-color: #0A0A0A;
     }
 
     /* === COMPONENTS (BUTTONS & INPUTS) === */
     .stButton>button {
-        background-color: #29B5E8; /* Electric Blue */
-        color: #0E1117; /* Dark Text */
+        background-color: #FFFFFF; /* High Contrast White */
+        color: #000000;
         border-radius: 4px; 
-        border: none;
+        border: 1px solid #FFF;
+        font-family: 'Inter', sans-serif;
         font-weight: 700;
         text-transform: uppercase;
         padding: 10px 20px;
         transition: all 0.2s ease;
-        box-shadow: 0 0 10px rgba(41, 181, 232, 0.2);
     }
     .stButton>button:hover { 
-        background-color: #00E5FF; /* Cyan */
-        transform: translateY(-1px);
-        box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+        background-color: #000000; 
+        color: #FFFFFF;
+        border: 1px solid #FFFFFF;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
     }
     
     input[type="text"] {
-        background: #0D1117 !important;
+        background: #0A0A0A !important;
         color: #FFF !important;
-        border: 1px solid #30363D !important;
-        border-left: 3px solid #29B5E8 !important;
+        border: 1px solid #333 !important;
         border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
         padding-left: 15px;
     }
     
     .stTabs [data-baseweb="tab-list"] { 
-        background-color: #0D1117; 
-        padding: 8px; 
-        border-radius: 8px;
-        border: 1px solid #30363D;
-    }
-    .stTabs [data-baseweb="tab"] { color: #8B949E; font-weight: 600; }
-    .stTabs [aria-selected="true"] { 
-        background-color: #1F6FEB; /* Github Blue */
-        color: #FFF; 
+        background-color: #000; 
+        padding: 4px; 
         border-radius: 6px;
+        border: 1px solid #222;
+    }
+    .stTabs [data-baseweb="tab"] { color: #666; font-weight: 600; }
+    .stTabs [aria-selected="true"] { 
+        background-color: #222; 
+        color: #FFF; 
+        border-radius: 4px;
     }
 
     /* ================================= */
     /* === 📱 MOBILE RESPONSIVENESS === */
     /* ================================= */
-    
     @media only screen and (max-width: 768px) {
-        .main-title {
-            font-size: 2.2rem !important;
-        }
+        .main-title { font-size: 2.5rem !important; }
         .metric-value { font-size: 24px !important; }
-        .metric-card { padding: 15px !important; margin-bottom: 10px !important; }
         .stButton>button { width: 100% !important; margin-top: 10px; }
     }
     </style>
@@ -333,11 +326,11 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | AZURE EDITION V2.0")
+    st.caption("INSIGHTGEN | STEALTH EDITION V3.0")
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>InsightGen</div>", unsafe_allow_html=True)
-st.markdown("#### *// ENTERPRISE INTELLIGENCE SUITE*")
+st.markdown("#### *// HIGH-PERFORMANCE ANALYTICS*")
 
 if uploaded_file:
     try:
@@ -355,7 +348,7 @@ if uploaded_file:
         with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
         with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
         with mc3: 
-            missing = df.isnull().sum().sum(); color = "#FF5252" if missing > 0 else "#00E5FF"
+            missing = df.isnull().sum().sum(); color = "#FFF" if missing > 0 else "#666"
             st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING VALUES</div></div>""", unsafe_allow_html=True)
         with mc4: 
             dupes = df.duplicated().sum()
@@ -369,9 +362,9 @@ if uploaded_file:
             st.write("")
             col_q, col_b = st.columns([3, 1])
             with col_q:
-                query = st.text_input("ANALYSIS QUERY:", placeholder="Ask a question about your data...", label_visibility="collapsed")
+                query = st.text_input("ANALYSIS QUERY:", placeholder="Type command...", label_visibility="collapsed")
             with col_b:
-                run_btn = st.button("RUN ANALYSIS", use_container_width=True)
+                run_btn = st.button("EXECUTE", use_container_width=True)
 
             if run_btn and query:
                 st.session_state.last_query = query
@@ -379,7 +372,7 @@ if uploaded_file:
                 with loader.container():
                     lc1, lc2, lc3 = st.columns([1,2,1])
                     with lc2:
-                        st.spinner("Processing Intelligence Stream...")
+                        st.code(">>> INITIALIZING AGENTS...", language="python")
 
                 try:
                     if DEMO_MODE:
@@ -457,33 +450,33 @@ if uploaded_file:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # AZURE THEME PLOTS (Dark Blue/Cyan)
+                # CARBON THEME PLOTS (Monochrome/Greyscale)
                 corr = numeric_df.corr()
-                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_dark")
-                fig_corr.update_layout(paper_bgcolor="#161B22", plot_bgcolor="#161B22", font_color="#FFF")
+                fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Greys', template="plotly_dark")
+                fig_corr.update_layout(paper_bgcolor="#0A0A0A", plot_bgcolor="#0A0A0A", font_color="#DDD")
                 try:
                     # Export dark bg image for PDF
-                    fig_corr.update_layout(paper_bgcolor="#111")
+                    fig_corr.update_layout(paper_bgcolor="#000")
                     fig_corr.write_image("dash_corr.png")
                     dashboard_images.append("dash_corr.png")
                 except: pass
                 
                 x_axis_val = numeric_df.columns[0]
                 fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_dark")
-                fig1.update_traces(marker_color='#29B5E8', marker_line_color='#FFF')
-                fig1.update_layout(paper_bgcolor="#161B22", plot_bgcolor="#161B22", font_color="#FFF")
+                fig1.update_traces(marker_color='#FFFFFF', marker_line_color='#333')
+                fig1.update_layout(paper_bgcolor="#0A0A0A", plot_bgcolor="#0A0A0A", font_color="#DDD")
                 try:
-                    fig1.update_layout(paper_bgcolor="#111")
+                    fig1.update_layout(paper_bgcolor="#000")
                     fig1.write_image("dash_hist.png")
                     dashboard_images.append("dash_hist.png")
                 except: pass
 
                 y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
                 fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_dark")
-                fig2.update_traces(marker_color='#00E5FF')
-                fig2.update_layout(paper_bgcolor="#161B22", plot_bgcolor="#161B22", font_color="#FFF")
+                fig2.update_traces(marker_color='#AAA')
+                fig2.update_layout(paper_bgcolor="#0A0A0A", plot_bgcolor="#0A0A0A", font_color="#DDD")
                 try:
-                    fig2.update_layout(paper_bgcolor="#111")
+                    fig2.update_layout(paper_bgcolor="#000")
                     fig2.write_image("dash_scatter.png")
                     dashboard_images.append("dash_scatter.png")
                 except: pass
@@ -494,7 +487,7 @@ if uploaded_file:
                 try:
                     # Pass original DF to ensure accurate summary
                     dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
-                    st.download_button(label="[ DOWNLOAD PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
+                    st.download_button(label="[ EXPORT PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
                     st.error(f"PDF Gen Error: {e}")
 
@@ -508,9 +501,9 @@ if uploaded_file:
             if not numeric_df.empty:
                 st.markdown("### VISUALIZATION DASHBOARD")
                 # Reset layout for UI
-                fig_corr.update_layout(paper_bgcolor="#161B22")
-                fig1.update_layout(paper_bgcolor="#161B22")
-                fig2.update_layout(paper_bgcolor="#161B22")
+                fig_corr.update_layout(paper_bgcolor="#0A0A0A")
+                fig1.update_layout(paper_bgcolor="#0A0A0A")
+                fig2.update_layout(paper_bgcolor="#0A0A0A")
                 
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
