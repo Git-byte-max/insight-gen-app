@@ -344,7 +344,7 @@ with st.sidebar:
 
 # --- 7. MAIN CONTENT ---
 st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>// INTELLIGENT ANALYTICS SUITE</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>-- INTELLIGENT ANALYTICS SUITE --</div>", unsafe_allow_html=True)
 
 if uploaded_file:
     try:
@@ -539,3 +539,4 @@ if uploaded_file:
 else:
     with st.container():
         st.info("READY: UPLOAD DATASET TO BEGIN...")
+
