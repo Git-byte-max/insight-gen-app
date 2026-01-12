@@ -19,7 +19,7 @@ from fpdf import FPDF
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 st.set_page_config(
-    page_title="InsightGen: Analyst",
+    page_title="INSIGHTGEN: Analyst",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -175,7 +175,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- 5. LORA + MULISH THEME CSS ---
+# --- 5. THEME CSS (LORA + MULISH) ---
 st.markdown("""
     <style>
     /* Import Lora (Headers) and Mulish (Body) */
@@ -220,10 +220,10 @@ st.markdown("""
         text-align: left;
         width: 100%;
         display: block;
-        padding-bottom: 5px;
+        padding-bottom: 20px;
         border-bottom: 3px solid #800000;
-        margin-bottom: 0px;
-        line-height: 1.0;
+        margin-bottom: 30px;
+        text-transform: uppercase; /* CAPS FORCE */
     }
 
     /* === 🟤 ROUNDED CARDS === */
@@ -332,20 +332,7 @@ with st.sidebar:
     st.caption("INSIGHTGEN | ANALYTICS SUITE V1.3")
 
 # --- 7. MAIN CONTENT ---
-t_col1, t_col2 = st.columns([4, 1])
-
-with t_col1:
-    st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
-    st.markdown("#### *// INTELLIGENT ANALYTICS SUITE*")
-
-with t_col2:
-    # Lottie Animation Embed
-    components.html("""
-    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-    <dotlottie-player src="https://lottie.host/4ee679d4-85fe-49ec-8d02-a9046ba1e422/PqScogHjI8.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
-    """, height=160)
-
-st.write("") 
+st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 
 if uploaded_file:
     try:
@@ -384,23 +371,21 @@ if uploaded_file:
             if run_btn and query:
                 st.session_state.last_query = query
                 
-                # --- DYNAMIC LOADING SEQUENCE ---
+                # --- NEW LOTTIE LOADING ANIMATION ---
                 status_box = st.empty()
                 with status_box.container():
-                    st.markdown("🔹 *Accessing Dataset...*")
-                    time.sleep(0.4)
-                    st.markdown("🔹 *Initializing AI Agents...*")
-                    time.sleep(0.4)
-                    st.markdown("🔹 *Planner Agent: Formulating Strategy...*")
-                    time.sleep(0.4)
-                    st.markdown("🔹 *Coder Agent: Writing Python Logic...*")
-                    time.sleep(0.4)
-                    st.markdown("🔹 *Executing Code & Generating Charts...*")
+                    # HTML Embed for DotLottie Player
+                    st.components.v1.html("""
+                    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                        <dotlottie-player src="https://lottie.host/4ee679d4-85fe-49ec-8d02-a9046ba1e422/PqScogHjI8.lottie" background="transparent" speed="1" style="width: 300px; height: 300px;" loop autoplay></dotlottie-player>
+                    </div>
+                    """, height=320)
                 # -------------------------------
 
                 try:
                     if DEMO_MODE:
-                        time.sleep(2) 
+                        time.sleep(3) 
                         status_box.empty()
                         st.session_state.analysis_result = f"Query: {query}\nStatus: SIMULATED RESPONSE\nReason: {debug_error}\n1. Trend Detected: Positive.\n2. Correlation: Strong (0.85)."
                         st.session_state.analysis_plot = "simulated"
