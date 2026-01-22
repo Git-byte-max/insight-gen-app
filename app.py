@@ -231,16 +231,29 @@ st.markdown("""
         padding: 20px;
         text-align: center;
     }
+    
+    /* Small expander for file details */
+    .streamlit-expanderHeader {
+        font-family: 'Mulish', sans-serif;
+        font-size: 0.9rem;
+        color: #666;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR ---
+# --- SIDEBAR (CLEANED UP) ---
 with st.sidebar:
     st.markdown("### SYSTEM MENU")
     
-    st.markdown("**1. Data Ingestion**")
-    uploaded_file = st.file_uploader("Drop your CSV or Excel file here", type=["csv", "xlsx"])
+    # MOVED UPLOAD FROM HERE TO MAIN PAGE
+    # Only showing status or reset options here
     
+    if "analysis_history" in st.session_state and len(st.session_state.analysis_history) > 0:
+        if st.button("🔄 Start New Session", use_container_width=True):
+            st.session_state.analysis_history = []
+            st.session_state.analysis_result = None
+            st.rerun()
+
     st.markdown("---")
     
     if DEMO_MODE:
@@ -256,14 +269,13 @@ with st.sidebar:
 
 # --- MAIN CONTENT ---
 
-# 1. Visual Polish: Dynamic Header with CUSTOM ANIMATION
+# 1. HEADER
 header_col1, header_col2 = st.columns([3, 1])
 with header_col1:
     greeting = get_time_greeting()
     st.markdown(f"<div class='greeting-text'>{greeting}, Analyst.</div>", unsafe_allow_html=True)
     st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 with header_col2:
-    # UPDATED: Using the user's specific Lottie URL
     st.components.v1.html("""
     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
     <dotlottie-player src="https://lottie.host/e519ba57-b007-43c2-a64e-08d2863f458b/agikvzJbA3.lottie" background="transparent" speed="1" style="width: 120px; height: 120px;" loop autoplay></dotlottie-player>
@@ -271,12 +283,23 @@ with header_col2:
 
 st.markdown("---")
 
+# 2. MAIN PAGE UPLOADER (Hybrid Logic)
+uploaded_file = st.file_uploader(
+    "📂 **Start Analysis:** Drag and drop your dataset here", 
+    type=["csv", "xlsx"],
+    help="Supported formats: .CSV and .XLSX"
+)
+
 if not uploaded_file:
-    # 2. REMOVED HERO SECTION / WELCOME MESSAGE
-    st.markdown(" ") 
-    st.caption("👈 *Upload a dataset from the sidebar to activate the Neural Engine.*")
+    # Empty State - Just a clean prompt
+    st.caption("👆 *Upload a file above to activate the Neural Engine.*")
 
 else:
+    # 3. HYBRID VIEW: File is loaded -> Show Dashboard
+    # We use an expander to 'hide' the file details so they don't clutter the view
+    with st.expander(f"✅ Active Dataset: {uploaded_file.name}", expanded=False):
+        st.info("File loaded successfully. To change files, close this expander and click 'Browse files' again.")
+
     try:
         if uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
@@ -320,7 +343,6 @@ else:
                 with st.chat_message("assistant"):
                     status_placeholder = st.empty()
                     
-                    # Using the SAME Animation URL for consistency in loading state
                     with status_placeholder.container():
                         st.components.v1.html("""
                         <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
