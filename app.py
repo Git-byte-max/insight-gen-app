@@ -37,7 +37,7 @@ except Exception as e:
     planner = coder = reporter = None
     debug_error = f"System Error: {e}"
 
-# --- SESSION STATE ---
+# --- SESSION STATE INITIALIZATION ---
 if "analysis_history" not in st.session_state:
     st.session_state.analysis_history = []
 if "analysis_plot" not in st.session_state:
@@ -46,9 +46,11 @@ if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 if "analysis_time" not in st.session_state:
     st.session_state.analysis_time = None
-# TRACK UPLOAD STATE
-if "file_uploaded" not in st.session_state:
-    st.session_state.file_uploaded = False
+# NEW: Persist the DataFrame itself
+if "current_df" not in st.session_state:
+    st.session_state.current_df = None
+if "current_filename" not in st.session_state:
+    st.session_state.current_filename = None
 
 # --- HELPER: TIME GREETING ---
 def get_time_greeting():
@@ -56,6 +58,27 @@ def get_time_greeting():
     if hour < 12: return "Good Morning"
     elif 12 <= hour < 18: return "Good Afternoon"
     else: return "Good Evening"
+
+# --- HELPER: DATA LOADER ---
+def load_data(uploaded_file):
+    """Reads file and saves to session state"""
+    try:
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file)
+        
+        # Save to Session State
+        st.session_state.current_df = df
+        st.session_state.current_filename = uploaded_file.name
+        
+        # Update Tools
+        if tools: tools.df = df
+        df.to_csv("dataset.csv", index=False)
+        return True
+    except Exception as e:
+        st.error(f"Error loading file: {e}")
+        return False
 
 # --- ADVANCED PDF ENGINE ---
 class PDFReport(FPDF):
@@ -234,6 +257,12 @@ st.markdown("""
         padding: 20px;
         text-align: center;
     }
+    
+    .streamlit-expanderHeader {
+        font-family: 'Mulish', sans-serif;
+        font-size: 0.9rem;
+        color: #666;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -241,20 +270,24 @@ st.markdown("""
 with st.sidebar:
     st.markdown("### SYSTEM MENU")
     
-    # DYNAMIC UPLOADER: Appears here ONLY if file is already uploaded
-    if st.session_state.get("file_uploaded", False):
-        st.success("✅ File Loaded")
-        # Allow re-uploading from sidebar to switch files
-        uploaded_file = st.file_uploader("Change Dataset", type=["csv", "xlsx"], key="sidebar_uploader")
-    else:
-        uploaded_file = None # Will be handled by main page uploader
+    # 1. SHOW "CHANGE FILE" IF DATA IS LOADED
+    if st.session_state.current_df is not None:
+        st.success(f"✅ Active: {st.session_state.current_filename}")
+        
+        # Sidebar Uploader (For Changing Files)
+        sidebar_file = st.file_uploader("Change Dataset", type=["csv", "xlsx"], key="sidebar_uploader")
+        if sidebar_file:
+            if load_data(sidebar_file):
+                st.rerun()
 
-    if "analysis_history" in st.session_state and len(st.session_state.analysis_history) > 0:
         if st.button("🔄 Reset Session", use_container_width=True):
+            st.session_state.current_df = None
+            st.session_state.current_filename = None
             st.session_state.analysis_history = []
             st.session_state.analysis_result = None
-            st.session_state.file_uploaded = False
             st.rerun()
+    else:
+        st.info("Waiting for data upload...")
 
     st.markdown("---")
     
@@ -285,236 +318,225 @@ with header_col2:
 
 st.markdown("---")
 
-# 2. LOGIC FOR UPLOAD LOCATION
-# If NO file uploaded yet, show Main Page Uploader
-if not st.session_state.get("file_uploaded", False):
-    main_uploaded_file = st.file_uploader(
+# 2. LOGIC CONTROLLER
+# IF NO DATA: Show Main Page Uploader
+if st.session_state.current_df is None:
+    uploaded_file = st.file_uploader(
         "📂 **Start Analysis:** Drag and drop your dataset here", 
         type=["csv", "xlsx"],
         help="Supported formats: .CSV and .XLSX",
         key="main_uploader"
     )
-    if main_uploaded_file:
-        uploaded_file = main_uploaded_file
-        st.session_state.file_uploaded = True
-        st.rerun() # Refresh to move uploader to sidebar
-else:
-    # If file IS uploaded, use the one from sidebar (or keep current)
-    # The 'uploaded_file' variable is already set in the sidebar block if changed there.
-    # If sidebar uploader is empty but state is True, we need to persist the file.
-    # (Streamlit file uploader logic is tricky on reruns, simplest is to rely on the widget state)
-    pass
-
-# 3. APP LOGIC
-if not uploaded_file and not st.session_state.get("file_uploaded", False):
-    # Empty State
-    st.caption("👆 *Upload a dataset to activate the Neural Engine.*")
-
-elif uploaded_file or st.session_state.get("file_uploaded", False):
-    # Handle the file (Main or Sidebar)
-    # Note: Streamlit resets 'uploaded_file' on rerun unless using session state. 
-    # For simplicity in this structure, we assume the user just uploaded or it's in the widget.
-    
-    # Robust fallback: If 'uploaded_file' is None but we are in "uploaded" state, 
-    # it means the user might have interacted with something else. 
-    # In a real app, you might need to cache the dataframe in session_state.
     
     if uploaded_file:
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                df = pd.read_csv(uploaded_file)
-            else:
-                df = pd.read_excel(uploaded_file)
-            if tools: tools.df = df
-            df.to_csv("dataset.csv", index=False)
+        # Load Data & Trigger Rerun
+        if load_data(uploaded_file):
+            st.rerun()
             
-            # --- DASHBOARD & CHAT UI ---
-            st.subheader("DATASET OVERVIEW")
-            mc1, mc2, mc3, mc4 = st.columns(4)
-            with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
-            with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
-            with mc3: 
-                missing = df.isnull().sum().sum(); color = "#800000" if missing > 0 else "#2E7D32"
-                st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING VALUES</div></div>""", unsafe_allow_html=True)
-            with mc4: 
-                dupes = df.duplicated().sum()
-                st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
-            st.write("")
+    # Empty State
+    if not uploaded_file:
+        st.caption("👆 *Upload a dataset to activate the Neural Engine.*")
 
-            tab1, tab2 = st.tabs(["💬 AI ANALYST", "📊 VISUAL DASHBOARD"])
+# IF DATA EXISTS: Show Dashboard (Even if uploader is gone)
+else:
+    # Get Data from Session State
+    df = st.session_state.current_df
+    
+    # Ensure Tools has access (in case of fresh rerun)
+    if tools: tools.df = df
+    df.to_csv("dataset.csv", index=False)
 
-            with tab1:
-                st.write("")
-                for message in st.session_state.analysis_history:
-                    with st.chat_message(message["role"]):
-                        st.markdown(message["content"])
-                        if "image" in message and message["image"]:
-                            st.image(message["image"])
+    # Show Info Expander
+    with st.expander(f"✅ Active Dataset: {st.session_state.current_filename}", expanded=False):
+        st.info("To change files, use the sidebar uploader or click 'Reset Session'.")
 
-                query = st.chat_input("Ask a question about your data...")
-                
-                if query:
-                    st.session_state.analysis_history.append({"role": "user", "content": query})
-                    st.session_state.last_query = query
-                    
-                    with st.chat_message("user"):
-                        st.markdown(query)
+    # --- DASHBOARD & CHAT UI ---
+    st.subheader("DATASET OVERVIEW")
+    mc1, mc2, mc3, mc4 = st.columns(4)
+    with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
+    with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
+    with mc3: 
+        missing = df.isnull().sum().sum(); color = "#800000" if missing > 0 else "#2E7D32"
+        st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING VALUES</div></div>""", unsafe_allow_html=True)
+    with mc4: 
+        dupes = df.duplicated().sum()
+        st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
+    st.write("")
 
-                    with st.chat_message("assistant"):
-                        status_placeholder = st.empty()
-                        with status_placeholder.container():
-                            st.components.v1.html("""
-                            <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-                            <div style="display: flex; justify-content: center;">
-                                <dotlottie-player src="https://lottie.host/e519ba57-b007-43c2-a64e-08d2863f458b/agikvzJbA3.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
-                            </div>
-                            """, height=160)
-                            st.caption("Analyzing data patterns...")
+    tab1, tab2 = st.tabs(["💬 AI ANALYST", "📊 VISUAL DASHBOARD"])
 
-                        try:
-                            if DEMO_MODE:
-                                time.sleep(2) 
-                                result_text = f"**Simulated Analysis:**\nQuery: {query}\nCorrelation: 0.85 (Strong)."
-                                plot_file = None
-                                status_placeholder.empty()
-                                st.markdown(result_text)
-                            else:
-                                if os.path.exists("plot.png"): os.remove("plot.png")
-                                
-                                start_time = time.time()
-                                from crewai import Crew, Task, Process
-                                
-                                col_list = list(df.columns)
-                                data_context = f"Columns: {col_list}. "
-                                
-                                task_plan = Task(
-                                    description=f"{data_context} user query: '{query}'. Output 1-sentence plan.", 
-                                    expected_output="Brief plan", 
-                                    agent=planner
-                                )
-                                task_code = Task(
-                                    description="Write ONE Python script. Check types (Cat/Num). Calc stats. Save 'plot.png'.", 
-                                    expected_output="Code output", 
-                                    agent=coder, 
-                                    context=[task_plan]
-                                )
-                                task_report = Task(
-                                    description="Format findings into Markdown (Summary, Stats, Implications).", 
-                                    expected_output="Markdown Report", 
-                                    agent=reporter, 
-                                    context=[task_code]
-                                )
-                                
-                                crew = Crew(
-                                    agents=[planner, coder, reporter], 
-                                    tasks=[task_plan, task_code, task_report], 
-                                    process=Process.sequential, 
-                                    verbose=True
-                                )
-                                
-                                result = crew.kickoff() 
-                                end_time = time.time()
-                                
-                                status_placeholder.empty()
-                                
-                                result_text = str(result)
-                                st.markdown(result_text)
-                                
-                                plot_file = None
-                                if os.path.exists("plot.png"):
-                                    plot_file = "plot.png"
-                                    st.image(plot_file)
-                                    
-                                elapsed = round(end_time - start_time, 2)
-                                st.caption(f"Analysis completed in {elapsed}s")
+    with tab1:
+        st.write("")
+        for message in st.session_state.analysis_history:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+                if "image" in message and message["image"]:
+                    st.image(message["image"])
 
-                            st.session_state.analysis_history.append({
-                                "role": "assistant", 
-                                "content": result_text,
-                                "image": plot_file
-                            })
+        query = st.chat_input("Ask a question about your data...")
+        
+        if query:
+            st.session_state.analysis_history.append({"role": "user", "content": query})
+            st.session_state.last_query = query
+            
+            with st.chat_message("user"):
+                st.markdown(query)
+
+            with st.chat_message("assistant"):
+                status_placeholder = st.empty()
+                with status_placeholder.container():
+                    st.components.v1.html("""
+                    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+                    <div style="display: flex; justify-content: center;">
+                        <dotlottie-player src="https://lottie.host/e519ba57-b007-43c2-a64e-08d2863f458b/agikvzJbA3.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
+                    </div>
+                    """, height=160)
+                    st.caption("Analyzing data patterns...")
+
+                try:
+                    if DEMO_MODE:
+                        time.sleep(2) 
+                        result_text = f"**Simulated Analysis:**\nQuery: {query}\nCorrelation: 0.85 (Strong)."
+                        plot_file = None
+                        status_placeholder.empty()
+                        st.markdown(result_text)
+                    else:
+                        if os.path.exists("plot.png"): os.remove("plot.png")
+                        
+                        start_time = time.time()
+                        from crewai import Crew, Task, Process
+                        
+                        col_list = list(df.columns)
+                        data_context = f"Columns: {col_list}. "
+                        
+                        task_plan = Task(
+                            description=f"{data_context} user query: '{query}'. Output 1-sentence plan.", 
+                            expected_output="Brief plan", 
+                            agent=planner
+                        )
+                        task_code = Task(
+                            description="Write ONE Python script. Check types (Cat/Num). Calc stats. Save 'plot.png'.", 
+                            expected_output="Code output", 
+                            agent=coder, 
+                            context=[task_plan]
+                        )
+                        task_report = Task(
+                            description="Format findings into Markdown (Summary, Stats, Implications).", 
+                            expected_output="Markdown Report", 
+                            agent=reporter, 
+                            context=[task_code]
+                        )
+                        
+                        crew = Crew(
+                            agents=[planner, coder, reporter], 
+                            tasks=[task_plan, task_code, task_report], 
+                            process=Process.sequential, 
+                            verbose=True
+                        )
+                        
+                        result = crew.kickoff() 
+                        end_time = time.time()
+                        
+                        status_placeholder.empty()
+                        
+                        result_text = str(result)
+                        st.markdown(result_text)
+                        
+                        plot_file = None
+                        if os.path.exists("plot.png"):
+                            plot_file = "plot.png"
+                            st.image(plot_file)
                             
-                            st.session_state.analysis_result = result_text
-                            st.session_state.analysis_plot = plot_file
+                        elapsed = round(end_time - start_time, 2)
+                        st.caption(f"Analysis completed in {elapsed}s")
 
-                        except Exception as e:
-                            status_placeholder.empty()
-                            st.error(f"Runtime Error: {e}")
-
-            with tab2:
-                st.write("")
-                cat_cols = df.select_dtypes(include=['object', 'category']).columns
-                if len(cat_cols) > 0:
-                    col_f1, col_f2 = st.columns(2)
-                    with col_f1: selected_cat = st.selectbox("FILTER COLUMN", cat_cols)
-                    with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"FILTER VALUES", unique_vals, default=unique_vals[:5])
-                    filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
-                else:
-                    filtered_df = df
-
-                dashboard_images = []
-                numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
-                if not numeric_df.empty:
-                    corr = numeric_df.corr()
-                    fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Reds', template="plotly_white")
-                    fig_corr.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
-                    try:
-                        fig_corr.write_image("dash_corr.png")
-                        dashboard_images.append("dash_corr.png")
-                    except: pass
+                    st.session_state.analysis_history.append({
+                        "role": "assistant", 
+                        "content": result_text,
+                        "image": plot_file
+                    })
                     
-                    x_axis_val = numeric_df.columns[0]
-                    fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
-                    fig1.update_traces(marker_color='#800000', marker_line_color='#FFF')
-                    fig1.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
-                    try:
-                        fig1.write_image("dash_hist.png")
-                        dashboard_images.append("dash_hist.png")
-                    except: pass
+                    st.session_state.analysis_result = result_text
+                    st.session_state.analysis_plot = plot_file
 
-                    y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
-                    fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
-                    fig2.update_traces(marker_color='#1C1C1C')
-                    fig2.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
-                    try:
-                        fig2.write_image("dash_scatter.png")
-                        dashboard_images.append("dash_scatter.png")
-                    except: pass
+                except Exception as e:
+                    status_placeholder.empty()
+                    st.error(f"Runtime Error: {e}")
 
-                d_col1, d_col2 = st.columns([4, 1])
-                with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
-                with d_col2:
-                    try:
-                        dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
-                        st.download_button(label="[ EXPORT PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
-                    except Exception as e:
-                        st.error(f"PDF Gen Error: {e}")
+    with tab2:
+        st.write("")
+        cat_cols = df.select_dtypes(include=['object', 'category']).columns
+        if len(cat_cols) > 0:
+            col_f1, col_f2 = st.columns(2)
+            with col_f1: selected_cat = st.selectbox("FILTER COLUMN", cat_cols)
+            with col_f2: unique_vals = df[selected_cat].unique(); selected_val = st.multiselect(f"FILTER VALUES", unique_vals, default=unique_vals[:5])
+            filtered_df = df[df[selected_cat].isin(selected_val)] if selected_val else df
+        else:
+            filtered_df = df
 
-                st.markdown("---")
-                column_config = {}
-                for col in filtered_df.select_dtypes(include="number").columns:
-                    column_config[col] = st.column_config.NumberColumn(col, format="%.2f")
-                st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
-                
-                st.markdown("---")
-                if not numeric_df.empty:
-                    st.markdown("### VISUALIZATION DASHBOARD")
-                    st.plotly_chart(fig_corr, width="stretch")
-                    gc1, gc2 = st.columns(2)
-                    with gc1: st.plotly_chart(fig1, width="stretch")
-                    with gc2: st.plotly_chart(fig2, width="stretch")
-                else:
-                    st.info("NO NUMERIC DATA AVAILABLE")
+        dashboard_images = []
+        numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
+        if not numeric_df.empty:
+            corr = numeric_df.corr()
+            fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Reds', template="plotly_white")
+            fig_corr.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
+            try:
+                fig_corr.write_image("dash_corr.png")
+                dashboard_images.append("dash_corr.png")
+            except: pass
+            
+            x_axis_val = numeric_df.columns[0]
+            fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
+            fig1.update_traces(marker_color='#800000', marker_line_color='#FFF')
+            fig1.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
+            try:
+                fig1.write_image("dash_hist.png")
+                dashboard_images.append("dash_hist.png")
+            except: pass
 
-            with full_report_container:
-                if st.session_state.analysis_history:
-                    try:
-                        last_result = st.session_state.analysis_history[-1]["content"]
-                        last_img = st.session_state.analysis_history[-1].get("image")
-                        full_pdf = generate_pdf("full", df, st.session_state.last_query, str(last_result), last_img, dashboard_images)
-                        st.download_button(label="[ EXPORT FULL REPORT ]", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
-                    except Exception as e:
-                        pass
+            y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
+            fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
+            fig2.update_traces(marker_color='#1C1C1C')
+            fig2.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
+            try:
+                fig2.write_image("dash_scatter.png")
+                dashboard_images.append("dash_scatter.png")
+            except: pass
 
-        except Exception as e:
-            st.error(f"SYSTEM ERROR: {e}")
+        d_col1, d_col2 = st.columns([4, 1])
+        with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
+        with d_col2:
+            try:
+                dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
+                st.download_button(label="[ EXPORT PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
+            except Exception as e:
+                st.error(f"PDF Gen Error: {e}")
+
+        st.markdown("---")
+        column_config = {}
+        for col in filtered_df.select_dtypes(include="number").columns:
+            column_config[col] = st.column_config.NumberColumn(col, format="%.2f")
+        st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
+        
+        st.markdown("---")
+        if not numeric_df.empty:
+            st.markdown("### VISUALIZATION DASHBOARD")
+            st.plotly_chart(fig_corr, width="stretch")
+            gc1, gc2 = st.columns(2)
+            with gc1: st.plotly_chart(fig1, width="stretch")
+            with gc2: st.plotly_chart(fig2, width="stretch")
+        else:
+            st.info("NO NUMERIC DATA AVAILABLE")
+
+    with full_report_container:
+        if st.session_state.analysis_history:
+            try:
+                last_result = st.session_state.analysis_history[-1]["content"]
+                last_img = st.session_state.analysis_history[-1].get("image")
+                full_pdf = generate_pdf("full", df, st.session_state.last_query, str(last_result), last_img, dashboard_images)
+                st.download_button(label="[ EXPORT FULL REPORT ]", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
+            except Exception as e:
+                pass
+
+    # Ensure backend tools always have current df
+    if tools: tools.df = df
