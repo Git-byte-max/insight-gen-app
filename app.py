@@ -186,7 +186,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- THEME CSS (GLASSMORPHISM + TRANSITIONS) ---
+# --- THEME CSS (GLASSMORPHISM + HOVER EFFECTS) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&family=Mulish:wght@300;500&display=swap');
@@ -254,6 +254,33 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
+    /* TAB HOVER & ANIMATION EFFECTS */
+    /* Target Streamlit Tab Buttons */
+    button[data-baseweb="tab"] {
+        transition: all 0.3s ease;
+        border-radius: 8px 8px 0 0;
+        margin: 0 4px;
+        border: none !important;
+    }
+
+    /* Hover State for Tabs */
+    button[data-baseweb="tab"]:hover {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        color: #2C3E50 !important;
+    }
+
+    /* Tab Content Fade In */
+    div[data-baseweb="tab-panel"] {
+        animation: fadeEffect 0.6s ease-in-out;
+    }
+    
+    @keyframes fadeEffect {
+        from {opacity: 0; transform: translateY(10px);}
+        to {opacity: 1; transform: translateY(0);}
+    }
+
     .stChatMessage {
         background: rgba(255, 255, 255, 0.6);
         backdrop-filter: blur(5px);
@@ -285,16 +312,6 @@ st.markdown("""
         background-color: rgba(255, 255, 255, 0.5);
         backdrop-filter: blur(20px);
         border-right: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    /* SMOOTH TAB TRANSITION ANIMATION */
-    div[data-baseweb="tab-panel"] {
-        animation: fadeEffect 0.6s ease-in-out;
-    }
-    
-    @keyframes fadeEffect {
-        from {opacity: 0; transform: translateY(10px);}
-        to {opacity: 1; transform: translateY(0);}
     }
     </style>
 """, unsafe_allow_html=True)
