@@ -256,24 +256,23 @@ with st.sidebar:
 
 # --- MAIN CONTENT ---
 
-# 1. Visual Polish: Dynamic Header with UPDATED Animation
+# 1. Visual Polish: Dynamic Header with CUSTOM ANIMATION
 header_col1, header_col2 = st.columns([3, 1])
 with header_col1:
     greeting = get_time_greeting()
     st.markdown(f"<div class='greeting-text'>{greeting}, Analyst.</div>", unsafe_allow_html=True)
     st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 with header_col2:
-    # Changed Lottie Animation to "AI Analysis / Robot"
+    # UPDATED: Using the user's specific Lottie URL
     st.components.v1.html("""
     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-    <dotlottie-player src="https://assets5.lottiefiles.com/packages/lf20_V9t630.json" background="transparent" speed="1" style="width: 120px; height: 120px;" loop autoplay></dotlottie-player>
+    <dotlottie-player src="https://lottie.host/e519ba57-b007-43c2-a64e-08d2863f458b/agikvzJbA3.lottie" background="transparent" speed="1" style="width: 120px; height: 120px;" loop autoplay></dotlottie-player>
     """, height=140)
 
 st.markdown("---")
 
 if not uploaded_file:
     # 2. REMOVED HERO SECTION / WELCOME MESSAGE
-    # Leaving this empty or minimal as requested.
     st.markdown(" ") 
     st.caption("👈 *Upload a dataset from the sidebar to activate the Neural Engine.*")
 
@@ -321,12 +320,12 @@ else:
                 with st.chat_message("assistant"):
                     status_placeholder = st.empty()
                     
-                    # Using the new Animation URL for the loading state as well
+                    # Using the SAME Animation URL for consistency in loading state
                     with status_placeholder.container():
                         st.components.v1.html("""
                         <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
                         <div style="display: flex; justify-content: center;">
-                            <dotlottie-player src="https://assets5.lottiefiles.com/packages/lf20_V9t630.json" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
+                            <dotlottie-player src="https://lottie.host/e519ba57-b007-43c2-a64e-08d2863f458b/agikvzJbA3.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
                         </div>
                         """, height=160)
                         st.caption("Analyzing data patterns...")
