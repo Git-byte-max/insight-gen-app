@@ -16,8 +16,8 @@ if not os.getenv("OPENAI_API_KEY"):
     DEMO_MODE = True
     debug_error = "Missing OPENAI_API_KEY in .env file."
 else:
-    # Temperature 0 = Maximum Speed & Deterministic Code
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    # Temperature 0.1 reduces creativity to prevent "template" responses
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
     DEMO_MODE = False
     debug_error = ""
 
@@ -37,24 +37,18 @@ planner = Agent(
     verbose=True
 )
 
-# 2. THE CODER (Smart Logic + Batch Execution)
+# 2. THE CODER (Result-Oriented Executor)
 coder = Agent(
     role="Senior Python Analyst",
-    goal="Run ONE script. Detect data types (Cat vs Num). Calculate relevant stats. Save 'plot.png'.",
+    goal="Run ONE script and return the RAW TEXT OUTPUT (Means, Correlations, etc.).",
     backstory=(
-        "You are a Python expert. Speed and Logic are key."
-        "CRITICAL INSTRUCTION: Write a SINGLE script with this logic:"
-        "1. CHECK DATATYPES: Is the column Numeric or Categorical?"
-        "2. IF CATEGORICAL vs NUMERIC (e.g., Genre vs Spending):"
-        "   - Calculate Mean/Median per group."
-        "   - Create a BOX PLOT or BAR CHART."
-        "   - Print: 'Significant difference between groups found' if means vary > 10%."
-        "3. IF NUMERIC vs NUMERIC (e.g., Age vs Score):"
-        "   - Calculate Correlation."
-        "   - Create a SCATTER PLOT."
-        "   - Print: 'Strong Correlation' if > 0.5."
-        "4. GENERAL: Detect outliers (>3 SD) and save plot as 'plot.png'."
-        "PRINT ALL RESULTS CLEARLY."
+        "You are a Python expert."
+        "CRITICAL EXECUTION PROTOCOL:"
+        "1. Write a SINGLE script using 'execute_code'."
+        "2. The script MUST print the final numbers (e.g., print(f'Correlation: {corr}'))."
+        "3. YOUR FINAL ANSWER MUST BE THE TEXT OUTPUT PRINTED BY THE SCRIPT."
+        "4. Do NOT output the Python code itself as the final answer. Output the RESULTS."
+        "5. Always save the chart as 'plot.png'."
     ),
     tools=[execute_code],
     llm=llm,
@@ -62,18 +56,18 @@ coder = Agent(
     verbose=True
 )
 
-# 3. THE REPORTER (The Formatter)
+# 3. THE REPORTER (Strict Factualist)
 reporter = Agent(
     role="Intelligence Briefer",
-    goal="Format the raw code output into a structured Markdown report.",
+    goal="Convert the Coder's RAW OUTPUT into a clean Markdown report.",
     backstory=(
-        "You receive raw data and pre-calculated insights from the Coder."
-        "Your only job is to format it beautifully."
-        "Structure:"
-        "## Executive Summary (One sentence on the main trend)"
-        "## Statistical Deep Dive (List the group means or correlations)"
-        "## Strategic Implication (What this means for the data)"
-        "Keep it concise and professional."
+        "You are a strict data editor."
+        "RULES:"
+        "1. READ the Coder's output carefully. It contains the real numbers."
+        "2. DO NOT use placeholders like '[insert value]'. Use the REAL numbers."
+        "3. DO NOT use conditional logic like 'If numeric...'. You must see the actual result and report ONLY that."
+        "4. If the Coder printed a Correlation, report it. If they printed a Mean, report it."
+        "5. Structure: ## Executive Summary, ## Statistical Deep Dive, ## Strategic Implication."
     ),
     llm=llm,
     allow_delegation=False,
