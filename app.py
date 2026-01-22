@@ -46,7 +46,6 @@ if "last_query" not in st.session_state:
     st.session_state.last_query = ""
 if "analysis_time" not in st.session_state:
     st.session_state.analysis_time = None
-# NEW: Persist the DataFrame itself
 if "current_df" not in st.session_state:
     st.session_state.current_df = None
 if "current_filename" not in st.session_state:
@@ -68,11 +67,9 @@ def load_data(uploaded_file):
         else:
             df = pd.read_excel(uploaded_file)
         
-        # Save to Session State
         st.session_state.current_df = df
         st.session_state.current_filename = uploaded_file.name
         
-        # Update Tools
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
         return True
@@ -83,35 +80,35 @@ def load_data(uploaded_file):
 # --- ADVANCED PDF ENGINE ---
 class PDFReport(FPDF):
     def header(self):
-        self.set_fill_color(128, 0, 0) # Maroon
+        self.set_fill_color(44, 62, 80) # Dark Slate Blue
         self.rect(0, 0, 210, 30, 'F')
-        self.set_font('Times', 'B', 20)
+        self.set_font('Helvetica', 'B', 20)
         self.set_text_color(255, 255, 255) 
         self.set_y(10)
         self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
-        self.set_font('Arial', '', 10) 
+        self.set_font('Helvetica', '', 10) 
         self.set_text_color(240, 240, 230) 
         self.cell(0, 0, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
         self.ln(25)
 
     def footer(self):
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
+        self.set_font('Helvetica', 'I', 8)
         self.set_text_color(80, 80, 80)
         self.cell(0, 10, f'Confidential // Page {self.page_no()}', 0, 0, 'C')
 
     def section_title(self, title):
-        self.set_font('Times', 'B', 16)
-        self.set_text_color(28, 28, 28) 
+        self.set_font('Helvetica', 'B', 16)
+        self.set_text_color(44, 62, 80) 
         self.cell(0, 10, title.upper(), 0, 1, 'L')
-        self.set_draw_color(128, 0, 0)
+        self.set_draw_color(44, 62, 80)
         self.set_line_width(1)
         self.line(10, self.get_y(), 200, self.get_y())
         self.ln(8)
 
     def create_table(self, df):
-        self.set_font("Arial", "B", 9)
-        self.set_fill_color(245, 245, 240) 
+        self.set_font("Helvetica", "B", 9)
+        self.set_fill_color(224, 247, 250) 
         self.set_text_color(0, 0, 0)
         self.set_draw_color(200, 200, 200) 
         col_width = 190 / (len(df.columns) + 1)
@@ -119,7 +116,7 @@ class PDFReport(FPDF):
         for col in df.columns:
             self.cell(col_width, 8, str(col)[:10], 1, 0, 'C', 1)
         self.ln()
-        self.set_font("Arial", "", 9)
+        self.set_font("Helvetica", "", 9)
         for index, row in df.iterrows():
             self.cell(col_width, 8, str(index), 1, 0, 'C')
             for val in row:
@@ -141,7 +138,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     missing = df.isnull().sum().sum()
     dupes = df.duplicated().sum()
     
-    pdf.set_font("Arial", '', 10)
+    pdf.set_font("Helvetica", '', 10)
     pdf.set_fill_color(255, 255, 255)
     pdf.set_draw_color(200, 200, 200)
     pdf.cell(95, 12, f" Total Records: {rows}", 1, 0, 'L', 1)
@@ -152,9 +149,9 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
 
     if report_type == "full":
         pdf.section_title("2. Intelligence Report")
-        pdf.set_font("Times", 'B', 11)
+        pdf.set_font("Helvetica", 'B', 11)
         pdf.cell(0, 8, f"QUERY SCOPE: {query}", 0, 1)
-        pdf.set_font("Arial", '', 10)
+        pdf.set_font("Helvetica", '', 10)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(10)
@@ -177,7 +174,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
         for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
                 if pdf.get_y() > 180: pdf.add_page()
-                pdf.set_font("Arial", 'I', 9)
+                pdf.set_font("Helvetica", 'I', 9)
                 pdf.set_text_color(50, 50, 50)
                 pdf.cell(0, 8, f"Fig {i+1}: Generated Visualization", 0, 1)
                 pdf.image(img_path, x=10, w=190) 
@@ -185,28 +182,30 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- THEME CSS (LORA + MULISH) ---
+# --- THEME CSS (GLASSMORPHISM) ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,400&family=Mulish:wght@300;400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&family=Mulish:wght@300;500&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Mulish', sans-serif;
-        background-color: #FDFBF7; 
-        color: #2C2C2C; 
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        color: #2C3E50;
     }
-    .stApp { background-color: #FDFBF7; }
+    .stApp {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
 
     h1, h2, h3 {
-        color: #1C1C1C !important;
-        font-family: 'Lora', serif;
-        font-weight: 700;
+        color: #2C3E50 !important;
+        font-family: 'Manrope', sans-serif;
+        font-weight: 800;
     }
     
     .main-title {
-        color: #1C1C1C !important; 
-        font-family: 'Lora', serif;
-        font-weight: 700;
+        color: #2C3E50 !important; 
+        font-family: 'Manrope', sans-serif;
+        font-weight: 800;
         font-size: 3.5rem; 
         text-transform: uppercase; 
     }
@@ -214,54 +213,66 @@ st.markdown("""
     .greeting-text {
         font-family: 'Mulish', sans-serif;
         font-size: 1.2rem;
-        color: #800000;
+        color: #34495E;
         font-weight: 600;
     }
 
     .metric-card {
-        background-color: #FFFFFF;
-        border: 1px solid #EAEAEA; 
-        border-left: 6px solid #800000;
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         padding: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         text-align: center;
-        border-radius: 12px;
+        border-radius: 15px;
     }
     .metric-value { 
-        color: #800000;
-        font-family: 'Lora', serif;
+        color: #2C3E50;
+        font-family: 'Manrope', sans-serif;
         font-size: 32px;
-        font-weight: 700; 
+        font-weight: 800; 
     }
     .metric-label {
         font-family: 'Mulish', sans-serif;
         font-size: 10px;
         font-weight: 700;
-        color: #666;
+        color: #5D6D7E;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
 
     .stChatMessage {
-        background-color: #FFFFFF;
-        border: 1px solid #EAEAEA;
-        border-radius: 12px;
-        padding: 10px;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+        padding: 15px;
         margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
     
     div[data-testid="stFileUploader"] {
-        background-color: #FFFFFF;
-        border: 2px dashed #800000;
-        border-radius: 15px;
-        padding: 20px;
+        background: rgba(255, 255, 255, 0.4);
+        border: 2px dashed #B0BEC5;
+        border-radius: 20px;
+        padding: 30px;
         text-align: center;
+        backdrop-filter: blur(10px);
     }
     
     .streamlit-expanderHeader {
         font-family: 'Mulish', sans-serif;
         font-size: 0.9rem;
-        color: #666;
+        color: #2C3E50;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 10px;
+    }
+    
+    div[data-testid="stSidebar"] {
+        background-color: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(255, 255, 255, 0.3);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -270,17 +281,16 @@ st.markdown("""
 with st.sidebar:
     st.markdown("### SYSTEM MENU")
     
-    # 1. SHOW "CHANGE FILE" IF DATA IS LOADED
+    # LOGIC: Show uploader here ONLY if data is already loaded
     if st.session_state.current_df is not None:
-        st.success(f"✅ Active: {st.session_state.current_filename}")
+        st.success(f"Active: {st.session_state.current_filename}")
         
-        # Sidebar Uploader (For Changing Files)
         sidebar_file = st.file_uploader("Change Dataset", type=["csv", "xlsx"], key="sidebar_uploader")
         if sidebar_file:
             if load_data(sidebar_file):
                 st.rerun()
 
-        if st.button("🔄 Reset Session", use_container_width=True):
+        if st.button("Reset Session", use_container_width=True):
             st.session_state.current_df = None
             st.session_state.current_filename = None
             st.session_state.analysis_history = []
@@ -322,32 +332,29 @@ st.markdown("---")
 # IF NO DATA: Show Main Page Uploader
 if st.session_state.current_df is None:
     uploaded_file = st.file_uploader(
-        "📂 **Start Analysis:** Drag and drop your dataset here", 
+        "Start Analysis: Drag and drop your dataset here", 
         type=["csv", "xlsx"],
         help="Supported formats: .CSV and .XLSX",
         key="main_uploader"
     )
     
     if uploaded_file:
-        # Load Data & Trigger Rerun
+        # Load Data & Trigger Rerun (This hides main uploader)
         if load_data(uploaded_file):
             st.rerun()
             
-    # Empty State
     if not uploaded_file:
-        st.caption("👆 *Upload a dataset to activate the Neural Engine.*")
+        st.caption("Upload a dataset to activate the Neural Engine.")
 
-# IF DATA EXISTS: Show Dashboard (Even if uploader is gone)
+# IF DATA EXISTS: Show Dashboard (Even if main uploader is gone)
 else:
-    # Get Data from Session State
     df = st.session_state.current_df
     
     # Ensure Tools has access (in case of fresh rerun)
     if tools: tools.df = df
     df.to_csv("dataset.csv", index=False)
 
-    # Show Info Expander
-    with st.expander(f"✅ Active Dataset: {st.session_state.current_filename}", expanded=False):
+    with st.expander(f"Active Dataset: {st.session_state.current_filename}", expanded=False):
         st.info("To change files, use the sidebar uploader or click 'Reset Session'.")
 
     # --- DASHBOARD & CHAT UI ---
@@ -356,14 +363,14 @@ else:
     with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
     with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
     with mc3: 
-        missing = df.isnull().sum().sum(); color = "#800000" if missing > 0 else "#2E7D32"
+        missing = df.isnull().sum().sum(); color = "#C0392B" if missing > 0 else "#27AE60"
         st.markdown(f"""<div class="metric-card"><div class="metric-value" style="color: {color}">{missing}</div><div class="metric-label">MISSING VALUES</div></div>""", unsafe_allow_html=True)
     with mc4: 
         dupes = df.duplicated().sum()
         st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
     st.write("")
 
-    tab1, tab2 = st.tabs(["💬 AI ANALYST", "📊 VISUAL DASHBOARD"])
+    tab1, tab2 = st.tabs(["AI ANALYST", "VISUAL DASHBOARD"])
 
     with tab1:
         st.write("")
@@ -478,8 +485,8 @@ else:
         numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
         if not numeric_df.empty:
             corr = numeric_df.corr()
-            fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Reds', template="plotly_white")
-            fig_corr.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
+            fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
+            fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
             try:
                 fig_corr.write_image("dash_corr.png")
                 dashboard_images.append("dash_corr.png")
@@ -487,8 +494,8 @@ else:
             
             x_axis_val = numeric_df.columns[0]
             fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
-            fig1.update_traces(marker_color='#800000', marker_line_color='#FFF')
-            fig1.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
+            fig1.update_traces(marker_color='#3498DB', marker_line_color='#FFF')
+            fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
             try:
                 fig1.write_image("dash_hist.png")
                 dashboard_images.append("dash_hist.png")
@@ -496,8 +503,8 @@ else:
 
             y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
             fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
-            fig2.update_traces(marker_color='#1C1C1C')
-            fig2.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
+            fig2.update_traces(marker_color='#2C3E50')
+            fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
             try:
                 fig2.write_image("dash_scatter.png")
                 dashboard_images.append("dash_scatter.png")
@@ -508,7 +515,7 @@ else:
         with d_col2:
             try:
                 dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
-                st.download_button(label="[ EXPORT PDF ]", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
+                st.download_button(label="EXPORT PDF", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
             except Exception as e:
                 st.error(f"PDF Gen Error: {e}")
 
@@ -534,9 +541,8 @@ else:
                 last_result = st.session_state.analysis_history[-1]["content"]
                 last_img = st.session_state.analysis_history[-1].get("image")
                 full_pdf = generate_pdf("full", df, st.session_state.last_query, str(last_result), last_img, dashboard_images)
-                st.download_button(label="[ EXPORT FULL REPORT ]", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
+                st.download_button(label="EXPORT FULL REPORT", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
             except Exception as e:
                 pass
 
-    # Ensure backend tools always have current df
     if tools: tools.df = df
