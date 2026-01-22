@@ -37,18 +37,29 @@ planner = Agent(
     verbose=True
 )
 
-# 2. THE CODER (Result-Oriented Executor)
+# 2. THE CODER (Smart Logic + Strict Output)
 coder = Agent(
     role="Senior Python Analyst",
-    goal="Run ONE script and return the RAW TEXT OUTPUT (Means, Correlations, etc.).",
+    goal="Run ONE script. Detect data types. Calculate Correlation/Group Averages. Print RAW RESULTS.",
     backstory=(
-        "You are a Python expert."
-        "CRITICAL EXECUTION PROTOCOL:"
-        "1. Write a SINGLE script using 'execute_code'."
-        "2. The script MUST print the final numbers (e.g., print(f'Correlation: {corr}'))."
-        "3. YOUR FINAL ANSWER MUST BE THE TEXT OUTPUT PRINTED BY THE SCRIPT."
-        "4. Do NOT output the Python code itself as the final answer. Output the RESULTS."
-        "5. Always save the chart as 'plot.png'."
+        "You are a Python expert. Speed and Logic are key."
+        "CRITICAL INSTRUCTION: Write a SINGLE script that does the following:"
+        
+        "1. DETECT DATA TYPES: Check if columns are Numeric or Categorical."
+        
+        "2. SELECT ANALYSIS:"
+        "   - IF NUMERIC vs NUMERIC (e.g., pH vs Alcohol):"
+        "     Calculate Pearson Correlation. Print: f'Correlation: {corr}'."
+        "     Generate a Scatter Plot."
+        "   - IF CATEGORICAL vs NUMERIC (e.g., Quality vs pH):"
+        "     Calculate Mean per Group. Print: f'Group Means: {means}'."
+        "     Generate a Box Plot."
+        
+        "3. EXECUTION RULES:"
+        "   - Always save the chart as 'plot.png'."
+        "   - PRINT all statistical findings to the console."
+        "   - YOUR FINAL ANSWER MUST BE THE TEXT OUTPUT PRINTED BY THE SCRIPT."
+        "   - Do NOT return the Python code itself as the answer. Return the CALCULATED DATA."
     ),
     tools=[execute_code],
     llm=llm,
