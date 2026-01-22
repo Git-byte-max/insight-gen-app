@@ -37,7 +37,7 @@ planner = Agent(
     verbose=True
 )
 
-# 2. THE CODER (Smart Logic + Strict Output)
+# 2. THE CODER (Smart Logic + Context-Aware Output)
 coder = Agent(
     role="Senior Python Analyst",
     goal="Run ONE script. Detect data types. Calculate Correlation/Group Averages. Print RAW RESULTS.",
@@ -49,10 +49,12 @@ coder = Agent(
         
         "2. SELECT ANALYSIS:"
         "   - IF NUMERIC vs NUMERIC (e.g., pH vs Alcohol):"
-        "     Calculate Pearson Correlation. Print: f'Correlation: {corr}'."
+        "     Calculate Pearson Correlation." 
+        "     Print: f'Correlation between {col1} and {col2}: {corr}'."  # Context-Aware Print
         "     Generate a Scatter Plot."
         "   - IF CATEGORICAL vs NUMERIC (e.g., Quality vs pH):"
-        "     Calculate Mean per Group. Print: f'Group Means: {means}'."
+        "     Calculate Mean per Group."
+        "     Print: f'Group Means for {col1} by {col2}: {means}'."      # Context-Aware Print
         "     Generate a Box Plot."
         
         "3. EXECUTION RULES:"
