@@ -39,7 +39,7 @@ except Exception as e:
 
 # --- SESSION STATE ---
 if "analysis_history" not in st.session_state:
-    st.session_state.analysis_history = []  # Store chat history
+    st.session_state.analysis_history = []
 if "analysis_plot" not in st.session_state:
     st.session_state.analysis_plot = None
 if "last_query" not in st.session_state:
@@ -177,21 +177,11 @@ st.markdown("""
         font-weight: 700;
     }
     
-    /* Header Animation Container */
-    .header-container {
-        display: flex;
-        align-items: center;
-        padding-bottom: 20px;
-        border-bottom: 3px solid #800000;
-        margin-bottom: 30px;
-    }
-    
     .main-title {
         color: #1C1C1C !important; 
         font-family: 'Lora', serif;
         font-weight: 700;
         font-size: 3.5rem; 
-        margin-right: 20px;
         text-transform: uppercase; 
     }
     
@@ -226,7 +216,6 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* Chat Interface Styling */
     .stChatMessage {
         background-color: #FFFFFF;
         border: 1px solid #EAEAEA;
@@ -235,7 +224,6 @@ st.markdown("""
         margin-bottom: 10px;
     }
     
-    /* Upload Box Styling */
     div[data-testid="stFileUploader"] {
         background-color: #FFFFFF;
         border: 2px dashed #800000;
@@ -250,7 +238,6 @@ st.markdown("""
 with st.sidebar:
     st.markdown("### SYSTEM MENU")
     
-    # Improved Upload Section Text
     st.markdown("**1. Data Ingestion**")
     uploaded_file = st.file_uploader("Drop your CSV or Excel file here", type=["csv", "xlsx"])
     
@@ -269,37 +256,27 @@ with st.sidebar:
 
 # --- MAIN CONTENT ---
 
-# 1. Visual Polish: Dynamic Header with Animation
+# 1. Visual Polish: Dynamic Header with UPDATED Animation
 header_col1, header_col2 = st.columns([3, 1])
 with header_col1:
     greeting = get_time_greeting()
     st.markdown(f"<div class='greeting-text'>{greeting}, Analyst.</div>", unsafe_allow_html=True)
     st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 with header_col2:
-    # Small Lottie Animation in Header
+    # Changed Lottie Animation to "AI Analysis / Robot"
     st.components.v1.html("""
     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-    <dotlottie-player src="https://lottie.host/0e9443fb-5443-43a1-939b-7b53756db004/WvBcP4Z7Af.lottie" background="transparent" speed="1" style="width: 100px; height: 100px;" loop autoplay></dotlottie-player>
-    """, height=120)
+    <dotlottie-player src="https://assets5.lottiefiles.com/packages/lf20_V9t630.json" background="transparent" speed="1" style="width: 120px; height: 120px;" loop autoplay></dotlottie-player>
+    """, height=140)
 
 st.markdown("---")
 
 if not uploaded_file:
-    # 2. Hero Section: Welcome Message (Only visible when no file)
-    hero_container = st.container()
-    with hero_container:
-        st.info("👋 **Welcome to InsightGen**")
-        st.markdown("""
-        ### AI-Powered Data Analytics
-        Unlock the potential of your data without writing a single line of code.
-        
-        **How it works:**
-        1. **Upload** your dataset (CSV or Excel) in the sidebar.
-        2. **Ask** questions in plain English (e.g., *"Compare Sales vs Marketing spending"*).
-        3. **Get** instant insights, statistical analysis, and visualization.
-        
-        *Upload a file to begin the session.*
-        """)
+    # 2. REMOVED HERO SECTION / WELCOME MESSAGE
+    # Leaving this empty or minimal as requested.
+    st.markdown(" ") 
+    st.caption("👈 *Upload a dataset from the sidebar to activate the Neural Engine.*")
+
 else:
     try:
         if uploaded_file.name.endswith(".csv"):
@@ -309,7 +286,6 @@ else:
         if tools: tools.df = df
         df.to_csv("dataset.csv", index=False)
 
-        # METRICS GRID
         st.subheader("DATASET OVERVIEW")
         mc1, mc2, mc3, mc4 = st.columns(4)
         with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
@@ -324,39 +300,33 @@ else:
 
         tab1, tab2 = st.tabs(["💬 AI ANALYST", "📊 VISUAL DASHBOARD"])
 
-        # --- TAB 1: UPGRADED CHAT INTERFACE ---
         with tab1:
             st.write("")
             
-            # Display Chat History
             for message in st.session_state.analysis_history:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
                     if "image" in message and message["image"]:
                         st.image(message["image"])
 
-            # Input Area
             query = st.chat_input("Ask a question about your data...")
             
             if query:
-                # Add User Message to History
                 st.session_state.analysis_history.append({"role": "user", "content": query})
                 st.session_state.last_query = query
                 
-                # Show User Message Immediately
                 with st.chat_message("user"):
                     st.markdown(query)
 
-                # Process Response
                 with st.chat_message("assistant"):
                     status_placeholder = st.empty()
                     
-                    # Loading Animation
+                    # Using the new Animation URL for the loading state as well
                     with status_placeholder.container():
                         st.components.v1.html("""
                         <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
                         <div style="display: flex; justify-content: center;">
-                            <dotlottie-player src="https://lottie.host/0e9443fb-5443-43a1-939b-7b53756db004/WvBcP4Z7Af.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
+                            <dotlottie-player src="https://assets5.lottiefiles.com/packages/lf20_V9t630.json" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
                         </div>
                         """, height=160)
                         st.caption("Analyzing data patterns...")
@@ -369,13 +339,11 @@ else:
                             status_placeholder.empty()
                             st.markdown(result_text)
                         else:
-                            # --- RUN CREWAI ---
                             if os.path.exists("plot.png"): os.remove("plot.png")
                             
                             start_time = time.time()
                             from crewai import Crew, Task, Process
                             
-                            # Context Injection
                             col_list = list(df.columns)
                             data_context = f"Columns: {col_list}. "
                             
@@ -407,31 +375,25 @@ else:
                             result = crew.kickoff() 
                             end_time = time.time()
                             
-                            # Clear Loading
                             status_placeholder.empty()
                             
-                            # Display Result
                             result_text = str(result)
                             st.markdown(result_text)
                             
-                            # Display Plot if exists
                             plot_file = None
                             if os.path.exists("plot.png"):
                                 plot_file = "plot.png"
                                 st.image(plot_file)
                                 
-                            # Show Timer
                             elapsed = round(end_time - start_time, 2)
                             st.caption(f"Analysis completed in {elapsed}s")
 
-                        # Save to History
                         st.session_state.analysis_history.append({
                             "role": "assistant", 
                             "content": result_text,
                             "image": plot_file
                         })
                         
-                        # Update Session State for PDF
                         st.session_state.analysis_result = result_text
                         st.session_state.analysis_plot = plot_file
 
@@ -439,7 +401,6 @@ else:
                         status_placeholder.empty()
                         st.error(f"Runtime Error: {e}")
 
-        # --- TAB 2: VISUAL DASHBOARD ---
         with tab2:
             st.write("")
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
@@ -454,7 +415,6 @@ else:
             dashboard_images = []
             numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
             if not numeric_df.empty:
-                # PAPER THEME PLOTS
                 corr = numeric_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Reds', template="plotly_white")
                 fig_corr.update_layout(paper_bgcolor="#FDFBF7", plot_bgcolor="#FDFBF7", font_family="Mulish", font_color="#1C1C1C")
@@ -508,7 +468,6 @@ else:
 
         with full_report_container:
             if st.session_state.analysis_history:
-                # Use last result for report
                 try:
                     last_result = st.session_state.analysis_history[-1]["content"]
                     last_img = st.session_state.analysis_history[-1].get("image")
