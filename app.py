@@ -2,7 +2,6 @@ import os
 import sys
 
 # --- CRITICAL FIX: DISABLE TELEMETRY AT THE ENTRY POINT ---
-# This MUST be the first thing the app does to prevent the crash.
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 # --- SQLITE FIX FOR STREAMLIT CLOUD ---
@@ -29,7 +28,6 @@ st.set_page_config(
 
 # Import Backend
 try:
-    # We import tools first to ensure df is linked
     import tools
     from agents import planner, coder, reporter, DEMO_MODE, debug_error
 except Exception as e:
@@ -40,8 +38,8 @@ except Exception as e:
     debug_error = f"System Error: {e}"
 
 # --- SESSION STATE ---
-if "analysis_result" not in st.session_state:
-    st.session_state.analysis_result = None
+if "analysis_history" not in st.session_state:
+    st.session_state.analysis_history = []  # Store chat history
 if "analysis_plot" not in st.session_state:
     st.session_state.analysis_plot = None
 if "last_query" not in st.session_state:
@@ -49,20 +47,22 @@ if "last_query" not in st.session_state:
 if "analysis_time" not in st.session_state:
     st.session_state.analysis_time = None
 
+# --- HELPER: TIME GREETING ---
+def get_time_greeting():
+    hour = datetime.now().hour
+    if hour < 12: return "Good Morning"
+    elif 12 <= hour < 18: return "Good Afternoon"
+    else: return "Good Evening"
+
 # --- ADVANCED PDF ENGINE ---
 class PDFReport(FPDF):
     def header(self):
-        # MAROON HEADER BAR
         self.set_fill_color(128, 0, 0) # Maroon
         self.rect(0, 0, 210, 30, 'F')
-        
-        # WHITE SERIF TITLE
         self.set_font('Times', 'B', 20)
         self.set_text_color(255, 255, 255) 
         self.set_y(10)
         self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
-        
-        # SUBTITLE
         self.set_font('Arial', '', 10) 
         self.set_text_color(240, 240, 230) 
         self.cell(0, 0, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
@@ -78,27 +78,21 @@ class PDFReport(FPDF):
         self.set_font('Times', 'B', 16)
         self.set_text_color(28, 28, 28) 
         self.cell(0, 10, title.upper(), 0, 1, 'L')
-        # Maroon Underline
         self.set_draw_color(128, 0, 0)
         self.set_line_width(1)
         self.line(10, self.get_y(), 200, self.get_y())
         self.ln(8)
 
     def create_table(self, df):
-        """ Renders a 'Printed' Style Table """
         self.set_font("Arial", "B", 9)
         self.set_fill_color(245, 245, 240) 
         self.set_text_color(0, 0, 0)
         self.set_draw_color(200, 200, 200) 
-        
-        # Headers
         col_width = 190 / (len(df.columns) + 1)
         self.cell(col_width, 8, "Metric", 1, 0, 'C', 1)
         for col in df.columns:
             self.cell(col_width, 8, str(col)[:10], 1, 0, 'C', 1)
         self.ln()
-        
-        # Data Rows
         self.set_font("Arial", "", 9)
         for index, row in df.iterrows():
             self.cell(col_width, 8, str(index), 1, 0, 'C')
@@ -115,68 +109,51 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # --- SECTION 1: MISSION OVERVIEW ---
     pdf.section_title("1. Mission Overview")
-    
     rows = df.shape[0]
     cols = df.shape[1]
     missing = df.isnull().sum().sum()
     dupes = df.duplicated().sum()
     
-    # 2x2 Data Grid
     pdf.set_font("Arial", '', 10)
     pdf.set_fill_color(255, 255, 255)
     pdf.set_draw_color(200, 200, 200)
-    
-    # Row 1
     pdf.cell(95, 12, f" Total Records: {rows}", 1, 0, 'L', 1)
     pdf.cell(95, 12, f" Variables: {cols}", 1, 1, 'L', 1)
-    # Row 2
     pdf.cell(95, 12, f" Missing Data: {missing}", 1, 0, 'L', 1)
     pdf.cell(95, 12, f" Duplicates: {dupes}", 1, 1, 'L', 1)
     pdf.ln(10)
 
-    # --- SECTION 2: EXECUTIVE SUMMARY ---
     if report_type == "full":
         pdf.section_title("2. Intelligence Report")
         pdf.set_font("Times", 'B', 11)
         pdf.cell(0, 8, f"QUERY SCOPE: {query}", 0, 1)
-        
         pdf.set_font("Arial", '', 10)
         clean_text = str(ai_text).replace("*", "").replace("#", "").encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(10)
-        
         if plot_path and os.path.exists(plot_path):
             pdf.image(plot_path, x=10, w=190)
             pdf.ln(10)
         pdf.add_page()
 
-    # --- SECTION 3: DATA INTELLIGENCE ---
     title_num = "3." if report_type == "full" else "2."
     if pdf.get_y() > 200: pdf.add_page()
-    
     pdf.section_title(f"{title_num} Statistical Recon")
-    
     stats = df.describe()
     pdf.create_table(stats)
     pdf.ln(10)
 
-    # --- SECTION 4: VISUAL SURVEILLANCE ---
     if dashboard_imgs:
         title_num = "4." if report_type == "full" else "3."
         if pdf.get_y() > 180: pdf.add_page()
-            
         pdf.section_title(f"{title_num} Visual Surveillance")
-        
         for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
                 if pdf.get_y() > 180: pdf.add_page()
-                    
                 pdf.set_font("Arial", 'I', 9)
                 pdf.set_text_color(50, 50, 50)
                 pdf.cell(0, 8, f"Fig {i+1}: Generated Visualization", 0, 1)
-                
                 pdf.image(img_path, x=10, w=190) 
                 pdf.ln(10)
                 
@@ -192,42 +169,37 @@ st.markdown("""
         background-color: #FDFBF7; 
         color: #2C2C2C; 
     }
-    
-    .stApp {
-        background-color: #FDFBF7;
-        background-image: none; 
-    }
+    .stApp { background-color: #FDFBF7; }
 
     h1, h2, h3 {
         color: #1C1C1C !important;
         font-family: 'Lora', serif;
-        border-bottom: none;
-        padding-bottom: 5px;
         font-weight: 700;
-        letter-spacing: 0px;
     }
     
-    .metric-label {
-        color: #666 !important;
-        font-family: 'Mulish', sans-serif;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        font-size: 11px;
+    /* Header Animation Container */
+    .header-container {
+        display: flex;
+        align-items: center;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #800000;
+        margin-bottom: 30px;
     }
     
     .main-title {
         color: #1C1C1C !important; 
         font-family: 'Lora', serif;
         font-weight: 700;
-        font-size: 4.5rem; 
-        text-align: left;
-        width: 100%;
-        display: block;
-        padding-bottom: 20px;
-        border-bottom: 3px solid #800000;
-        margin-bottom: 30px;
+        font-size: 3.5rem; 
+        margin-right: 20px;
         text-transform: uppercase; 
+    }
+    
+    .greeting-text {
+        font-family: 'Mulish', sans-serif;
+        font-size: 1.2rem;
+        color: #800000;
+        font-weight: 600;
     }
 
     .metric-card {
@@ -237,79 +209,39 @@ st.markdown("""
         padding: 20px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         text-align: center;
-        transition: all 0.3s ease;
-        margin-bottom: 15px;
-        border-radius: 20px;
-    }
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); 
+        border-radius: 12px;
     }
     .metric-value { 
         color: #800000;
         font-family: 'Lora', serif;
-        font-size: 38px;
+        font-size: 32px;
         font-weight: 700; 
     }
-
-    div[data-testid="stDataFrame"] {
-        background-color: #FFFFFF; 
-        border: 1px solid #E0E0E0;
+    .metric-label {
         font-family: 'Mulish', sans-serif;
-        border-radius: 12px;
-        padding: 5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    div[data-testid="stDataFrame"] > div {
-        background-color: #FFFFFF;
-    }
-
-    .stButton>button {
-        background-color: #2C2C2C;
-        color: #FFF;
-        border: none;
-        border-radius: 25px; 
-        font-family: 'Mulish', sans-serif;
+        font-size: 10px;
         font-weight: 700;
+        color: #666;
         text-transform: uppercase;
-        padding: 12px 30px;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .stButton>button:hover { 
-        background-color: #800000;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(128,0,0,0.3);
-    }
-    
-    input[type="text"] {
-        background: #FFFFFF !important;
-        color: #1C1C1C !important;
-        border: 1px solid #CCC !important;
-        border-radius: 12px;
-        padding-left: 15px;
-        font-family: 'Mulish', sans-serif;
-    }
-    
-    .stTabs [data-baseweb="tab-list"] { 
-        background-color: #FDFBF7; 
-        padding: 5px; 
-    }
-    .stTabs [data-baseweb="tab"] { 
-        color: #555; 
-        font-family: 'Mulish', sans-serif; 
-        font-weight: 700;
-    }
-    .stTabs [aria-selected="true"] { 
-        background-color: #FDFBF7; 
-        color: #800000; 
-        border-bottom: 3px solid #800000;
+        letter-spacing: 1px;
     }
 
-    @media only screen and (max-width: 768px) {
-        .main-title { font-size: 2.5rem !important; }
-        .metric-value { font-size: 28px !important; }
-        .stButton>button { width: 100% !important; margin-top: 10px; }
+    /* Chat Interface Styling */
+    .stChatMessage {
+        background-color: #FFFFFF;
+        border: 1px solid #EAEAEA;
+        border-radius: 12px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    /* Upload Box Styling */
+    div[data-testid="stFileUploader"] {
+        background-color: #FFFFFF;
+        border: 2px dashed #800000;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -317,7 +249,11 @@ st.markdown("""
 # --- SIDEBAR ---
 with st.sidebar:
     st.markdown("### SYSTEM MENU")
-    uploaded_file = st.file_uploader("UPLOAD DATASET", type=["csv", "xlsx"])
+    
+    # Improved Upload Section Text
+    st.markdown("**1. Data Ingestion**")
+    uploaded_file = st.file_uploader("Drop your CSV or Excel file here", type=["csv", "xlsx"])
+    
     st.markdown("---")
     
     if DEMO_MODE:
@@ -329,12 +265,42 @@ with st.sidebar:
     st.markdown("---")
     full_report_container = st.container()
     st.markdown("---")
-    st.caption("INSIGHTGEN | ANALYTICS SUITE V2.0")
+    st.caption("INSIGHTGEN | ANALYTICS SUITE V2.1")
 
 # --- MAIN CONTENT ---
-st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 
-if uploaded_file:
+# 1. Visual Polish: Dynamic Header with Animation
+header_col1, header_col2 = st.columns([3, 1])
+with header_col1:
+    greeting = get_time_greeting()
+    st.markdown(f"<div class='greeting-text'>{greeting}, Analyst.</div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
+with header_col2:
+    # Small Lottie Animation in Header
+    st.components.v1.html("""
+    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+    <dotlottie-player src="https://lottie.host/0e9443fb-5443-43a1-939b-7b53756db004/WvBcP4Z7Af.lottie" background="transparent" speed="1" style="width: 100px; height: 100px;" loop autoplay></dotlottie-player>
+    """, height=120)
+
+st.markdown("---")
+
+if not uploaded_file:
+    # 2. Hero Section: Welcome Message (Only visible when no file)
+    hero_container = st.container()
+    with hero_container:
+        st.info("👋 **Welcome to InsightGen**")
+        st.markdown("""
+        ### AI-Powered Data Analytics
+        Unlock the potential of your data without writing a single line of code.
+        
+        **How it works:**
+        1. **Upload** your dataset (CSV or Excel) in the sidebar.
+        2. **Ask** questions in plain English (e.g., *"Compare Sales vs Marketing spending"*).
+        3. **Get** instant insights, statistical analysis, and visualization.
+        
+        *Upload a file to begin the session.*
+        """)
+else:
     try:
         if uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
@@ -344,7 +310,6 @@ if uploaded_file:
         df.to_csv("dataset.csv", index=False)
 
         # METRICS GRID
-        st.write("")
         st.subheader("DATASET OVERVIEW")
         mc1, mc2, mc3, mc4 = st.columns(4)
         with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
@@ -357,137 +322,124 @@ if uploaded_file:
             st.markdown(f"""<div class="metric-card"><div class="metric-value">{dupes}</div><div class="metric-label">DUPLICATES</div></div>""", unsafe_allow_html=True)
         st.write("")
 
-        tab1, tab2 = st.tabs(["AI ANALYSIS", "VISUAL DASHBOARD"])
+        tab1, tab2 = st.tabs(["💬 AI ANALYST", "📊 VISUAL DASHBOARD"])
 
-        # --- TAB 1 ---
+        # --- TAB 1: UPGRADED CHAT INTERFACE ---
         with tab1:
             st.write("")
-            col_q, col_b = st.columns([3, 1])
-            with col_q:
-                query = st.text_input("ANALYSIS QUERY:", placeholder="Ask a question about your data...", label_visibility="collapsed")
-            with col_b:
-                run_btn = st.button("RUN ANALYSIS", use_container_width=True)
+            
+            # Display Chat History
+            for message in st.session_state.analysis_history:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+                    if "image" in message and message["image"]:
+                        st.image(message["image"])
 
-            if run_btn and query:
+            # Input Area
+            query = st.chat_input("Ask a question about your data...")
+            
+            if query:
+                # Add User Message to History
+                st.session_state.analysis_history.append({"role": "user", "content": query})
                 st.session_state.last_query = query
                 
-                # --- START TIMER ---
-                start_time = time.time()
-                
-                # --- OPTIMIZED LOADING SEQUENCE ---
-                status_container = st.empty()
-                
-                with status_container.container():
-                    # 1. Animation (Looping)
-                    st.components.v1.html("""
-                    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-                    <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
-                        <dotlottie-player src="https://lottie.host/0e9443fb-5443-43a1-939b-7b53756db004/WvBcP4Z7Af.lottie" background="transparent" speed="1" style="width: 300px; height: 300px;" loop autoplay></dotlottie-player>
-                    </div>
-                    """, height=300)
+                # Show User Message Immediately
+                with st.chat_message("user"):
+                    st.markdown(query)
+
+                # Process Response
+                with st.chat_message("assistant"):
+                    status_placeholder = st.empty()
                     
-                    # 2. Text Placeholders (Slower Pace)
-                    text_placeholder = st.empty()
-                    
-                    text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>- Reading Dataset...</h3>", unsafe_allow_html=True)
-                    time.sleep(2) 
-                    
-                    text_placeholder.markdown(f"<h3 style='text-align: center; color: #800000; font-family: Mulish;'>- Initializing AI Agents...</h3>", unsafe_allow_html=True)
-                    time.sleep(2) 
+                    # Loading Animation
+                    with status_placeholder.container():
+                        st.components.v1.html("""
+                        <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+                        <div style="display: flex; justify-content: center;">
+                            <dotlottie-player src="https://lottie.host/0e9443fb-5443-43a1-939b-7b53756db004/WvBcP4Z7Af.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
+                        </div>
+                        """, height=160)
+                        st.caption("Analyzing data patterns...")
 
-                    # 3. Persistent Message (Emoji-Free)
-                    text_placeholder.markdown(
-                        f"""<h3 style='text-align: center; color: #800000; font-family: Mulish;'>
-                        Deep Analysis in Progress...<br>
-                        <span style='font-size: 0.7em; color: #666;'>This may take up to 60 seconds. Please wait.</span>
-                        </h3>""", 
-                        unsafe_allow_html=True
-                    )
-                
-                # -------------------------------
+                    try:
+                        if DEMO_MODE:
+                            time.sleep(2) 
+                            result_text = f"**Simulated Analysis:**\nQuery: {query}\nCorrelation: 0.85 (Strong)."
+                            plot_file = None
+                            status_placeholder.empty()
+                            st.markdown(result_text)
+                        else:
+                            # --- RUN CREWAI ---
+                            if os.path.exists("plot.png"): os.remove("plot.png")
+                            
+                            start_time = time.time()
+                            from crewai import Crew, Task, Process
+                            
+                            # Context Injection
+                            col_list = list(df.columns)
+                            data_context = f"Columns: {col_list}. "
+                            
+                            task_plan = Task(
+                                description=f"{data_context} user query: '{query}'. Output 1-sentence plan.", 
+                                expected_output="Brief plan", 
+                                agent=planner
+                            )
+                            task_code = Task(
+                                description="Write ONE Python script. Check types (Cat/Num). Calc stats. Save 'plot.png'.", 
+                                expected_output="Code output", 
+                                agent=coder, 
+                                context=[task_plan]
+                            )
+                            task_report = Task(
+                                description="Format findings into Markdown (Summary, Stats, Implications).", 
+                                expected_output="Markdown Report", 
+                                agent=reporter, 
+                                context=[task_code]
+                            )
+                            
+                            crew = Crew(
+                                agents=[planner, coder, reporter], 
+                                tasks=[task_plan, task_code, task_report], 
+                                process=Process.sequential, 
+                                verbose=True
+                            )
+                            
+                            result = crew.kickoff() 
+                            end_time = time.time()
+                            
+                            # Clear Loading
+                            status_placeholder.empty()
+                            
+                            # Display Result
+                            result_text = str(result)
+                            st.markdown(result_text)
+                            
+                            # Display Plot if exists
+                            plot_file = None
+                            if os.path.exists("plot.png"):
+                                plot_file = "plot.png"
+                                st.image(plot_file)
+                                
+                            # Show Timer
+                            elapsed = round(end_time - start_time, 2)
+                            st.caption(f"Analysis completed in {elapsed}s")
 
-                try:
-                    if DEMO_MODE:
-                        time.sleep(3) 
-                        status_container.empty()
-                        st.session_state.analysis_result = f"Query: {query}\nStatus: SIMULATED RESPONSE\nReason: {debug_error}\n1. Trend Detected: Positive.\n2. Correlation: Strong (0.85)."
-                        st.session_state.analysis_plot = "simulated"
-                        st.session_state.analysis_time = 3.14
-                    else:
-                        if os.path.exists("plot.png"): os.remove("plot.png")
+                        # Save to History
+                        st.session_state.analysis_history.append({
+                            "role": "assistant", 
+                            "content": result_text,
+                            "image": plot_file
+                        })
                         
-                        from crewai import Crew, Task, Process
-                        
-                        # --- OPTIMIZATION: CONTEXT INJECTION ---
-                        col_list = list(df.columns)
-                        data_context = f"The dataset has columns: {col_list}. "
-                        
-                        task_plan = Task(
-                            description=f"{data_context} user wants to analyze: '{query}'. Output a 1-sentence execution plan.", 
-                            expected_output="Brief plan", 
-                            agent=planner
-                        )
-                        
-                        task_code = Task(
-                            description="Write ONE Python script. Calculate correlation, outliers, and basic stats. Print textual insights based on the numbers. Save 'plot.png'.", 
-                            expected_output="Executed code output with stats and insights", 
-                            agent=coder, 
-                            context=[task_plan]
-                        )
-                        
-                        task_report = Task(
-                            description="Convert the code execution logs into a formatted Markdown report with sections: Summary, Stats, Implications.", 
-                            expected_output="Formatted Report", 
-                            agent=reporter, 
-                            context=[task_code]
-                        )
-                        
-                        crew = Crew(
-                            agents=[planner, coder, reporter], 
-                            tasks=[task_plan, task_code, task_report], 
-                            process=Process.sequential, 
-                            verbose=True
-                        )
-                        
-                        # --- BLOCKING CALL ---
-                        result = crew.kickoff() 
-                        # ---------------------
-                        
-                        # --- END TIMER ---
-                        end_time = time.time()
-                        st.session_state.analysis_time = round(end_time - start_time, 2)
-                        
-                        # FORCE CLEAR LOADING SCREEN
-                        status_container.empty()
-                        
-                        st.session_state.analysis_result = str(result)
-                        st.session_state.analysis_plot = "plot.png" if os.path.exists("plot.png") else None
-                except Exception as e:
-                    status_container.empty()
-                    st.error(f"RUNTIME ERROR: {e}")
+                        # Update Session State for PDF
+                        st.session_state.analysis_result = result_text
+                        st.session_state.analysis_plot = plot_file
 
-            if st.session_state.analysis_result:
-                st.markdown("---")
-                st.caption(f"QUERY LOG: {st.session_state.last_query}")
-                r1, r2 = st.columns([1.5, 1])
-                with r1:
-                    st.markdown("### ANALYSIS RESULTS")
-                    st.markdown(st.session_state.analysis_result)
-                    
-                    # SHOW TIMER
-                    if st.session_state.analysis_time:
-                        st.markdown(f"<p style='color: #666; font-size: 0.9em; font-style: italic; margin-top: 15px;'>Analysis completed in {st.session_state.analysis_time} seconds</p>", unsafe_allow_html=True)
+                    except Exception as e:
+                        status_placeholder.empty()
+                        st.error(f"Runtime Error: {e}")
 
-                with r2:
-                    st.markdown("### CHART PREVIEW")
-                    if st.session_state.analysis_plot == "simulated":
-                        st.info("Simulated Plot")
-                    elif st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png"):
-                        st.image("plot.png")
-                    else:
-                        st.caption("NO VISUALIZATION GENERATED")
-
-        # --- TAB 2 ---
+        # --- TAB 2: VISUAL DASHBOARD ---
         with tab2:
             st.write("")
             cat_cols = df.select_dtypes(include=['object', 'category']).columns
@@ -547,7 +499,6 @@ if uploaded_file:
             st.markdown("---")
             if not numeric_df.empty:
                 st.markdown("### VISUALIZATION DASHBOARD")
-                
                 st.plotly_chart(fig_corr, width="stretch")
                 gc1, gc2 = st.columns(2)
                 with gc1: st.plotly_chart(fig1, width="stretch")
@@ -556,16 +507,15 @@ if uploaded_file:
                 st.info("NO NUMERIC DATA AVAILABLE")
 
         with full_report_container:
-            if st.session_state.analysis_result:
-                plot_to_use = "plot.png" if st.session_state.analysis_plot == "plot.png" and os.path.exists("plot.png") else None
+            if st.session_state.analysis_history:
+                # Use last result for report
                 try:
-                    full_pdf = generate_pdf("full", df, st.session_state.last_query, str(st.session_state.analysis_result), plot_to_use, dashboard_images)
+                    last_result = st.session_state.analysis_history[-1]["content"]
+                    last_img = st.session_state.analysis_history[-1].get("image")
+                    full_pdf = generate_pdf("full", df, st.session_state.last_query, str(last_result), last_img, dashboard_images)
                     st.download_button(label="[ EXPORT FULL REPORT ]", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
                 except Exception as e:
-                    st.error(f"Full PDF Error: {e}")
+                    pass
 
     except Exception as e:
         st.error(f"SYSTEM ERROR: {e}")
-else:
-    with st.container():
-        st.info("READY: UPLOAD DATASET TO BEGIN...")
