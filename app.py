@@ -55,7 +55,6 @@ if "current_filename" not in st.session_state:
 def get_time_greeting():
     # Define IST timezone (UTC + 5:30)
     ist_offset = timezone(timedelta(hours=5, minutes=30))
-    # Get current time in IST
     now_ist = datetime.now(ist_offset)
     hour = now_ist.hour
     
@@ -187,7 +186,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- THEME CSS (GLASSMORPHISM + HOVER) ---
+# --- THEME CSS (GLASSMORPHISM + TRANSITIONS) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&family=Mulish:wght@300;500&display=swap');
@@ -222,7 +221,7 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* METRIC CARD WITH HOVER EFFECT */
+    /* CARD HOVER EFFECT */
     .metric-card {
         background: rgba(255, 255, 255, 0.4);
         backdrop-filter: blur(10px);
@@ -232,13 +231,12 @@ st.markdown("""
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         text-align: center;
         border-radius: 15px;
-        transition: all 0.3s ease; /* Smooth transition */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
     .metric-card:hover {
-        transform: translateY(-5px); /* Lift up effect */
-        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2); /* Enhanced shadow */
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
     }
 
     .metric-value { 
@@ -288,6 +286,16 @@ st.markdown("""
         backdrop-filter: blur(20px);
         border-right: 1px solid rgba(255, 255, 255, 0.3);
     }
+
+    /* SMOOTH TAB TRANSITION ANIMATION */
+    div[data-baseweb="tab-panel"] {
+        animation: fadeEffect 0.6s ease-in-out;
+    }
+    
+    @keyframes fadeEffect {
+        from {opacity: 0; transform: translateY(10px);}
+        to {opacity: 1; transform: translateY(0);}
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -295,7 +303,6 @@ st.markdown("""
 with st.sidebar:
     st.markdown("### SYSTEM MENU")
     
-    # LOGIC: Show uploader here ONLY if data is already loaded
     if st.session_state.current_df is not None:
         st.success(f"Active: {st.session_state.current_filename}")
         
@@ -343,7 +350,6 @@ with header_col2:
 st.markdown("---")
 
 # 2. LOGIC CONTROLLER
-# IF NO DATA: Show Main Page Uploader
 if st.session_state.current_df is None:
     uploaded_file = st.file_uploader(
         "Start Analysis: Drag and drop your dataset here", 
@@ -353,25 +359,21 @@ if st.session_state.current_df is None:
     )
     
     if uploaded_file:
-        # Load Data & Trigger Rerun (This hides main uploader)
         if load_data(uploaded_file):
             st.rerun()
             
     if not uploaded_file:
         st.caption("Upload a dataset to activate the Neural Engine.")
 
-# IF DATA EXISTS: Show Dashboard (Even if main uploader is gone)
 else:
     df = st.session_state.current_df
     
-    # Ensure Tools has access (in case of fresh rerun)
     if tools: tools.df = df
     df.to_csv("dataset.csv", index=False)
 
     with st.expander(f"Active Dataset: {st.session_state.current_filename}", expanded=False):
         st.info("To change files, use the sidebar uploader or click 'Reset Session'.")
 
-    # --- DASHBOARD & CHAT UI ---
     st.subheader("DATASET OVERVIEW")
     mc1, mc2, mc3, mc4 = st.columns(4)
     with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
