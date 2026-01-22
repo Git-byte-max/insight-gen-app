@@ -16,7 +16,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit.components.v1 as components 
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from fpdf import FPDF
 
 # --- CONFIGURATION ---
@@ -51,9 +51,14 @@ if "current_df" not in st.session_state:
 if "current_filename" not in st.session_state:
     st.session_state.current_filename = None
 
-# --- HELPER: TIME GREETING ---
+# --- HELPER: TIME GREETING (IST) ---
 def get_time_greeting():
-    hour = datetime.now().hour
+    # Define IST timezone (UTC + 5:30)
+    ist_offset = timezone(timedelta(hours=5, minutes=30))
+    # Get current time in IST
+    now_ist = datetime.now(ist_offset)
+    hour = now_ist.hour
+    
     if hour < 12: return "Good Morning"
     elif 12 <= hour < 18: return "Good Afternoon"
     else: return "Good Evening"
@@ -182,7 +187,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- THEME CSS (GLASSMORPHISM) ---
+# --- THEME CSS (GLASSMORPHISM + HOVER) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&family=Mulish:wght@300;500&display=swap');
@@ -217,6 +222,7 @@ st.markdown("""
         font-weight: 600;
     }
 
+    /* METRIC CARD WITH HOVER EFFECT */
     .metric-card {
         background: rgba(255, 255, 255, 0.4);
         backdrop-filter: blur(10px);
@@ -226,7 +232,15 @@ st.markdown("""
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         text-align: center;
         border-radius: 15px;
+        transition: all 0.3s ease; /* Smooth transition */
     }
+    
+    .metric-card:hover {
+        transform: translateY(-5px); /* Lift up effect */
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2); /* Enhanced shadow */
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
     .metric-value { 
         color: #2C3E50;
         font-family: 'Manrope', sans-serif;
