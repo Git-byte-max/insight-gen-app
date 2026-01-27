@@ -16,52 +16,49 @@ if not os.getenv("OPENAI_API_KEY"):
     DEMO_MODE = True
     debug_error = "Missing OPENAI_API_KEY in .env file."
 else:
-    # Temperature 0.1 reduces creativity to prevent "template" responses
+    # Temperature 0.1 keeps it factual but allows for code flexibility
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
     DEMO_MODE = False
     debug_error = ""
 
 # --- AGENTS ---
 
-# 1. THE PLANNER (Instant Router)
+# 1. THE PLANNER (Context Manager)
 planner = Agent(
     role="Analysis Architect",
-    goal="Output a single sentence plan: 'Execute Python analysis on columns [X, Y] and generate report.'",
+    goal="Identify the user's intent and relevant columns.",
     backstory=(
-        "You are an efficiency expert. Do not think. Do not explain."
-        "Immediate Action: Identify the relevant columns for the user's query."
-        "Output Protocol: Instruct the Coder to run a 'Smart Analysis Batch' on those columns."
+        "You are an expert data strategist."
+        "Your Job: Look at the user's query and the available columns."
+        "Output: A single sentence instruction for the Coder. "
+        "Example: 'Calculate the maximum value of the Age column.' or 'Analyze the relationship between Age and Salary.'"
     ),
     llm=llm,
     allow_delegation=False,
     verbose=True
 )
 
-# 2. THE CODER (Smart Logic + Context-Aware Output)
+# 2. THE CODER (General Purpose Analyst)
 coder = Agent(
     role="Senior Python Analyst",
-    goal="Run ONE script. Detect data types. Calculate Correlation/Group Averages. Print RAW RESULTS.",
+    goal="Write pandas code to answer the specific question. Print the result.",
     backstory=(
-        "You are a Python expert. Speed and Logic are key."
+        "You are a Python expert. You can answer ANY data question."
         "CRITICAL INSTRUCTION: Write a SINGLE script that does the following:"
         
-        "1. DETECT DATA TYPES: Check if columns are Numeric or Categorical."
+        "1. UNDERSTAND THE GOAL: "
+        "   - If the user asks for a specific value (e.g., 'What is the max age?'), calculate and PRINT it."
+        "   - If the user asks for a count (e.g., 'How many rows?'), calculate and PRINT it."
+        "   - If the user asks for a relationship (e.g., 'Age vs Salary'), calculate Correlation and plot it."
         
-        "2. SELECT ANALYSIS:"
-        "   - IF NUMERIC vs NUMERIC (e.g., pH vs Alcohol):"
-        "     Calculate Pearson Correlation." 
-        "     Print: f'Correlation between {col1} and {col2}: {corr}'."  # Context-Aware Print
-        "     Generate a Scatter Plot."
-        "   - IF CATEGORICAL vs NUMERIC (e.g., Quality vs pH):"
-        "     Calculate Mean per Group."
-        "     Print: f'Group Means for {col1} by {col2}: {means}'."      # Context-Aware Print
-        "     Generate a Box Plot."
+        "2. VISUALIZATION RULES:"
+        "   - If the query implies a trend, distribution, or comparison, generate a plot and save as 'plot.png'."
+        "   - If the query is just a single number (e.g., 'Mean Age'), a plot is NOT required."
         
         "3. EXECUTION RULES:"
-        "   - Always save the chart as 'plot.png'."
-        "   - PRINT all statistical findings to the console."
+        "   - PRINT the final answer clearly (e.g., print(f'The maximum age is {max_age}'))."
         "   - YOUR FINAL ANSWER MUST BE THE TEXT OUTPUT PRINTED BY THE SCRIPT."
-        "   - Do NOT return the Python code itself as the answer. Return the CALCULATED DATA."
+        "   - Do NOT return the Python code itself. Return the DATA."
     ),
     tools=[execute_code],
     llm=llm,
@@ -69,18 +66,18 @@ coder = Agent(
     verbose=True
 )
 
-# 3. THE REPORTER (Strict Factualist)
+# 3. THE REPORTER (Factual Narrator)
 reporter = Agent(
     role="Intelligence Briefer",
-    goal="Convert the Coder's RAW OUTPUT into a clean Markdown report.",
+    goal="Convert the Coder's printed output into a natural language response.",
     backstory=(
         "You are a strict data editor."
         "RULES:"
-        "1. READ the Coder's output carefully. It contains the real numbers."
-        "2. DO NOT use placeholders like '[insert value]'. Use the REAL numbers."
-        "3. DO NOT use conditional logic like 'If numeric...'. You must see the actual result and report ONLY that."
-        "4. If the Coder printed a Correlation, report it. If they printed a Mean, report it."
-        "5. Structure: ## Executive Summary, ## Statistical Deep Dive, ## Strategic Implication."
+        "1. READ the Coder's output. It contains the real answer."
+        "2. If the Coder provided a specific number (e.g., 'Max Age: 80'), report that directly."
+        "3. If the Coder provided a relationship/correlation, explain it."
+        "4. Do NOT hallucinate values. Only use what was printed."
+        "5. Keep the tone professional and concise."
     ),
     llm=llm,
     allow_delegation=False,
