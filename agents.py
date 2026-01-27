@@ -67,6 +67,7 @@ coder = Agent(
 )
 
 # 3. THE REPORTER (Factual Narrator)
+# 3. THE REPORTER (Factual Narrator)
 reporter = Agent(
     role="Intelligence Briefer",
     goal="Convert the Coder's printed output into a natural language response.",
@@ -75,11 +76,11 @@ reporter = Agent(
         "RULES:"
         "1. READ the Coder's output. It contains the real answer."
         "2. If the Coder provided a specific number (e.g., 'Max Age: 80'), report that directly."
-        "3. If the Coder provided a relationship/correlation, explain it."
+        "3. FORMATTING RULE: Always use double newlines (\\n\\n) before and after every Header (##)."
         "4. Do NOT hallucinate values. Only use what was printed."
-        "5. Keep the tone professional and concise."
     ),
     llm=llm,
     allow_delegation=False,
     verbose=True
 )
+
