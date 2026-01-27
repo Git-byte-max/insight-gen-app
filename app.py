@@ -186,7 +186,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- THEME CSS (GLASSMORPHISM + HOVER EFFECTS) ---
+# --- THEME CSS (GLASSMORPHISM + TRANSITIONS + HOVER) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&family=Mulish:wght@300;500&display=swap');
@@ -253,7 +253,7 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-
+    
     /* TAB HOVER & ANIMATION EFFECTS */
     /* Target Streamlit Tab Buttons */
     button[data-baseweb="tab"] {
@@ -498,6 +498,18 @@ else:
                     
                     st.session_state.analysis_result = result_text
                     st.session_state.analysis_plot = plot_file
+
+                    # --- NEW: EXPORT BUTTON INSIDE CHAT ---
+                    try:
+                        chat_pdf = generate_pdf("full", df, query, result_text, plot_file, None)
+                        st.download_button(
+                            label="Download Analysis Report",
+                            data=chat_pdf,
+                            file_name=f"InsightGen_Analysis_{int(time.time())}.pdf",
+                            mime="application/pdf"
+                        )
+                    except Exception as e:
+                        st.warning("Could not generate PDF for this specific result.")
 
                 except Exception as e:
                     status_placeholder.empty()
