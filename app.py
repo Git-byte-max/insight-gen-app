@@ -53,7 +53,6 @@ if "current_filename" not in st.session_state:
 
 # --- HELPER: TIME GREETING (IST) ---
 def get_time_greeting():
-    # Define IST timezone (UTC + 5:30)
     ist_offset = timezone(timedelta(hours=5, minutes=30))
     now_ist = datetime.now(ist_offset)
     hour = now_ist.hour
@@ -64,7 +63,6 @@ def get_time_greeting():
 
 # --- HELPER: DATA LOADER ---
 def load_data(uploaded_file):
-    """Reads file and saves to session state"""
     try:
         if uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
@@ -84,7 +82,7 @@ def load_data(uploaded_file):
 # --- ADVANCED PDF ENGINE ---
 class PDFReport(FPDF):
     def header(self):
-        self.set_fill_color(44, 62, 80) # Dark Slate Blue
+        self.set_fill_color(44, 62, 80) 
         self.rect(0, 0, 210, 30, 'F')
         self.set_font('Helvetica', 'B', 20)
         self.set_text_color(255, 255, 255) 
@@ -186,7 +184,7 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- THEME CSS (GLASSMORPHISM + TRANSITIONS + HOVER) ---
+# --- THEME CSS (GLASSMORPHISM) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&family=Mulish:wght@300;500&display=swap');
@@ -221,7 +219,6 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* CARD HOVER EFFECT */
     .metric-card {
         background: rgba(255, 255, 255, 0.4);
         backdrop-filter: blur(10px);
@@ -254,8 +251,6 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* TAB HOVER & ANIMATION EFFECTS */
-    /* Target Streamlit Tab Buttons */
     button[data-baseweb="tab"] {
         transition: all 0.3s ease;
         border-radius: 8px 8px 0 0;
@@ -263,7 +258,6 @@ st.markdown("""
         border: none !important;
     }
 
-    /* Hover State for Tabs */
     button[data-baseweb="tab"]:hover {
         background-color: rgba(255, 255, 255, 0.5) !important;
         transform: translateY(-3px);
@@ -271,7 +265,6 @@ st.markdown("""
         color: #2C3E50 !important;
     }
 
-    /* Tab Content Fade In */
     div[data-baseweb="tab-panel"] {
         animation: fadeEffect 0.6s ease-in-out;
     }
@@ -447,10 +440,20 @@ else:
                         from crewai import Crew, Task, Process
                         
                         col_list = list(df.columns)
-                        data_context = f"Columns: {col_list}. "
+                        
+                        # --- S5-01: CONVERSATION MEMORY INJECTION ---
+                        history_context = ""
+                        if len(st.session_state.analysis_history) > 1:
+                            recent_history = st.session_state.analysis_history[-5:-1] # Get last two interactions
+                            history_context = "RECENT CHAT HISTORY:\n" + "\n".join(
+                                [f"{msg['role'].upper()}: {msg['content']}" for msg in recent_history if not msg.get('image')]
+                            )
+                        
+                        data_context = f"Columns: {col_list}. {history_context}"
+                        # --------------------------------------------
                         
                         task_plan = Task(
-                            description=f"{data_context} user query: '{query}'. Output 1-sentence plan.", 
+                            description=f"{data_context}\nNEW USER QUERY: '{query}'. Output 1-sentence plan considering past context if relevant.", 
                             expected_output="Brief plan", 
                             agent=planner
                         )
@@ -499,7 +502,6 @@ else:
                     st.session_state.analysis_result = result_text
                     st.session_state.analysis_plot = plot_file
 
-                    # --- NEW: EXPORT BUTTON INSIDE CHAT ---
                     try:
                         chat_pdf = generate_pdf("full", df, query, result_text, plot_file, None)
                         st.download_button(
@@ -528,7 +530,22 @@ else:
 
         dashboard_images = []
         numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
+        
+        # --- S5-02 & S5-03: DYNAMIC AXES & SMART TABLE ---
         if not numeric_df.empty:
+            num_cols_list = numeric_df.columns.tolist()
+            
+            st.markdown("### VISUALIZATION DASHBOARD")
+            
+            # --- S5-02: DYNAMIC AXES ---
+            d_ax1, d_ax2 = st.columns(2)
+            with d_ax1:
+                x_axis_val = st.selectbox("Select X-Axis", num_cols_list, index=0)
+            with d_ax2:
+                # Default Y to the second numeric column if available
+                default_y_index = 1 if len(num_cols_list) > 1 else 0
+                y_axis_val = st.selectbox("Select Y-Axis", num_cols_list, index=default_y_index)
+            
             corr = numeric_df.corr()
             fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
             fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
@@ -537,7 +554,6 @@ else:
                 dashboard_images.append("dash_corr.png")
             except: pass
             
-            x_axis_val = numeric_df.columns[0]
             fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
             fig1.update_traces(marker_color='#3498DB', marker_line_color='#FFF')
             fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
@@ -546,7 +562,6 @@ else:
                 dashboard_images.append("dash_hist.png")
             except: pass
 
-            y_axis_val = numeric_df.columns[1] if len(numeric_df.columns) > 1 else numeric_df.columns[0]
             fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
             fig2.update_traces(marker_color='#2C3E50')
             fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
@@ -554,6 +569,11 @@ else:
                 fig2.write_image("dash_scatter.png")
                 dashboard_images.append("dash_scatter.png")
             except: pass
+
+            st.plotly_chart(fig_corr, width="stretch")
+            gc1, gc2 = st.columns(2)
+            with gc1: st.plotly_chart(fig1, width="stretch")
+            with gc2: st.plotly_chart(fig2, width="stretch")
 
         d_col1, d_col2 = st.columns([4, 1])
         with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
@@ -565,19 +585,23 @@ else:
                 st.error(f"PDF Gen Error: {e}")
 
         st.markdown("---")
+        
+        # --- S5-03: SMART DATA TABLE ---
         column_config = {}
         for col in filtered_df.select_dtypes(include="number").columns:
-            column_config[col] = st.column_config.NumberColumn(col, format="%.2f")
+            min_val = float(filtered_df[col].min())
+            max_val = float(filtered_df[col].max())
+            column_config[col] = st.column_config.ProgressColumn(
+                col,
+                help=f"Range: {min_val} to {max_val}",
+                format="%.2f",
+                min_value=min_val,
+                max_value=max_val,
+            )
+        
         st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
         
-        st.markdown("---")
-        if not numeric_df.empty:
-            st.markdown("### VISUALIZATION DASHBOARD")
-            st.plotly_chart(fig_corr, width="stretch")
-            gc1, gc2 = st.columns(2)
-            with gc1: st.plotly_chart(fig1, width="stretch")
-            with gc2: st.plotly_chart(fig2, width="stretch")
-        else:
+        if numeric_df.empty:
             st.info("NO NUMERIC DATA AVAILABLE")
 
     with full_report_container:
