@@ -169,13 +169,18 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     pdf.create_table(stats)
     pdf.ln(10)
 
+    # --- PDF PAGINATION FIX APPLIED HERE ---
     if dashboard_imgs:
         title_num = "4." if report_type == "full" else "3."
-        if pdf.get_y() > 180: pdf.add_page()
+        if pdf.get_y() > 160: pdf.add_page()
         pdf.section_title(f"{title_num} Visual Surveillance")
+        
         for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
-                if pdf.get_y() > 180: pdf.add_page()
+                # Ensure enough space for BOTH caption and image
+                if pdf.get_y() > 120: 
+                    pdf.add_page()
+                
                 pdf.set_font("Helvetica", 'I', 9)
                 pdf.set_text_color(50, 50, 50)
                 pdf.cell(0, 8, f"Fig {i+1}: Generated Visualization", 0, 1)
@@ -441,16 +446,14 @@ else:
                         
                         col_list = list(df.columns)
                         
-                        # --- S5-01: CONVERSATION MEMORY INJECTION ---
                         history_context = ""
                         if len(st.session_state.analysis_history) > 1:
-                            recent_history = st.session_state.analysis_history[-5:-1] # Get last two interactions
+                            recent_history = st.session_state.analysis_history[-5:-1]
                             history_context = "RECENT CHAT HISTORY:\n" + "\n".join(
                                 [f"{msg['role'].upper()}: {msg['content']}" for msg in recent_history if not msg.get('image')]
                             )
                         
                         data_context = f"Columns: {col_list}. {history_context}"
-                        # --------------------------------------------
                         
                         task_plan = Task(
                             description=f"{data_context}\nNEW USER QUERY: '{query}'. Output 1-sentence plan considering past context if relevant.", 
@@ -531,18 +534,15 @@ else:
         dashboard_images = []
         numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
         
-        # --- S5-02 & S5-03: DYNAMIC AXES & SMART TABLE ---
         if not numeric_df.empty:
             num_cols_list = numeric_df.columns.tolist()
             
             st.markdown("### VISUALIZATION DASHBOARD")
             
-            # --- S5-02: DYNAMIC AXES ---
             d_ax1, d_ax2 = st.columns(2)
             with d_ax1:
                 x_axis_val = st.selectbox("Select X-Axis", num_cols_list, index=0)
             with d_ax2:
-                # Default Y to the second numeric column if available
                 default_y_index = 1 if len(num_cols_list) > 1 else 0
                 y_axis_val = st.selectbox("Select Y-Axis", num_cols_list, index=default_y_index)
             
@@ -586,7 +586,6 @@ else:
 
         st.markdown("---")
         
-        # --- S5-03: SMART DATA TABLE ---
         column_config = {}
         for col in filtered_df.select_dtypes(include="number").columns:
             min_val = float(filtered_df[col].min())
