@@ -169,16 +169,21 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     pdf.create_table(stats)
     pdf.ln(10)
 
-    # --- PDF PAGINATION FIX APPLIED HERE ---
+    # --- THE FINAL PAGINATION FIX ---
     if dashboard_imgs:
         title_num = "4." if report_type == "full" else "3."
-        if pdf.get_y() > 160: pdf.add_page()
+        
+        # Check if we have enough room for BOTH the title AND the first image
+        # If we are past y=80 (upper third of the page), start a fresh page
+        if pdf.get_y() > 80: 
+            pdf.add_page()
+            
         pdf.section_title(f"{title_num} Visual Surveillance")
         
         for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
-                # Ensure enough space for BOTH caption and image
-                if pdf.get_y() > 120: 
+                # For the 2nd and 3rd images, check if they fit on the current page
+                if pdf.get_y() > 130: 
                     pdf.add_page()
                 
                 pdf.set_font("Helvetica", 'I', 9)
