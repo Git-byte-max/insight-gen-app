@@ -2,8 +2,7 @@ import os
 # --- CRITICAL FIX: DISABLE TELEMETRY BEFORE IMPORTING CREWAI ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
-from crewai import Agent
-from langchain_openai import ChatOpenAI
+from crewai import Agent, LLM
 from tools import execute_code
 from dotenv import load_dotenv
 
@@ -17,7 +16,8 @@ if not os.getenv("OPENAI_API_KEY"):
     debug_error = "Missing OPENAI_API_KEY in .env file."
 else:
     # Temperature 0.1 keeps it factual but allows for code flexibility
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+    # FIXED: Using CrewAI's native LLM class to prevent Pydantic validation errors
+    llm = LLM(model="gpt-4o-mini", temperature=0.1)
     DEMO_MODE = False
     debug_error = ""
 
@@ -52,6 +52,7 @@ coder = Agent(
         "   - If the user asks for a relationship (e.g., 'Age vs Salary'), calculate Correlation and plot it."
         
         "2. VISUALIZATION RULES:"
+        "   - CRITICAL: You MUST include `import matplotlib; matplotlib.use('Agg')` BEFORE importing pyplot to prevent server crashes."
         "   - If the query implies a trend, distribution, or comparison, generate a plot and save as 'plot.png'."
         "   - If the query is just a single number (e.g., 'Mean Age'), a plot is NOT required."
         
@@ -66,7 +67,6 @@ coder = Agent(
     verbose=True
 )
 
-# 3. THE REPORTER (Factual Narrator)
 # 3. THE REPORTER (Factual Narrator)
 reporter = Agent(
     role="Intelligence Briefer",
@@ -83,4 +83,3 @@ reporter = Agent(
     allow_delegation=False,
     verbose=True
 )
-
