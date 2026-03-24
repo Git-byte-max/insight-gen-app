@@ -3,6 +3,7 @@ import sys
 
 # --- CRITICAL FIX: DISABLE TELEMETRY AT THE ENTRY POINT ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+os.environ["OTEL_SDK_DISABLED"] = "true"
 
 # --- SQLITE FIX FOR STREAMLIT CLOUD ---
 try:
