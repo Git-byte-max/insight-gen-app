@@ -6,6 +6,6 @@ pandas
 matplotlib
 plotly
 fpdf
-kaleido==0.2.1.post1
+kaleido==0.2.1
 openai
 pydantic>=2.0
