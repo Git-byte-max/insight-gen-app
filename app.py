@@ -1,7 +1,8 @@
 import os
 import sys
+import math
 
-# --- CRITICAL FIX: DISABLE TELEMETRY AT THE ENTRY POINT ---
+# --- CRITICAL FIX: DISABLE ALL TELEMETRY AT THE ENTRY POINT ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 os.environ["OTEL_SDK_DISABLED"] = "true"
 
@@ -63,6 +64,7 @@ def get_time_greeting():
     else: return "Good Evening"
 
 # --- HELPER: DATA LOADER ---
+@st.cache_data(show_spinner=False)
 def load_data(uploaded_file):
     try:
         if uploaded_file.name.endswith(".csv"):
@@ -91,7 +93,9 @@ class PDFReport(FPDF):
         self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
         self.set_font('Helvetica', '', 10) 
         self.set_text_color(240, 240, 230) 
-        self.cell(0, 0, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1, 'C')
+        
+        ist_now = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        self.cell(0, 0, f'Generated: {ist_now.strftime("%Y-%m-%d %H:%M")} (IST)', 0, 1, 'C')
         self.ln(25)
 
     def footer(self):
@@ -170,12 +174,8 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
     pdf.create_table(stats)
     pdf.ln(10)
 
-    # --- THE FINAL PAGINATION FIX ---
     if dashboard_imgs:
         title_num = "4." if report_type == "full" else "3."
-        
-        # Check if we have enough room for BOTH the title AND the first image
-        # If we are past y=80 (upper third of the page), start a fresh page
         if pdf.get_y() > 80: 
             pdf.add_page()
             
@@ -183,7 +183,6 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
         
         for i, img_path in enumerate(dashboard_imgs):
             if os.path.exists(img_path):
-                # For the 2nd and 3rd images, check if they fit on the current page
                 if pdf.get_y() > 130: 
                     pdf.add_page()
                 
@@ -594,15 +593,22 @@ else:
         
         column_config = {}
         for col in filtered_df.select_dtypes(include="number").columns:
-            min_val = float(filtered_df[col].min())
-            max_val = float(filtered_df[col].max())
-            column_config[col] = st.column_config.ProgressColumn(
-                col,
-                help=f"Range: {min_val} to {max_val}",
-                format="%.2f",
-                min_value=min_val,
-                max_value=max_val,
-            )
+            # Force infinities to become NaNs, then drop all NaNs
+            clean_col = filtered_df[col].replace([float('inf'), float('-inf')], float('nan')).dropna()
+            
+            if not clean_col.empty:
+                min_val = float(clean_col.min())
+                max_val = float(clean_col.max())
+                
+                # STRICT CHECK: Must be finite (no Inf/NaN) and max must be greater than min
+                if math.isfinite(min_val) and math.isfinite(max_val) and (max_val > min_val):
+                    column_config[col] = st.column_config.ProgressColumn(
+                        col,
+                        help=f"Range: {min_val:.2f} to {max_val:.2f}",
+                        format="%.2f",
+                        min_value=min_val,
+                        max_value=max_val,
+                    )
         
         st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
         
