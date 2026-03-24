@@ -1,45 +1,43 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-from crewai.tools import BaseTool
 import io
-import sys
+import traceback
+from contextlib import redirect_stdout
+from crewai.tools import tool
 
-# Global variable to hold the DataFrame
+# This global variable gets overwritten dynamically by app.py 
+# when the user uploads a CSV or Excel file.
 df = None
 
-class ExecuteCodeTool(BaseTool):
-    name: str = "execute_code"
-    description: str = (
-        "Executes a Python code snippet. "
-        "The variable 'df' is available as a pandas DataFrame. "
-        "If you create a plot, save it as 'plot.png'. "
-        "Always print the final answer or result to stdout."
-    )
+@tool("Execute Python Code")
+def execute_code(code: str) -> str:
+    """
+    Executes a Python script and returns the printed console output.
+    You MUST use this to run pandas operations. The dataframe is already loaded as 'df'.
+    """
+    global df
     
-    def _run(self, code_snippet: str) -> str:
-        global df
-        
-        # Capture standard output
-        old_stdout = sys.stdout
-        redirected_output = sys.stdout = io.StringIO()
-        
-        try:
-            # Create a local environment for execution
-            local_scope = {"df": df, "pd": pd, "plt": plt}
-            
-            # Execute the code
-            exec(code_snippet, globals(), local_scope)
-            
-            # Get the standard output
-            output = redirected_output.getvalue()
-            return f"Execution Successful. Output:\n{output}"
+    if df is None:
+        return "Error: No dataset loaded. Please wait for the user to upload data."
 
-        except Exception as e:
-            return f"Error executing code: {e}"
+    # Clean the code string in case the LLM wrapped it in markdown code blocks
+    clean_code = code.replace("```python", "").replace("```", "").strip()
+    
+    # Setup the execution environment with the injected dataframe
+    execution_env = {'df': df}
+    output_buffer = io.StringIO()
+    
+    try:
+        # Redirect standard output so we can capture the AI's print() statements
+        with redirect_stdout(output_buffer):
+            exec(clean_code, {}, execution_env)
         
-        finally:
-            # Restore standard output
-            sys.stdout = old_stdout
-
-# Instantiate the tool so agents can import it
-execute_code = ExecuteCodeTool()
+        result = output_buffer.getvalue()
+        
+        if not result.strip():
+            return "Script executed successfully, but nothing was printed. Please explicitly print() the final answer."
+            
+        return result
+        
+    except Exception as e:
+        # Return the exact error traceback so the AI can self-correct its code
+        error_msg = f"Execution Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+        return error_msg
