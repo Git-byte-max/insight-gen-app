@@ -375,21 +375,21 @@ else:
                             recent_history = st.session_state.analysis_history[-5:-1]
                             history_context = "RECENT HISTORY:\n" + "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in recent_history if not msg.get('image')])
                         
-                        # STRICT 3-AGENT TASKS
+                        # STRICT BUT DESCRIPTIVE 3-AGENT TASKS
                         task_plan = Task(
-                            description=f"Columns: {list(df.columns)}. {history_context}\nNEW QUERY: '{query}'. Plan the exact pandas code needed.", 
-                            expected_output="A 1-sentence mathematical strategy.", 
+                            description=f"Columns: {list(df.columns)}. {history_context}\nNEW QUERY: '{query}'. Plan the exact pandas calculation and the appropriate visualization.", 
+                            expected_output="A 1-sentence mathematical and visual strategy.", 
                             agent=planner
                         )
                         task_code = Task(
-                            description="Write ONE Python script. Calculate exact numbers and explicitly `print()` them. Save plots as 'plot.png' with a white background.", 
+                            description="Write ONE Python script. Calculate exact numbers and explicitly `print()` them. You MUST generate a relevant diagram (e.g., a scatter plot for a correlation query) and save it exactly as 'plot.png' with a white background.", 
                             expected_output="Raw console output containing the actual calculated numerical data.", 
                             agent=coder, 
                             context=[task_plan]
                         )
                         task_report = Task(
-                            description="Format the printed findings into Markdown. NEVER use placeholder variables like {correlation}. Report the ACTUAL numbers the Coder printed.", 
-                            expected_output="Markdown Report with real numerical data.", 
+                            description="Format the printed findings into a Markdown report. You MUST write a full paragraph summary explaining what the results mean. Report the ACTUAL numbers the Coder printed. NEVER use placeholder variables like {correlation}.", 
+                            expected_output="A detailed Markdown Report containing a descriptive paragraph summary and the real numerical data.", 
                             agent=reporter, 
                             context=[task_code]
                         )
