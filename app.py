@@ -296,7 +296,7 @@ else:
                     # DIAGRAM DOWNLOAD: History Plots
                     if os.path.exists(message["image"]):
                         with open(message["image"], "rb") as file:
-                            st.download_button("📥 Download This Plot", data=file, file_name=f"ai_plot_{int(time.time())}.png", mime="image/png", key=f"dl_{time.time()}")
+                            st.download_button("Download This Plot", data=file, file_name=f"ai_plot_{int(time.time())}.png", mime="image/png", key=f"dl_{time.time()}")
 
         query = st.chat_input("Ask a question about your data...")
         
@@ -331,8 +331,9 @@ else:
                             recent_history = st.session_state.analysis_history[-5:-1]
                             history_context = "RECENT HISTORY:\n" + "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in recent_history if not msg.get('image')])
                         
+                        # Added instruction to save plot with a solid background
                         task_plan = Task(description=f"Columns: {list(df.columns)}. {history_context}\nNEW QUERY: '{query}'. Plan exactly what code to write.", expected_output="Brief plan", agent=planner)
-                        task_code = Task(description="Write ONE Python script. Save plots as 'plot.png'.", expected_output="Code output", agent=coder, context=[task_plan])
+                        task_code = Task(description="Write ONE Python script. Save plots as 'plot.png' with a white background.", expected_output="Code output", agent=coder, context=[task_plan])
                         task_report = Task(description="Format findings into Markdown.", expected_output="Markdown Report", agent=reporter, context=[task_code])
                         
                         crew = Crew(agents=[planner, coder, reporter], tasks=[task_plan, task_code, task_report], process=Process.sequential, verbose=True)
@@ -346,7 +347,7 @@ else:
                             st.image(plot_file)
                             # DIAGRAM DOWNLOAD: Fresh Plot
                             with open(plot_file, "rb") as file:
-                                st.download_button("📥 Download Analysis Plot", data=file, file_name="ai_analysis_plot.png", mime="image/png")
+                                st.download_button("Download Analysis Plot", data=file, file_name="ai_analysis_plot.png", mime="image/png")
                                 
                         st.caption(f"Analysis completed in {round(time.time() - start_time, 2)}s")
 
@@ -379,38 +380,41 @@ else:
             with d_ax1: x_axis_val = st.selectbox("Select X-Axis", num_cols_list, index=0)
             with d_ax2: y_axis_val = st.selectbox("Select Y-Axis", num_cols_list, index=1 if len(num_cols_list) > 1 else 0)
             
-            # Generating Charts
+            # Generating Charts with Solid Backgrounds for Export
             fig_corr = px.imshow(numeric_df.corr(), text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
-            fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
+            fig_corr.update_layout(font_family="Mulish", font_color="#2C3E50", paper_bgcolor="white", plot_bgcolor="white")
             try: fig_corr.write_image("dash_corr.png"); dashboard_images.append("dash_corr.png")
             except: pass
+            fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") # Revert for UI
             
             fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
             fig1.update_traces(marker_color='#3498DB', marker_line_color='#FFF')
-            fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
+            fig1.update_layout(font_family="Mulish", font_color="#2C3E50", paper_bgcolor="white", plot_bgcolor="white")
             try: fig1.write_image("dash_hist.png"); dashboard_images.append("dash_hist.png")
             except: pass
+            fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") # Revert for UI
 
             fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
             fig2.update_traces(marker_color='#2C3E50')
-            fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
+            fig2.update_layout(font_family="Mulish", font_color="#2C3E50", paper_bgcolor="white", plot_bgcolor="white")
             try: fig2.write_image("dash_scatter.png"); dashboard_images.append("dash_scatter.png")
             except: pass
+            fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") # Revert for UI
 
-            # Render Charts with Download Buttons
+            # Render Charts with Clean Download Buttons
             st.plotly_chart(fig_corr, width="stretch")
             if os.path.exists("dash_corr.png"):
-                with open("dash_corr.png", "rb") as f: st.download_button("📥 Download Correlation Matrix", f, "correlation_matrix.png", "image/png")
+                with open("dash_corr.png", "rb") as f: st.download_button("Download Correlation Matrix", f, "correlation_matrix.png", "image/png")
             
             gc1, gc2 = st.columns(2)
             with gc1: 
                 st.plotly_chart(fig1, width="stretch")
                 if os.path.exists("dash_hist.png"):
-                    with open("dash_hist.png", "rb") as f: st.download_button("📥 Download Histogram", f, "histogram.png", "image/png")
+                    with open("dash_hist.png", "rb") as f: st.download_button("Download Histogram", f, "histogram.png", "image/png")
             with gc2: 
                 st.plotly_chart(fig2, width="stretch")
                 if os.path.exists("dash_scatter.png"):
-                    with open("dash_scatter.png", "rb") as f: st.download_button("📥 Download Scatter Plot", f, "scatter_plot.png", "image/png")
+                    with open("dash_scatter.png", "rb") as f: st.download_button("Download Scatter Plot", f, "scatter_plot.png", "image/png")
 
         d_col1, d_col2 = st.columns([4, 1])
         with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
