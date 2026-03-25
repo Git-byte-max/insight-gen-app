@@ -333,14 +333,23 @@ else:
 
     with tab1:
         st.write("")
-        for message in st.session_state.analysis_history:
+        # --- SPRINT 6: FIX CHAT HISTORY IMAGE LOOP ---
+        for idx, message in enumerate(st.session_state.analysis_history):
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
                 if "image" in message and message["image"]:
-                    st.image(message["image"])
                     if os.path.exists(message["image"]):
-                        with open(message["image"], "rb") as file:
-                            st.download_button("Download This Plot", data=file, file_name=f"ai_plot_{int(time.time())}.png", mime="image/png", key=f"dl_{time.time()}")
+                        with st.container(border=True):
+                            st.image(message["image"])
+                            with open(message["image"], "rb") as file:
+                                st.download_button(
+                                    label="Download This Diagram", 
+                                    data=file, 
+                                    file_name=message["image"], 
+                                    mime="image/png", 
+                                    key=f"dl_hist_{idx}", 
+                                    use_container_width=True
+                                )
 
         query = st.chat_input("Ask a question about your data...")
         
@@ -375,7 +384,6 @@ else:
                             recent_history = st.session_state.analysis_history[-5:-1]
                             history_context = "RECENT HISTORY:\n" + "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in recent_history if not msg.get('image')])
                         
-                        # STRICT BUT DESCRIPTIVE 3-AGENT TASKS
                         task_plan = Task(
                             description=f"Columns: {list(df.columns)}. {history_context}\nNEW QUERY: '{query}'. Plan the exact pandas calculation and the appropriate visualization.", 
                             expected_output="A 1-sentence mathematical and visual strategy.", 
@@ -405,16 +413,33 @@ else:
                         status_placeholder.empty()
                         st.markdown(result_text)
                         
-                        plot_file = "plot.png" if os.path.exists("plot.png") else None
-                        if plot_file:
-                            st.image(plot_file)
-                            with open(plot_file, "rb") as file:
-                                st.download_button("Download Analysis Plot", data=file, file_name="ai_analysis_plot.png", mime="image/png")
+                        # --- SPRINT 6: FIX IMAGE OVERWRITE BUG ---
+                        unique_plot_file = None
+                        if os.path.exists("plot.png"):
+                            unique_plot_file = f"ai_plot_{int(time.time())}.png"
+                            os.rename("plot.png", unique_plot_file)
+                            
+                            with st.container(border=True):
+                                st.image(unique_plot_file)
+                                with open(unique_plot_file, "rb") as file:
+                                    st.download_button(
+                                        label="Download Analysis Diagram", 
+                                        data=file, 
+                                        file_name=unique_plot_file, 
+                                        mime="image/png",
+                                        key=f"dl_new_{int(time.time())}",
+                                        use_container_width=True
+                                    )
                                 
                         st.caption(f"Analysis completed in {round(time.time() - start_time, 2)}s")
 
-                        st.session_state.analysis_history.append({"role": "assistant", "content": result_text, "image": plot_file})
-                        st.session_state.analysis_plot = plot_file
+                        # Save the UNIQUE filename to history
+                        st.session_state.analysis_history.append({
+                            "role": "assistant", 
+                            "content": result_text, 
+                            "image": unique_plot_file
+                        })
+                        st.session_state.analysis_plot = unique_plot_file
 
                     except Exception as e:
                         status_placeholder.empty()
