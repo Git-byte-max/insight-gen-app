@@ -1,6 +1,7 @@
 import os
 import sys
 import math
+import io
 
 # --- CRITICAL FIX: DISABLE ALL TELEMETRY AT THE ENTRY POINT ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
@@ -46,8 +47,6 @@ if "analysis_plot" not in st.session_state:
     st.session_state.analysis_plot = None
 if "last_query" not in st.session_state:
     st.session_state.last_query = ""
-if "analysis_time" not in st.session_state:
-    st.session_state.analysis_time = None
 if "current_df" not in st.session_state:
     st.session_state.current_df = None
 if "current_filename" not in st.session_state:
@@ -63,14 +62,19 @@ def get_time_greeting():
     elif 12 <= hour < 18: return "Good Afternoon"
     else: return "Good Evening"
 
-# --- HELPER: DATA LOADER ---
+# --- SPRINT 6: PERFORMANCE CACHING ---
 @st.cache_data(show_spinner=False)
-def load_data(uploaded_file):
+def process_dataframe(file_bytes, filename):
+    """Caches the dataframe parsing to save RAM and CPU on UI re-runs."""
+    if filename.endswith(".csv"):
+        return pd.read_csv(io.BytesIO(file_bytes))
+    else:
+        return pd.read_excel(io.BytesIO(file_bytes))
+
+def load_data_to_session(uploaded_file):
     try:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
+        file_bytes = uploaded_file.getvalue()
+        df = process_dataframe(file_bytes, uploaded_file.name)
         
         st.session_state.current_df = df
         st.session_state.current_filename = uploaded_file.name
@@ -79,7 +83,8 @@ def load_data(uploaded_file):
         df.to_csv("dataset.csv", index=False)
         return True
     except Exception as e:
-        st.error(f"Error loading file: {e}")
+        # SPRINT 6: Edge Case Handling
+        st.error(f"Failed to parse file. Please ensure it is a valid, uncorrupted CSV or Excel document. Error: {e}")
         return False
 
 # --- ADVANCED PDF ENGINE ---
@@ -194,157 +199,49 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
                 
     return pdf.output(dest='S').encode('latin-1')
 
-# --- THEME CSS (GLASSMORPHISM) ---
+# --- THEME CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;800&family=Mulish:wght@300;500&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Mulish', sans-serif;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        color: #2C3E50;
-    }
-    .stApp {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    }
-
-    h1, h2, h3 {
-        color: #2C3E50 !important;
-        font-family: 'Manrope', sans-serif;
-        font-weight: 800;
-    }
-    
-    .main-title {
-        color: #2C3E50 !important; 
-        font-family: 'Manrope', sans-serif;
-        font-weight: 800;
-        font-size: 3.5rem; 
-        text-transform: uppercase; 
-    }
-    
-    .greeting-text {
-        font-family: 'Mulish', sans-serif;
-        font-size: 1.2rem;
-        color: #34495E;
-        font-weight: 600;
-    }
-
-    .metric-card {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        padding: 20px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-        text-align: center;
-        border-radius: 15px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
-    }
-
-    .metric-value { 
-        color: #2C3E50;
-        font-family: 'Manrope', sans-serif;
-        font-size: 32px;
-        font-weight: 800; 
-    }
-    .metric-label {
-        font-family: 'Mulish', sans-serif;
-        font-size: 10px;
-        font-weight: 700;
-        color: #5D6D7E;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    button[data-baseweb="tab"] {
-        transition: all 0.3s ease;
-        border-radius: 8px 8px 0 0;
-        margin: 0 4px;
-        border: none !important;
-    }
-
-    button[data-baseweb="tab"]:hover {
-        background-color: rgba(255, 255, 255, 0.5) !important;
-        transform: translateY(-3px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        color: #2C3E50 !important;
-    }
-
-    div[data-baseweb="tab-panel"] {
-        animation: fadeEffect 0.6s ease-in-out;
-    }
-    
-    @keyframes fadeEffect {
-        from {opacity: 0; transform: translateY(10px);}
-        to {opacity: 1; transform: translateY(0);}
-    }
-
-    .stChatMessage {
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 15px;
-        padding: 15px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    
-    div[data-testid="stFileUploader"] {
-        background: rgba(255, 255, 255, 0.4);
-        border: 2px dashed #B0BEC5;
-        border-radius: 20px;
-        padding: 30px;
-        text-align: center;
-        backdrop-filter: blur(10px);
-    }
-    
-    .streamlit-expanderHeader {
-        font-family: 'Mulish', sans-serif;
-        font-size: 0.9rem;
-        color: #2C3E50;
-        background: rgba(255, 255, 255, 0.4);
-        border-radius: 10px;
-    }
-    
-    div[data-testid="stSidebar"] {
-        background-color: rgba(255, 255, 255, 0.5);
-        backdrop-filter: blur(20px);
-        border-right: 1px solid rgba(255, 255, 255, 0.3);
-    }
+    html, body, [class*="css"] { font-family: 'Mulish', sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); color: #2C3E50; }
+    .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+    h1, h2, h3 { color: #2C3E50 !important; font-family: 'Manrope', sans-serif; font-weight: 800; }
+    .main-title { color: #2C3E50 !important; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 3.5rem; text-transform: uppercase; }
+    .greeting-text { font-family: 'Mulish', sans-serif; font-size: 1.2rem; color: #34495E; font-weight: 600; }
+    .metric-card { background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); text-align: center; border-radius: 15px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .metric-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2); }
+    .metric-value { color: #2C3E50; font-family: 'Manrope', sans-serif; font-size: 32px; font-weight: 800; }
+    .metric-label { font-family: 'Mulish', sans-serif; font-size: 10px; font-weight: 700; color: #5D6D7E; text-transform: uppercase; letter-spacing: 1px; }
+    button[data-baseweb="tab"] { transition: all 0.3s ease; border-radius: 8px 8px 0 0; margin: 0 4px; border: none !important; }
+    button[data-baseweb="tab"]:hover { background-color: rgba(255, 255, 255, 0.5) !important; transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); color: #2C3E50 !important; }
+    .stChatMessage { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 15px; padding: 15px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    div[data-testid="stFileUploader"] { background: rgba(255, 255, 255, 0.4); border: 2px dashed #B0BEC5; border-radius: 20px; padding: 30px; text-align: center; backdrop-filter: blur(10px); }
+    div[data-testid="stSidebar"] { background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.3); }
     </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR (DYNAMIC) ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.markdown("### SYSTEM MENU")
     
     if st.session_state.current_df is not None:
         st.success(f"Active: {st.session_state.current_filename}")
-        
         sidebar_file = st.file_uploader("Change Dataset", type=["csv", "xlsx"], key="sidebar_uploader")
-        if sidebar_file:
-            if load_data(sidebar_file):
-                st.rerun()
+        if sidebar_file and load_data_to_session(sidebar_file):
+            st.rerun()
 
         if st.button("Reset Session", use_container_width=True):
             st.session_state.current_df = None
             st.session_state.current_filename = None
             st.session_state.analysis_history = []
-            st.session_state.analysis_result = None
+            st.session_state.analysis_plot = None
             st.rerun()
     else:
         st.info("Waiting for data upload...")
 
     st.markdown("---")
-    
     if DEMO_MODE:
-        st.code("STATUS: OFFLINE MODE")
-        st.error(f"Error: {debug_error}")
+        st.error("STATUS: OFFLINE (Missing API Key)")
     else:
         st.success("STATUS: ONLINE")
         
@@ -354,12 +251,9 @@ with st.sidebar:
     st.caption("INSIGHTGEN | ANALYTICS SUITE V2.1")
 
 # --- MAIN CONTENT ---
-
-# 1. HEADER
 header_col1, header_col2 = st.columns([3, 1])
 with header_col1:
-    greeting = get_time_greeting()
-    st.markdown(f"<div class='greeting-text'>{greeting}, Analyst.</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='greeting-text'>{get_time_greeting()}, Analyst.</div>", unsafe_allow_html=True)
     st.markdown("<div class='main-title'>INSIGHTGEN</div>", unsafe_allow_html=True)
 with header_col2:
     st.components.v1.html("""
@@ -369,30 +263,14 @@ with header_col2:
 
 st.markdown("---")
 
-# 2. LOGIC CONTROLLER
 if st.session_state.current_df is None:
-    uploaded_file = st.file_uploader(
-        "Start Analysis: Drag and drop your dataset here", 
-        type=["csv", "xlsx"],
-        help="Supported formats: .CSV and .XLSX",
-        key="main_uploader"
-    )
-    
-    if uploaded_file:
-        if load_data(uploaded_file):
-            st.rerun()
-            
-    if not uploaded_file:
-        st.caption("Upload a dataset to activate the Neural Engine.")
+    uploaded_file = st.file_uploader("Start Analysis: Drag and drop your dataset here", type=["csv", "xlsx"], key="main_uploader")
+    if uploaded_file and load_data_to_session(uploaded_file):
+        st.rerun()
 
 else:
     df = st.session_state.current_df
-    
     if tools: tools.df = df
-    df.to_csv("dataset.csv", index=False)
-
-    with st.expander(f"Active Dataset: {st.session_state.current_filename}", expanded=False):
-        st.info("To change files, use the sidebar uploader or click 'Reset Session'.")
 
     st.subheader("DATASET OVERVIEW")
     mc1, mc2, mc3, mc4 = st.columns(4)
@@ -415,115 +293,69 @@ else:
                 st.markdown(message["content"])
                 if "image" in message and message["image"]:
                     st.image(message["image"])
+                    # DIAGRAM DOWNLOAD: History Plots
+                    if os.path.exists(message["image"]):
+                        with open(message["image"], "rb") as file:
+                            st.download_button("📥 Download This Plot", data=file, file_name=f"ai_plot_{int(time.time())}.png", mime="image/png", key=f"dl_{time.time()}")
 
         query = st.chat_input("Ask a question about your data...")
         
         if query:
-            st.session_state.analysis_history.append({"role": "user", "content": query})
-            st.session_state.last_query = query
-            
-            with st.chat_message("user"):
-                st.markdown(query)
+            if DEMO_MODE:
+                st.error("API Key missing. Cannot process query.")
+            else:
+                st.session_state.analysis_history.append({"role": "user", "content": query})
+                st.session_state.last_query = query
+                
+                with st.chat_message("user"): st.markdown(query)
 
-            with st.chat_message("assistant"):
-                status_placeholder = st.empty()
-                with status_placeholder.container():
-                    st.components.v1.html("""
-                    <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-                    <div style="display: flex; justify-content: center;">
-                        <dotlottie-player src="https://lottie.host/e519ba57-b007-43c2-a64e-08d2863f458b/agikvzJbA3.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
-                    </div>
-                    """, height=160)
-                    st.caption("Analyzing data patterns...")
+                with st.chat_message("assistant"):
+                    status_placeholder = st.empty()
+                    with status_placeholder.container():
+                        st.components.v1.html("""
+                        <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+                        <div style="display: flex; justify-content: center;">
+                            <dotlottie-player src="https://lottie.host/e519ba57-b007-43c2-a64e-08d2863f458b/agikvzJbA3.lottie" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></dotlottie-player>
+                        </div>
+                        """, height=160)
+                        st.caption("Analyzing data patterns...")
 
-                try:
-                    if DEMO_MODE:
-                        time.sleep(2) 
-                        result_text = f"**Simulated Analysis:**\nQuery: {query}\nCorrelation: 0.85 (Strong)."
-                        plot_file = None
-                        status_placeholder.empty()
-                        st.markdown(result_text)
-                    else:
+                    try:
                         if os.path.exists("plot.png"): os.remove("plot.png")
                         
                         start_time = time.time()
                         from crewai import Crew, Task, Process
                         
-                        col_list = list(df.columns)
-                        
                         history_context = ""
                         if len(st.session_state.analysis_history) > 1:
                             recent_history = st.session_state.analysis_history[-5:-1]
-                            history_context = "RECENT CHAT HISTORY:\n" + "\n".join(
-                                [f"{msg['role'].upper()}: {msg['content']}" for msg in recent_history if not msg.get('image')]
-                            )
+                            history_context = "RECENT HISTORY:\n" + "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in recent_history if not msg.get('image')])
                         
-                        data_context = f"Columns: {col_list}. {history_context}"
+                        task_plan = Task(description=f"Columns: {list(df.columns)}. {history_context}\nNEW QUERY: '{query}'. Plan exactly what code to write.", expected_output="Brief plan", agent=planner)
+                        task_code = Task(description="Write ONE Python script. Save plots as 'plot.png'.", expected_output="Code output", agent=coder, context=[task_plan])
+                        task_report = Task(description="Format findings into Markdown.", expected_output="Markdown Report", agent=reporter, context=[task_code])
                         
-                        task_plan = Task(
-                            description=f"{data_context}\nNEW USER QUERY: '{query}'. Output 1-sentence plan considering past context if relevant.", 
-                            expected_output="Brief plan", 
-                            agent=planner
-                        )
-                        task_code = Task(
-                            description="Write ONE Python script. Check types (Cat/Num). Calc stats. Save 'plot.png'.", 
-                            expected_output="Code output", 
-                            agent=coder, 
-                            context=[task_plan]
-                        )
-                        task_report = Task(
-                            description="Format findings into Markdown (Summary, Stats, Implications).", 
-                            expected_output="Markdown Report", 
-                            agent=reporter, 
-                            context=[task_code]
-                        )
-                        
-                        crew = Crew(
-                            agents=[planner, coder, reporter], 
-                            tasks=[task_plan, task_code, task_report], 
-                            process=Process.sequential, 
-                            verbose=True
-                        )
-                        
-                        result = crew.kickoff() 
-                        end_time = time.time()
+                        crew = Crew(agents=[planner, coder, reporter], tasks=[task_plan, task_code, task_report], process=Process.sequential, verbose=True)
+                        result_text = str(crew.kickoff()) 
                         
                         status_placeholder.empty()
-                        
-                        result_text = str(result)
                         st.markdown(result_text)
                         
-                        plot_file = None
-                        if os.path.exists("plot.png"):
-                            plot_file = "plot.png"
+                        plot_file = "plot.png" if os.path.exists("plot.png") else None
+                        if plot_file:
                             st.image(plot_file)
-                            
-                        elapsed = round(end_time - start_time, 2)
-                        st.caption(f"Analysis completed in {elapsed}s")
+                            # DIAGRAM DOWNLOAD: Fresh Plot
+                            with open(plot_file, "rb") as file:
+                                st.download_button("📥 Download Analysis Plot", data=file, file_name="ai_analysis_plot.png", mime="image/png")
+                                
+                        st.caption(f"Analysis completed in {round(time.time() - start_time, 2)}s")
 
-                    st.session_state.analysis_history.append({
-                        "role": "assistant", 
-                        "content": result_text,
-                        "image": plot_file
-                    })
-                    
-                    st.session_state.analysis_result = result_text
-                    st.session_state.analysis_plot = plot_file
+                        st.session_state.analysis_history.append({"role": "assistant", "content": result_text, "image": plot_file})
+                        st.session_state.analysis_plot = plot_file
 
-                    try:
-                        chat_pdf = generate_pdf("full", df, query, result_text, plot_file, None)
-                        st.download_button(
-                            label="Download Analysis Report",
-                            data=chat_pdf,
-                            file_name=f"InsightGen_Analysis_{int(time.time())}.pdf",
-                            mime="application/pdf"
-                        )
                     except Exception as e:
-                        st.warning("Could not generate PDF for this specific result.")
-
-                except Exception as e:
-                    status_placeholder.empty()
-                    st.error(f"Runtime Error: {e}")
+                        status_placeholder.empty()
+                        st.error(f"Runtime Error: {e}")
 
     with tab2:
         st.write("")
@@ -541,79 +373,66 @@ else:
         
         if not numeric_df.empty:
             num_cols_list = numeric_df.columns.tolist()
-            
             st.markdown("### VISUALIZATION DASHBOARD")
             
             d_ax1, d_ax2 = st.columns(2)
-            with d_ax1:
-                x_axis_val = st.selectbox("Select X-Axis", num_cols_list, index=0)
-            with d_ax2:
-                default_y_index = 1 if len(num_cols_list) > 1 else 0
-                y_axis_val = st.selectbox("Select Y-Axis", num_cols_list, index=default_y_index)
+            with d_ax1: x_axis_val = st.selectbox("Select X-Axis", num_cols_list, index=0)
+            with d_ax2: y_axis_val = st.selectbox("Select Y-Axis", num_cols_list, index=1 if len(num_cols_list) > 1 else 0)
             
-            corr = numeric_df.corr()
-            fig_corr = px.imshow(corr, text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
+            # Generating Charts
+            fig_corr = px.imshow(numeric_df.corr(), text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
             fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
-            try:
-                fig_corr.write_image("dash_corr.png")
-                dashboard_images.append("dash_corr.png")
+            try: fig_corr.write_image("dash_corr.png"); dashboard_images.append("dash_corr.png")
             except: pass
             
             fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
             fig1.update_traces(marker_color='#3498DB', marker_line_color='#FFF')
             fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
-            try:
-                fig1.write_image("dash_hist.png")
-                dashboard_images.append("dash_hist.png")
+            try: fig1.write_image("dash_hist.png"); dashboard_images.append("dash_hist.png")
             except: pass
 
             fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
             fig2.update_traces(marker_color='#2C3E50')
             fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Mulish", font_color="#2C3E50")
-            try:
-                fig2.write_image("dash_scatter.png")
-                dashboard_images.append("dash_scatter.png")
+            try: fig2.write_image("dash_scatter.png"); dashboard_images.append("dash_scatter.png")
             except: pass
 
+            # Render Charts with Download Buttons
             st.plotly_chart(fig_corr, width="stretch")
+            if os.path.exists("dash_corr.png"):
+                with open("dash_corr.png", "rb") as f: st.download_button("📥 Download Correlation Matrix", f, "correlation_matrix.png", "image/png")
+            
             gc1, gc2 = st.columns(2)
-            with gc1: st.plotly_chart(fig1, width="stretch")
-            with gc2: st.plotly_chart(fig2, width="stretch")
+            with gc1: 
+                st.plotly_chart(fig1, width="stretch")
+                if os.path.exists("dash_hist.png"):
+                    with open("dash_hist.png", "rb") as f: st.download_button("📥 Download Histogram", f, "histogram.png", "image/png")
+            with gc2: 
+                st.plotly_chart(fig2, width="stretch")
+                if os.path.exists("dash_scatter.png"):
+                    with open("dash_scatter.png", "rb") as f: st.download_button("📥 Download Scatter Plot", f, "scatter_plot.png", "image/png")
 
         d_col1, d_col2 = st.columns([4, 1])
         with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
         with d_col2:
             try:
                 dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
-                st.download_button(label="EXPORT PDF", data=dash_pdf, file_name="InsightGen_Dashboard_Report.pdf", mime="application/pdf", width="stretch")
+                st.download_button(label="EXPORT PDF", data=dash_pdf, file_name="InsightGen_Dashboard.pdf", mime="application/pdf", width="stretch")
             except Exception as e:
-                st.error(f"PDF Gen Error: {e}")
+                pass
 
         st.markdown("---")
-        
         column_config = {}
         for col in filtered_df.select_dtypes(include="number").columns:
-            # Force infinities to become NaNs, then drop all NaNs
             clean_col = filtered_df[col].replace([float('inf'), float('-inf')], float('nan')).dropna()
-            
             if not clean_col.empty:
-                min_val = float(clean_col.min())
-                max_val = float(clean_col.max())
-                
-                # STRICT CHECK: Must be finite (no Inf/NaN) and max must be greater than min
+                min_val, max_val = float(clean_col.min()), float(clean_col.max())
                 if math.isfinite(min_val) and math.isfinite(max_val) and (max_val > min_val):
-                    column_config[col] = st.column_config.ProgressColumn(
-                        col,
-                        help=f"Range: {min_val:.2f} to {max_val:.2f}",
-                        format="%.2f",
-                        min_value=min_val,
-                        max_value=max_val,
-                    )
+                    column_config[col] = st.column_config.ProgressColumn(col, help=f"Range: {min_val:.2f} to {max_val:.2f}", format="%.2f", min_value=min_val, max_value=max_val)
         
         st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
         
-        if numeric_df.empty:
-            st.info("NO NUMERIC DATA AVAILABLE")
+        if numeric_df.empty: st.info("NO NUMERIC DATA AVAILABLE")
 
     with full_report_container:
         if st.session_state.analysis_history:
@@ -621,8 +440,6 @@ else:
                 last_result = st.session_state.analysis_history[-1]["content"]
                 last_img = st.session_state.analysis_history[-1].get("image")
                 full_pdf = generate_pdf("full", df, st.session_state.last_query, str(last_result), last_img, dashboard_images)
-                st.download_button(label="EXPORT FULL REPORT", data=full_pdf, file_name="InsightGen_Full_Analytics_Report.pdf", mime="application/pdf", width="stretch")
+                st.download_button(label="EXPORT FULL REPORT", data=full_pdf, file_name="InsightGen_Full_Analytics.pdf", mime="application/pdf", width="stretch")
             except Exception as e:
                 pass
-
-    if tools: tools.df = df
