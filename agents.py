@@ -1,10 +1,18 @@
 import os
+
 # --- CRITICAL FIX: DISABLE TELEMETRY BEFORE IMPORTING CREWAI ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 
 from crewai import Agent, LLM
-from tools import execute_code
 from dotenv import load_dotenv
+
+# Import the custom execution tool
+try:
+    from tools import execute_code
+    tool_list = [execute_code]
+except ImportError as e:
+    tool_list = []
+    print(f"Warning: Tool import failed - {e}")
 
 # Load environment variables
 load_dotenv()
@@ -15,69 +23,52 @@ if not os.getenv("OPENAI_API_KEY"):
     DEMO_MODE = True
     debug_error = "Missing OPENAI_API_KEY in .env file."
 else:
-    # Temperature 0.1 keeps it factual but allows for code flexibility
-    # FIXED: Using CrewAI's native LLM class to prevent Pydantic validation errors
-    llm = LLM(model="gpt-4o-mini", temperature=0.1)
+    # Temperature 0.0 guarantees strict, factual outputs and prevents hallucinated variables
+    llm = LLM(
+        model="gpt-4o-mini", 
+        temperature=0.0
+    )
     DEMO_MODE = False
     debug_error = ""
 
-# --- AGENTS ---
+# --- AGENT DEFINITIONS ---
 
-# 1. THE PLANNER (Context Manager)
 planner = Agent(
-    role="Analysis Architect",
-    goal="Identify the user's intent and relevant columns.",
+    role="Data Analytics Planner",
+    goal="Quickly identify the relevant columns and state a 1-sentence mathematical strategy.",
     backstory=(
-        "You are an expert data strategist."
-        "Your Job: Look at the user's query and the available columns."
-        "Output: A single sentence instruction for the Coder. "
-        "Example: 'Calculate the maximum value of the Age column.' or 'Analyze the relationship between Age and Salary.'"
+        "You are a Lead Data Scientist. You review the user's query and the dataset columns. "
+        "You output a single, direct sentence instructing the Coder on exactly what to calculate."
     ),
     llm=llm,
     allow_delegation=False,
     verbose=True
 )
 
-# 2. THE CODER (General Purpose Analyst)
 coder = Agent(
-    role="Senior Python Analyst",
-    goal="Write pandas code to answer the specific question. Print the result.",
+    role="Senior Python Data Analyst",
+    goal="Write pandas code, execute it using the tool, and print the exact numerical results.",
     backstory=(
-        "You are a Python expert. You can answer ANY data question."
-        "CRITICAL INSTRUCTION: Write a SINGLE script that does the following:"
-        
-        "1. UNDERSTAND THE GOAL: "
-        "   - If the user asks for a specific value (e.g., 'What is the max age?'), calculate and PRINT it."
-        "   - If the user asks for a count (e.g., 'How many rows?'), calculate and PRINT it."
-        "   - If the user asks for a relationship (e.g., 'Age vs Salary'), calculate Correlation and plot it."
-        
-        "2. VISUALIZATION RULES:"
-        "   - CRITICAL: You MUST include `import matplotlib; matplotlib.use('Agg')` BEFORE importing pyplot to prevent server crashes."
-        "   - If the query implies a trend, distribution, or comparison, generate a plot and save as 'plot.png'."
-        "   - If the query is just a single number (e.g., 'Mean Age'), a plot is NOT required."
-        
-        "3. EXECUTION RULES:"
-        "   - PRINT the final answer clearly (e.g., print(f'The maximum age is {max_age}'))."
-        "   - YOUR FINAL ANSWER MUST BE THE TEXT OUTPUT PRINTED BY THE SCRIPT."
-        "   - Do NOT return the Python code itself. Return the DATA."
+        "You are an expert Python data analyst. "
+        "CRITICAL RULES YOU MUST FOLLOW: "
+        "1. The dataset is already loaded in memory as a pandas DataFrame named 'df'. "
+        "2. If creating a plot, include `import matplotlib; matplotlib.use('Agg')` BEFORE importing pyplot, and save it strictly as 'plot.png' with a white background. "
+        "3. You MUST explicitly `print()` the final numerical answers to the console so the Reporter can read them. Do not guess; run the code."
     ),
-    tools=[execute_code],
     llm=llm,
+    tools=tool_list,
     allow_delegation=False,
     verbose=True
 )
 
-# 3. THE REPORTER (Factual Narrator)
 reporter = Agent(
-    role="Intelligence Briefer",
-    goal="Convert the Coder's printed output into a natural language response.",
+    role="AI Reporting Analyst",
+    goal="Translate the Coder's printed output into a clean, factual Markdown report.",
     backstory=(
-        "You are a strict data editor."
-        "RULES:"
-        "1. READ the Coder's output. It contains the real answer."
-        "2. If the Coder provided a specific number (e.g., 'Max Age: 80'), report that directly."
-        "3. FORMATTING RULE: Always use double newlines (\\n\\n) before and after every Header (##)."
-        "4. Do NOT hallucinate values. Only use what was printed."
+        "You are an expert technical writer. You take the raw console output from the Coder "
+        "and turn it into a structured summary. "
+        "CRITICAL RULE: You NEVER hallucinate external data or use placeholder variables like {correlation}. "
+        "You strictly report the exact numbers provided in the Coder's output."
     ),
     llm=llm,
     allow_delegation=False,
