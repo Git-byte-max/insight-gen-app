@@ -65,7 +65,6 @@ def get_time_greeting():
 # --- SPRINT 6: PERFORMANCE CACHING ---
 @st.cache_data(show_spinner=False)
 def process_dataframe(file_bytes, filename):
-    """Caches the dataframe parsing to save RAM and CPU on UI re-runs."""
     if filename.endswith(".csv"):
         return pd.read_csv(io.BytesIO(file_bytes))
     else:
@@ -83,25 +82,33 @@ def load_data_to_session(uploaded_file):
         df.to_csv("dataset.csv", index=False)
         return True
     except Exception as e:
-        # SPRINT 6: Edge Case Handling
         st.error(f"Failed to parse file. Please ensure it is a valid, uncorrupted CSV or Excel document. Error: {e}")
         return False
 
 # --- ADVANCED PDF ENGINE ---
 class PDFReport(FPDF):
+    def set_filename(self, filename):
+        self.filename = filename
+
     def header(self):
         self.set_fill_color(44, 62, 80) 
-        self.rect(0, 0, 210, 30, 'F')
+        self.rect(0, 0, 210, 35, 'F') # Slightly taller to fit the filename
         self.set_font('Helvetica', 'B', 20)
         self.set_text_color(255, 255, 255) 
         self.set_y(10)
-        self.cell(0, 10, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
-        self.set_font('Helvetica', '', 10) 
-        self.set_text_color(240, 240, 230) 
+        self.cell(0, 8, 'INSIGHTGEN | ANALYTICS REPORT', 0, 1, 'C')
         
         ist_now = datetime.now(timezone(timedelta(hours=5, minutes=30)))
-        self.cell(0, 0, f'Generated: {ist_now.strftime("%Y-%m-%d %H:%M")} (IST)', 0, 1, 'C')
-        self.ln(25)
+        self.set_font('Helvetica', '', 10) 
+        self.set_text_color(240, 240, 230) 
+        self.cell(0, 6, f'Generated: {ist_now.strftime("%Y-%m-%d %H:%M")} (IST)', 0, 1, 'C')
+        
+        # SPRINT 6: Added Filename to PDF Header
+        fname = getattr(self, 'filename', 'Unknown File')
+        self.set_font('Helvetica', 'I', 10)
+        self.set_text_color(173, 216, 230) # Light blue text for the filename
+        self.cell(0, 6, f'Source Data: {fname}', 0, 1, 'C')
+        self.ln(20)
 
     def footer(self):
         self.set_y(-15)
@@ -139,8 +146,9 @@ class PDFReport(FPDF):
                 self.cell(col_width, 8, val_str, 1, 0, 'C')
             self.ln()
 
-def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dashboard_imgs=None):
+def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dashboard_imgs=None, filename="Unknown"):
     pdf = PDFReport()
+    pdf.set_filename(filename)
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
@@ -208,6 +216,11 @@ st.markdown("""
     h1, h2, h3 { color: #2C3E50 !important; font-family: 'Manrope', sans-serif; font-weight: 800; }
     .main-title { color: #2C3E50 !important; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 3.5rem; text-transform: uppercase; }
     .greeting-text { font-family: 'Mulish', sans-serif; font-size: 1.2rem; color: #34495E; font-weight: 600; }
+    
+    /* Active File Header Styling */
+    .file-header { font-family: 'Manrope', sans-serif; font-size: 1.4rem; color: #2C3E50; font-weight: 800; padding: 10px 0px 20px 0px; border-bottom: 2px solid rgba(44, 62, 80, 0.1); margin-bottom: 20px; }
+    .file-header span { color: #3498DB; background: rgba(255, 255, 255, 0.6); padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 1.2rem; }
+
     .metric-card { background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); text-align: center; border-radius: 15px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
     .metric-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2); }
     .metric-value { color: #2C3E50; font-family: 'Manrope', sans-serif; font-size: 32px; font-weight: 800; }
@@ -217,6 +230,29 @@ st.markdown("""
     .stChatMessage { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 15px; padding: 15px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     div[data-testid="stFileUploader"] { background: rgba(255, 255, 255, 0.4); border: 2px dashed #B0BEC5; border-radius: 20px; padding: 30px; text-align: center; backdrop-filter: blur(10px); }
     div[data-testid="stSidebar"] { background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.3); }
+    
+    /* SPRINT 6: Custom Styling for Download Buttons */
+    div[data-testid="stDownloadButton"] button {
+        background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+        color: white !important;
+        border: none;
+        border-radius: 8px;
+        font-family: 'Manrope', sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        width: 100%;
+    }
+    div[data-testid="stDownloadButton"] button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(52, 152, 219, 0.5);
+        background: linear-gradient(135deg, #2980B9 0%, #3498DB 100%);
+        color: white !important;
+        border: none;
+    }
+    div[data-testid="stDownloadButton"] button p {
+        color: white !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -225,7 +261,6 @@ with st.sidebar:
     st.markdown("### SYSTEM MENU")
     
     if st.session_state.current_df is not None:
-        st.success(f"Active: {st.session_state.current_filename}")
         sidebar_file = st.file_uploader("Change Dataset", type=["csv", "xlsx"], key="sidebar_uploader")
         if sidebar_file and load_data_to_session(sidebar_file):
             st.rerun()
@@ -272,7 +307,9 @@ else:
     df = st.session_state.current_df
     if tools: tools.df = df
 
-    st.subheader("DATASET OVERVIEW")
+    # SPRINT 6: Active File Header added directly to the UI
+    st.markdown(f"<div class='file-header'>Active Dataset: <span>{st.session_state.current_filename}</span></div>", unsafe_allow_html=True)
+
     mc1, mc2, mc3, mc4 = st.columns(4)
     with mc1: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[0]}</div><div class="metric-label">TOTAL ROWS</div></div>""", unsafe_allow_html=True)
     with mc2: st.markdown(f"""<div class="metric-card"><div class="metric-value">{df.shape[1]}</div><div class="metric-label">COLUMNS</div></div>""", unsafe_allow_html=True)
@@ -293,7 +330,6 @@ else:
                 st.markdown(message["content"])
                 if "image" in message and message["image"]:
                     st.image(message["image"])
-                    # DIAGRAM DOWNLOAD: History Plots
                     if os.path.exists(message["image"]):
                         with open(message["image"], "rb") as file:
                             st.download_button("Download This Plot", data=file, file_name=f"ai_plot_{int(time.time())}.png", mime="image/png", key=f"dl_{time.time()}")
@@ -331,7 +367,6 @@ else:
                             recent_history = st.session_state.analysis_history[-5:-1]
                             history_context = "RECENT HISTORY:\n" + "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in recent_history if not msg.get('image')])
                         
-                        # Added instruction to save plot with a solid background
                         task_plan = Task(description=f"Columns: {list(df.columns)}. {history_context}\nNEW QUERY: '{query}'. Plan exactly what code to write.", expected_output="Brief plan", agent=planner)
                         task_code = Task(description="Write ONE Python script. Save plots as 'plot.png' with a white background.", expected_output="Code output", agent=coder, context=[task_plan])
                         task_report = Task(description="Format findings into Markdown.", expected_output="Markdown Report", agent=reporter, context=[task_code])
@@ -345,7 +380,6 @@ else:
                         plot_file = "plot.png" if os.path.exists("plot.png") else None
                         if plot_file:
                             st.image(plot_file)
-                            # DIAGRAM DOWNLOAD: Fresh Plot
                             with open(plot_file, "rb") as file:
                                 st.download_button("Download Analysis Plot", data=file, file_name="ai_analysis_plot.png", mime="image/png")
                                 
@@ -420,8 +454,8 @@ else:
         with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
         with d_col2:
             try:
-                dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images)
-                st.download_button(label="EXPORT PDF", data=dash_pdf, file_name="InsightGen_Dashboard.pdf", mime="application/pdf", width="stretch")
+                dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images, filename=st.session_state.current_filename)
+                st.download_button(label="EXPORT PDF DASHBOARD", data=dash_pdf, file_name=f"Dashboard_{st.session_state.current_filename}.pdf", mime="application/pdf", width="stretch")
             except Exception as e:
                 pass
 
@@ -443,7 +477,7 @@ else:
             try:
                 last_result = st.session_state.analysis_history[-1]["content"]
                 last_img = st.session_state.analysis_history[-1].get("image")
-                full_pdf = generate_pdf("full", df, st.session_state.last_query, str(last_result), last_img, dashboard_images)
-                st.download_button(label="EXPORT FULL REPORT", data=full_pdf, file_name="InsightGen_Full_Analytics.pdf", mime="application/pdf", width="stretch")
+                full_pdf = generate_pdf("full", df, st.session_state.last_query, str(last_result), last_img, dashboard_images, filename=st.session_state.current_filename)
+                st.download_button(label="EXPORT FULL INTELLIGENCE REPORT", data=full_pdf, file_name=f"Full_Report_{st.session_state.current_filename}.pdf", mime="application/pdf", width="stretch")
             except Exception as e:
                 pass
