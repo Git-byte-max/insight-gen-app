@@ -92,7 +92,7 @@ class PDFReport(FPDF):
 
     def header(self):
         self.set_fill_color(44, 62, 80) 
-        self.rect(0, 0, 210, 35, 'F') # Slightly taller to fit the filename
+        self.rect(0, 0, 210, 35, 'F') 
         self.set_font('Helvetica', 'B', 20)
         self.set_text_color(255, 255, 255) 
         self.set_y(10)
@@ -103,10 +103,9 @@ class PDFReport(FPDF):
         self.set_text_color(240, 240, 230) 
         self.cell(0, 6, f'Generated: {ist_now.strftime("%Y-%m-%d %H:%M")} (IST)', 0, 1, 'C')
         
-        # SPRINT 6: Added Filename to PDF Header
         fname = getattr(self, 'filename', 'Unknown File')
         self.set_font('Helvetica', 'I', 10)
-        self.set_text_color(173, 216, 230) # Light blue text for the filename
+        self.set_text_color(173, 216, 230) 
         self.cell(0, 6, f'Source Data: {fname}', 0, 1, 'C')
         self.ln(20)
 
@@ -217,7 +216,6 @@ st.markdown("""
     .main-title { color: #2C3E50 !important; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 3.5rem; text-transform: uppercase; }
     .greeting-text { font-family: 'Mulish', sans-serif; font-size: 1.2rem; color: #34495E; font-weight: 600; }
     
-    /* Active File Header Styling */
     .file-header { font-family: 'Manrope', sans-serif; font-size: 1.4rem; color: #2C3E50; font-weight: 800; padding: 10px 0px 20px 0px; border-bottom: 2px solid rgba(44, 62, 80, 0.1); margin-bottom: 20px; }
     .file-header span { color: #3498DB; background: rgba(255, 255, 255, 0.6); padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 1.2rem; }
 
@@ -231,7 +229,18 @@ st.markdown("""
     div[data-testid="stFileUploader"] { background: rgba(255, 255, 255, 0.4); border: 2px dashed #B0BEC5; border-radius: 20px; padding: 30px; text-align: center; backdrop-filter: blur(10px); }
     div[data-testid="stSidebar"] { background-color: rgba(255, 255, 255, 0.5); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.3); }
     
-    /* SPRINT 6: Custom Styling for Download Buttons */
+    /* Styled Containers for Diagrams */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 15px 0 rgba(31, 38, 135, 0.05);
+    }
+
     div[data-testid="stDownloadButton"] button {
         background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
         color: white !important;
@@ -307,7 +316,6 @@ else:
     df = st.session_state.current_df
     if tools: tools.df = df
 
-    # SPRINT 6: Active File Header added directly to the UI
     st.markdown(f"<div class='file-header'>Active Dataset: <span>{st.session_state.current_filename}</span></div>", unsafe_allow_html=True)
 
     mc1, mc2, mc3, mc4 = st.columns(4)
@@ -414,48 +422,51 @@ else:
             with d_ax1: x_axis_val = st.selectbox("Select X-Axis", num_cols_list, index=0)
             with d_ax2: y_axis_val = st.selectbox("Select Y-Axis", num_cols_list, index=1 if len(num_cols_list) > 1 else 0)
             
-            # Generating Charts with Solid Backgrounds for Export
+            # Generating Charts
             fig_corr = px.imshow(numeric_df.corr(), text_auto=True, aspect="auto", color_continuous_scale='Blues', template="plotly_white")
             fig_corr.update_layout(font_family="Mulish", font_color="#2C3E50", paper_bgcolor="white", plot_bgcolor="white")
             try: fig_corr.write_image("dash_corr.png"); dashboard_images.append("dash_corr.png")
             except: pass
-            fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") # Revert for UI
+            fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") 
             
             fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
             fig1.update_traces(marker_color='#3498DB', marker_line_color='#FFF')
             fig1.update_layout(font_family="Mulish", font_color="#2C3E50", paper_bgcolor="white", plot_bgcolor="white")
             try: fig1.write_image("dash_hist.png"); dashboard_images.append("dash_hist.png")
             except: pass
-            fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") # Revert for UI
+            fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") 
 
             fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
             fig2.update_traces(marker_color='#2C3E50')
             fig2.update_layout(font_family="Mulish", font_color="#2C3E50", paper_bgcolor="white", plot_bgcolor="white")
             try: fig2.write_image("dash_scatter.png"); dashboard_images.append("dash_scatter.png")
             except: pass
-            fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") # Revert for UI
+            fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") 
 
-            # Render Charts with Clean Download Buttons
-            st.plotly_chart(fig_corr, width="stretch")
-            if os.path.exists("dash_corr.png"):
-                with open("dash_corr.png", "rb") as f: st.download_button("Download Correlation Matrix", f, "correlation_matrix.png", "image/png")
+            # Render Charts with Border Containers
+            with st.container(border=True):
+                st.plotly_chart(fig_corr, use_container_width=True)
+                if os.path.exists("dash_corr.png"):
+                    with open("dash_corr.png", "rb") as f: st.download_button("Download Correlation Matrix", f, "correlation_matrix.png", "image/png", use_container_width=True)
             
             gc1, gc2 = st.columns(2)
             with gc1: 
-                st.plotly_chart(fig1, width="stretch")
-                if os.path.exists("dash_hist.png"):
-                    with open("dash_hist.png", "rb") as f: st.download_button("Download Histogram", f, "histogram.png", "image/png")
+                with st.container(border=True):
+                    st.plotly_chart(fig1, use_container_width=True)
+                    if os.path.exists("dash_hist.png"):
+                        with open("dash_hist.png", "rb") as f: st.download_button("Download Histogram", f, "histogram.png", "image/png", use_container_width=True)
             with gc2: 
-                st.plotly_chart(fig2, width="stretch")
-                if os.path.exists("dash_scatter.png"):
-                    with open("dash_scatter.png", "rb") as f: st.download_button("Download Scatter Plot", f, "scatter_plot.png", "image/png")
+                with st.container(border=True):
+                    st.plotly_chart(fig2, use_container_width=True)
+                    if os.path.exists("dash_scatter.png"):
+                        with open("dash_scatter.png", "rb") as f: st.download_button("Download Scatter Plot", f, "scatter_plot.png", "image/png", use_container_width=True)
 
         d_col1, d_col2 = st.columns([4, 1])
         with d_col1: st.markdown(f"**FILTERED RECORDS:** {len(filtered_df)}") 
         with d_col2:
             try:
                 dash_pdf = generate_pdf("dashboard", df, dashboard_imgs=dashboard_images, filename=st.session_state.current_filename)
-                st.download_button(label="EXPORT PDF DASHBOARD", data=dash_pdf, file_name=f"Dashboard_{st.session_state.current_filename}.pdf", mime="application/pdf", width="stretch")
+                st.download_button(label="EXPORT PDF DASHBOARD", data=dash_pdf, file_name=f"Dashboard_{st.session_state.current_filename}.pdf", mime="application/pdf", use_container_width=True)
             except Exception as e:
                 pass
 
@@ -468,7 +479,7 @@ else:
                 if math.isfinite(min_val) and math.isfinite(max_val) and (max_val > min_val):
                     column_config[col] = st.column_config.ProgressColumn(col, help=f"Range: {min_val:.2f} to {max_val:.2f}", format="%.2f", min_value=min_val, max_value=max_val)
         
-        st.dataframe(filtered_df.head(100), width="stretch", height=300, column_config=column_config)
+        st.dataframe(filtered_df.head(100), use_container_width=True, height=300, column_config=column_config)
         
         if numeric_df.empty: st.info("NO NUMERIC DATA AVAILABLE")
 
@@ -478,6 +489,6 @@ else:
                 last_result = st.session_state.analysis_history[-1]["content"]
                 last_img = st.session_state.analysis_history[-1].get("image")
                 full_pdf = generate_pdf("full", df, st.session_state.last_query, str(last_result), last_img, dashboard_images, filename=st.session_state.current_filename)
-                st.download_button(label="EXPORT FULL INTELLIGENCE REPORT", data=full_pdf, file_name=f"Full_Report_{st.session_state.current_filename}.pdf", mime="application/pdf", width="stretch")
+                st.download_button(label="EXPORT FULL INTELLIGENCE REPORT", data=full_pdf, file_name=f"Full_Report_{st.session_state.current_filename}.pdf", mime="application/pdf", use_container_width=True)
             except Exception as e:
                 pass
