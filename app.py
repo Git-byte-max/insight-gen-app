@@ -2,6 +2,8 @@ import os
 import sys
 import math
 import io
+import time
+from datetime import datetime, timedelta, timezone
 
 # --- CRITICAL FIX: DISABLE ALL TELEMETRY AT THE ENTRY POINT ---
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
@@ -18,8 +20,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import streamlit.components.v1 as components 
-import time
-from datetime import datetime, timedelta, timezone
 from fpdf import FPDF
 
 # --- CONFIGURATION ---
@@ -457,7 +457,11 @@ else:
             filtered_df = df
 
         dashboard_images = []
+        
+        # --- ULTIMATE DEFENSE-IN-DEPTH: Filter Duplicates & Inf from Dashboards ---
         numeric_df = filtered_df.select_dtypes(include=['float64', 'int64'])
+        numeric_df = numeric_df.drop_duplicates() 
+        numeric_df = numeric_df.replace([float('inf'), float('-inf')], float('nan')).dropna(how='all') 
         
         if not numeric_df.empty:
             num_cols_list = numeric_df.columns.tolist()
@@ -473,14 +477,14 @@ else:
             except: pass
             fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") 
             
-            fig1 = px.histogram(filtered_df, x=x_axis_val, nbins=20, template="plotly_white")
+            fig1 = px.histogram(numeric_df, x=x_axis_val, nbins=20, template="plotly_white")
             fig1.update_traces(marker_color='#3498DB', marker_line_color='#FFF')
             fig1.update_layout(font_family="Mulish", font_color="#2C3E50", paper_bgcolor="white", plot_bgcolor="white")
             try: fig1.write_image("dash_hist.png"); dashboard_images.append("dash_hist.png")
             except: pass
             fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") 
 
-            fig2 = px.scatter(filtered_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
+            fig2 = px.scatter(numeric_df, x=x_axis_val, y=y_axis_val, template="plotly_white")
             fig2.update_traces(marker_color='#2C3E50')
             fig2.update_layout(font_family="Mulish", font_color="#2C3E50", paper_bgcolor="white", plot_bgcolor="white")
             try: fig2.write_image("dash_scatter.png"); dashboard_images.append("dash_scatter.png")
@@ -488,19 +492,22 @@ else:
             fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)") 
 
             with st.container(border=True):
-                st.plotly_chart(fig_corr, use_container_width=True)
+                # FIXED: stretch instead of use_container_width
+                st.plotly_chart(fig_corr, width="stretch")
                 if os.path.exists("dash_corr.png"):
                     with open("dash_corr.png", "rb") as f: st.download_button("Download Correlation Matrix", f, "correlation_matrix.png", "image/png", use_container_width=True)
             
             gc1, gc2 = st.columns(2)
             with gc1: 
                 with st.container(border=True):
-                    st.plotly_chart(fig1, use_container_width=True)
+                    # FIXED: stretch instead of use_container_width
+                    st.plotly_chart(fig1, width="stretch")
                     if os.path.exists("dash_hist.png"):
                         with open("dash_hist.png", "rb") as f: st.download_button("Download Histogram", f, "histogram.png", "image/png", use_container_width=True)
             with gc2: 
                 with st.container(border=True):
-                    st.plotly_chart(fig2, use_container_width=True)
+                    # FIXED: stretch instead of use_container_width
+                    st.plotly_chart(fig2, width="stretch")
                     if os.path.exists("dash_scatter.png"):
                         with open("dash_scatter.png", "rb") as f: st.download_button("Download Scatter Plot", f, "scatter_plot.png", "image/png", use_container_width=True)
 
