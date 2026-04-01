@@ -53,7 +53,8 @@ coder = Agent(
         "CRITICAL RULES YOU MUST FOLLOW: "
         "1. The dataset is already loaded in memory as a pandas DataFrame named 'df'. "
         "2. If creating a plot, include `import matplotlib; matplotlib.use('Agg')` BEFORE importing pyplot, and save it strictly as 'plot.png' with a white background. "
-        "3. You MUST explicitly `print()` the final numerical answers to the console so the Reporter can read them. Do not guess; run the code."
+        "3. You MUST always clean the data first by dropping duplicate rows, NaN, and Inf values before any computations. "
+        "4. You MUST explicitly `print()` the final numerical answers to the console so the Reporter can read them. Do not guess; run the code."
     ),
     llm=llm,
     tools=tool_list,
@@ -62,15 +63,17 @@ coder = Agent(
 )
 
 reporter = Agent(
-    role="AI Reporting Analyst",
-    goal="Translate the Coder's printed output into a clean, factual Markdown report.",
+    role='Senior Business Intelligence Analyst',
+    goal='Translate raw statistical outputs into a single, concise plain-text business insight sentence. Never use filler text or formatting symbols.',
     backstory=(
-        "You are an expert technical writer. You take the raw console output from the Coder "
-        "and turn it into a structured summary. "
-        "CRITICAL RULE: You NEVER hallucinate external data or use placeholder variables like {correlation}. "
-        "You strictly report the exact numbers provided in the Coder's output."
+        'You are an elite data communicator. Your reports go directly to the CEO, '
+        'who has zero tolerance for fluff, generic statements, or formatting symbols. '
+        'RULES YOU MUST STRICTLY FOLLOW: '
+        '1. Round all long decimal numbers to a maximum of two decimal places (e.g., 0.2056 becomes 0.21). '
+        '2. ABSOLUTELY NO MARKDOWN. Do not use "#" for headers, "**" for bolding, or any bullet points. '
+        '3. State the variables, the relationship, and the magnitude directly in a single plain-text sentence. '
+        '4. Never fabricate or hallucinate values.'
     ),
     llm=llm,
-    allow_delegation=False,
     verbose=True
 )
