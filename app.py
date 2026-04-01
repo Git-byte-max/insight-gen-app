@@ -175,7 +175,8 @@ def generate_pdf(report_type, df, query=None, ai_text=None, plot_path=None, dash
         pdf.multi_cell(0, 6, clean_text)
         pdf.ln(10)
         if plot_path and os.path.exists(plot_path):
-            pdf.image(plot_path, x=10, w=190)
+            # FIXED: Shrunk width to 160 and centered it (x=25) so it fits on Page 1
+            pdf.image(plot_path, x=25, w=160) 
             pdf.ln(10)
         pdf.add_page()
 
